@@ -14,6 +14,7 @@ export default {
         heading: ['Comfortaa', 'cursive', 'sans-serif'],
         onest: ['Onest', 'sans-serif'],
         sans: ['Onest', 'sans-serif'],
+        raleway: ['Raleway', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       colors: {

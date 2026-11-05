@@ -114,9 +114,50 @@ export async function initDatabase() {
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS riven_weapons (
+      id TEXT PRIMARY KEY,
+      slug TEXT UNIQUE NOT NULL,
+      name_en TEXT NOT NULL,
+      name_ru TEXT NOT NULL,
+      group_type TEXT NOT NULL,
+      riven_type TEXT NOT NULL,
+      disposition REAL DEFAULT 1.0,
+      req_mr INTEGER DEFAULT 0,
+      icon_url TEXT,
+      thumb_url TEXT,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS riven_lots (
+      id TEXT PRIMARY KEY,
+      weapon_slug TEXT NOT NULL,
+      seller_name TEXT NOT NULL,
+      seller_status TEXT DEFAULT 'offline',
+      seller_reputation INTEGER DEFAULT 0,
+      is_direct_sell BOOLEAN DEFAULT 1,
+      buyout_price INTEGER,
+      starting_price INTEGER,
+      top_bid INTEGER,
+      mod_name TEXT,
+      mod_rank INTEGER DEFAULT 0,
+      re_rolls INTEGER DEFAULT 0,
+      mastery_level INTEGER DEFAULT 8,
+      polarity TEXT,
+      attributes TEXT,
+      endo_value INTEGER DEFAULT 0,
+      efficiency REAL DEFAULT 0,
+      lot_created_at TEXT,
+      lot_updated_at TEXT,
+      fetched_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE INDEX IF NOT EXISTS idx_snapshots_slug_time ON market_snapshots(item_slug, timestamp);
     CREATE INDEX IF NOT EXISTS idx_history_slug_date ON price_history(item_slug, date);
     CREATE INDEX IF NOT EXISTS idx_notes_user ON notes(user_id);
+    CREATE INDEX IF NOT EXISTS idx_riven_weapons_group ON riven_weapons(group_type);
+    CREATE INDEX IF NOT EXISTS idx_riven_lots_weapon ON riven_lots(weapon_slug);
+    CREATE INDEX IF NOT EXISTS idx_riven_lots_endo ON riven_lots(endo_value);
+    CREATE INDEX IF NOT EXISTS idx_riven_lots_price ON riven_lots(buyout_price);
   `);
 
   // Safe incremental schema migrations

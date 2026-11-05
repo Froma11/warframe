@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import { db, initDatabase } from './db';
 import { initAuth, generateToken, setAuthCookie, clearAuthCookie, requireAuth } from './auth';
 import { scraper } from './services/scraper';
+import { rivenService } from './services/rivenService';
 
 dotenv.config();
 
@@ -349,6 +350,62 @@ app.get('/api/arcanes/:slug', requireAuth, async (req, res) => {
   }
 });
 
+// --- RIVENS & ENDO (VENUS) ROUTES ---
+
+// 1. Get riven weapons directory (RU/EN, categories, search autocomplete)
+app.get('/api/rivens/weapons', async (req, res) => {
+  try {
+    const search = String(req.query.search || '');
+    const group = String(req.query.group || 'all');
+    const weapons = await rivenService.getWeapons(search, group);
+    res.json({
+      success: true,
+      count: weapons.length,
+      data: weapons,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 2. Get riven lots for a weapon from SQLite DB (with filters & sorting)
+app.get('/api/rivens/lots/:slug', async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const { type, rerolls, rank, onlineOnly, sortBy } = req.query;
+
+    const result = await rivenService.getLotsForWeapon(slug, {
+      type: type as any,
+      rerolls: rerolls as any,
+      rank: rank as any,
+      onlineOnly: onlineOnly === 'true',
+      sortBy: sortBy as any,
+    });
+
+    res.json({
+      success: true,
+      weapon: result.weapon,
+      total: result.total,
+      data: result.lots,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 3. Force-sync latest auctions from market
+app.post('/api/rivens/sync', async (req, res) => {
+  try {
+    const count = await rivenService.syncLiveAuctions();
+    res.json({
+      success: true,
+      syncedCount: count,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Health & System status
 app.get('/api/status', async (_req, res) => {
   try {
@@ -384,6 +441,9 @@ async function start() {
     
     // Start background worker (15 min interval as requested in answer 3)
     scraper.startBackgroundWorker(15);
+
+    // Start riven background worker for live lots accumulation (every 30s)
+    rivenService.startBackgroundWorker(0.5);
   });
 }
 

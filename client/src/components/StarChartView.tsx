@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 
 interface StarChartViewProps {
-  onSelectPlanet: (planet: 'sedna' | 'earth') => void;
+  onSelectPlanet: (planet: 'sedna' | 'earth' | 'venus') => void;
   lang: 'ru' | 'en';
 }
 
@@ -9,7 +9,7 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
   onSelectPlanet,
   lang,
 }) => {
-  const [selectedPlanet, setSelectedPlanet] = useState<'sedna' | 'earth' | null>(null);
+  const [selectedPlanet, setSelectedPlanet] = useState<'sedna' | 'earth' | 'venus' | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -53,7 +53,7 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
   }, []);
 
   // Handle approach animation: smooth glide to center and scale
-  const handlePlanetClick = (planet: 'sedna' | 'earth') => {
+  const handlePlanetClick = (planet: 'sedna' | 'earth' | 'venus') => {
     if (selectedPlanet) return;
     setSelectedPlanet(planet);
 
@@ -343,23 +343,56 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
           </div>
         </div>
 
-        {/* 8. RESERVED ORBITAL SLOTS (Clean minimal nodes for future tabs) */}
-        
-        {/* Slot 1: Upper-Left (Orbit 3) */}
+        {/* 8. «МР В ЭНДО» (Active Sector — Upper-Left Orbit — Venus 100% Round Sphere) */}
         <div
-          className={`absolute pointer-events-none flex items-center justify-center transition-opacity duration-300 ${
-            isTransitioning ? 'opacity-0' : 'opacity-40'
+          onClick={() => handlePlanetClick('venus')}
+          className={`group absolute cursor-pointer flex flex-col items-center transition-all duration-500 ease-out z-20 ${
+            isTransitioning && selectedPlanet !== 'venus' ? 'opacity-0 pointer-events-none' : 'opacity-100'
           }`}
           style={{
-            left: 'calc(50% - 250px)',
+            left: 'calc(50% - 220px)',
             top: 'calc(50% - 135px)',
-            transform: 'translate(-50%, -50%)',
+            transform: selectedPlanet === 'venus'
+              ? 'translate(220px, 135px) scale(2.4)'
+              : 'translate(-50%, -50%) scale(1)',
+            transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
-          <div className="w-5 h-5 rounded-full aspect-square border border-dashed border-[#00e5ff]/50 flex items-center justify-center shadow-[0_0_8px_rgba(0,229,255,0.3)]">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#00e5ff]" />
+          {/* Sphere with Directional Sun Illumination (100% Round Circle) */}
+          <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden shadow-[0_0_35px_rgba(0,229,255,0.35),inset_18px_-18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(0,229,255,0.65)] transition-all duration-300">
+            <img
+              src="/venus_clean.png"
+              alt="Rivens-endo"
+              className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin aspect-square"
+              style={{ animationDuration: '110s' }}
+            />
+
+            {/* Physical directional solar illumination on the surface facing the sun */}
+            <div
+              className="absolute inset-0 rounded-full pointer-events-none aspect-square"
+              style={{
+                background: 'radial-gradient(circle at 75% 75%, rgba(0, 229, 255, 0.25) 0%, transparent 60%)',
+                boxShadow: 'inset 0 0 18px rgba(0, 229, 255, 0.45)',
+              }}
+            />
+          </div>
+
+          {/* ONLY the label «МР в эндо» / «Rivens-endo» (No planet name!) */}
+          <div
+            className={`flex flex-col items-center mt-3.5 transition-all duration-200 ${
+              selectedPlanet === 'venus' ? 'opacity-0 scale-90' : 'opacity-100 scale-100'
+            }`}
+          >
+            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#050e18]/90 border border-[#00e5ff]/50 shadow-[0_0_16px_rgba(0,229,255,0.25)] group-hover:border-[#00e5ff] group-hover:bg-[#071626] group-hover:shadow-[0_0_24px_rgba(0,229,255,0.55)] group-hover:scale-105 transition-all">
+              <span className="w-2 h-2 rounded-full bg-[#00e5ff] animate-pulse" />
+              <span className="text-xs sm:text-sm font-comfortaa font-bold text-white tracking-wider uppercase">
+                {lang === 'ru' ? 'МР в эндо' : 'Rivens-endo'}
+              </span>
+            </div>
           </div>
         </div>
+
+        {/* 9. RESERVED ORBITAL SLOTS (Clean minimal nodes for future tabs) */}
 
         {/* Slot 2: Lower-Right (Orbit 2) */}
         <div
