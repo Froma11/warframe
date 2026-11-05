@@ -23,23 +23,22 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="w-full bg-[#05080c]/95 border-b border-white/[0.08] backdrop-blur-md px-4 sm:px-6 py-2.5 sticky top-0 z-40 select-none font-mono">
       <div className="max-w-[1920px] mx-auto flex items-center justify-between">
         
-        {/* Left: Star Chart Button or Sync Status */}
+        {/* Left: Star Chart Button or Title */}
         <div className="flex items-center gap-3">
           {!isStarChart && onGoToStarChart ? (
             <button
               onClick={onGoToStarChart}
               className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#090e17] hover:bg-[#00e5ff]/15 border border-[#00e5ff]/40 text-[#00e5ff] hover:text-white transition-all shadow-[0_0_12px_rgba(0,229,255,0.2)] text-xs font-semibold"
-              title={lang === 'ru' ? 'Вернуться на Звездную карту' : 'Return to Star Chart'}
             >
-              <Compass className="w-4 h-4 text-[#00e5ff] animate-spin" style={{ animationDuration: '40s' }} />
+              <Compass className="w-4 h-4 text-[#00e5ff]" />
               <span className="tracking-wider uppercase text-[11px]">
-                {lang === 'ru' ? 'ЗВЕЗДНАЯ КАРТА' : 'STAR CHART'}
+                {lang === 'ru' ? '◀ Звездная карта' : '◀ Star Chart'}
               </span>
             </button>
           ) : (
-            <div className="flex items-center gap-2 text-xs text-[#00e5ff] font-bold tracking-wider">
+            <div className="flex items-center gap-2 text-xs text-white font-bold tracking-wider">
               <Compass className="w-4 h-4 text-[#00e5ff]" />
-              <span className="uppercase">WARFRAME // ORIGIN SYSTEM</span>
+              <span className="uppercase">Warframe Market</span>
             </div>
           )}
 
