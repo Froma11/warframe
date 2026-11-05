@@ -276,15 +276,18 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
             />
           </div>
 
-          {/* ONLY the label «Профиль» */}
+          {/* ONLY the label «Профиль» (High-contrast Warframe holographic badge) */}
           <div
-            className={`flex flex-col items-center mt-3 transition-opacity duration-200 ${
-              selectedPlanet === 'earth' ? 'opacity-0' : 'opacity-100'
+            className={`flex flex-col items-center mt-3.5 transition-all duration-200 ${
+              selectedPlanet === 'earth' ? 'opacity-0 scale-90' : 'opacity-100 scale-100'
             }`}
           >
-            <span className="text-sm sm:text-base font-raleway font-bold text-white tracking-widest uppercase group-hover:text-[#34d399] transition-colors drop-shadow-[0_2px_12px_rgba(16,185,129,0.7)]">
-              {lang === 'ru' ? 'Профиль' : 'Profile'}
-            </span>
+            <div className="flex items-center gap-2 px-3.5 py-1 rounded-lg bg-[#041410]/90 border border-[#10b981]/60 shadow-[0_0_16px_rgba(16,185,129,0.4)] group-hover:border-[#34d399] group-hover:bg-[#061e18] group-hover:shadow-[0_0_24px_rgba(16,185,129,0.7)] transition-all">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
+              <span className="text-xs sm:text-sm font-mono font-bold text-white tracking-widest uppercase">
+                {lang === 'ru' ? 'Профиль' : 'Profile'}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -322,15 +325,18 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
             />
           </div>
 
-          {/* ONLY the label «Маркет» */}
+          {/* ONLY the label «Маркет» (High-contrast Warframe holographic badge) */}
           <div
-            className={`flex flex-col items-center mt-3 transition-opacity duration-200 ${
-              selectedPlanet === 'sedna' ? 'opacity-0' : 'opacity-100'
+            className={`flex flex-col items-center mt-3.5 transition-all duration-200 ${
+              selectedPlanet === 'sedna' ? 'opacity-0 scale-90' : 'opacity-100 scale-100'
             }`}
           >
-            <span className="text-sm sm:text-base font-raleway font-bold text-white tracking-widest uppercase group-hover:text-[#00e5ff] transition-colors drop-shadow-[0_2px_12px_rgba(0,229,255,0.7)]">
-              {lang === 'ru' ? 'Маркет' : 'Market'}
-            </span>
+            <div className="flex items-center gap-2 px-3.5 py-1 rounded-lg bg-[#040e18]/90 border border-[#00e5ff]/60 shadow-[0_0_16px_rgba(0,229,255,0.4)] group-hover:border-[#00e5ff] group-hover:bg-[#061524] group-hover:shadow-[0_0_24px_rgba(0,229,255,0.7)] transition-all">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00e5ff] animate-pulse" />
+              <span className="text-xs sm:text-sm font-mono font-bold text-white tracking-widest uppercase">
+                {lang === 'ru' ? 'Маркет' : 'Market'}
+              </span>
+            </div>
           </div>
         </div>
 
