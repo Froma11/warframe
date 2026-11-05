@@ -67,7 +67,7 @@ export const UserHeaderCard: React.FC<UserHeaderCardProps> = ({
               </span>
               <span className="text-slate-300 dark:text-white/20">•</span>
               <span className="font-sans text-slate-700 dark:text-white font-medium">
-                {notesCount} {lang === 'ru' ? 'сохраненных целей' : 'saved targets'}
+                {notesCount} {lang === 'ru' ? 'сохраненных заметок' : 'saved notes'}
               </span>
             </div>
           </div>

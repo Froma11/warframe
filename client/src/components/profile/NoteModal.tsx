@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { X, Tag, FileText, Check } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, FileText, Check, CornerDownLeft } from 'lucide-react';
 import { NoteItem } from './NotesGrid';
 
 interface NoteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (note: { title: string; content: string; tag: string }, id?: number) => Promise<void>;
+  onSave: (note: { title?: string; content: string; tag?: string }, id?: number) => Promise<void>;
   initialNote?: NoteItem | null;
   lang: 'ru' | 'en';
 }
@@ -17,22 +17,20 @@ export const NoteModal: React.FC<NoteModalProps> = ({
   initialNote,
   lang,
 }) => {
-  const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [tag, setTag] = useState<string>('СНАЙПИНГ');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       if (initialNote) {
-        setTitle(initialNote.title || '');
-        setContent(initialNote.content || '');
-        setTag(initialNote.tag || 'СНАЙПИНГ');
+        setContent(initialNote.content || initialNote.title || '');
       } else {
-        setTitle('');
         setContent('');
-        setTag('СНАЙПИНГ');
       }
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 50);
     }
   }, [isOpen, initialNote]);
 
@@ -48,22 +46,24 @@ export const NoteModal: React.FC<NoteModalProps> = ({
 
   const isEditing = !!initialNote;
 
-  const tags = [
-    { id: 'СНАЙПИНГ', labelRu: 'Снайпинг', labelEn: 'Sniping', color: 'text-[#0284c7] dark:text-[#00e5ff] border-[#00e5ff]/40 bg-[#00e5ff]/10' },
-    { id: 'ТОРГОВЛЯ', labelRu: 'Торговля', labelEn: 'Trading', color: 'text-emerald-600 dark:text-[#10b981] border-[#10b981]/40 bg-[#10b981]/10' },
-    { id: 'ФАРМ', labelRu: 'Фарм', labelEn: 'Farming', color: 'text-amber-600 dark:text-[#fbbf24] border-[#fbbf24]/40 bg-[#fbbf24]/10' },
-    { id: 'ИНВЕСТ', labelRu: 'Инвест', labelEn: 'Invest', color: 'text-purple-600 dark:text-[#c084fc] border-[#c084fc]/40 bg-[#c084fc]/10' },
-  ];
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const cleanText = content.trim();
+    if (!cleanText) return;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim() && !content.trim()) return;
     setIsSubmitting(true);
     try {
-      await onSave({ title: title.trim(), content: content.trim(), tag }, initialNote?.id);
+      await onSave({ content: cleanText, title: '', tag: '' }, initialNote?.id);
       onClose();
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleKeyDownOnTextarea = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit();
     }
   };
 
@@ -86,73 +86,46 @@ export const NoteModal: React.FC<NoteModalProps> = ({
 
         {/* Modal Header */}
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-9 h-9 rounded-xl bg-[#00e5ff]/15 border border-[#00e5ff]/35 flex items-center justify-center text-[#00e5ff]">
+          <div className="w-10 h-10 rounded-2xl bg-[#00e5ff]/15 border border-[#00e5ff]/35 flex items-center justify-center text-[#00e5ff] shadow-[0_0_12px_rgba(0,229,255,0.2)]">
             <FileText className="w-5 h-5" />
           </div>
           <div>
             <h3 className="font-comfortaa font-bold text-lg text-slate-900 dark:text-white">
               {isEditing
-                ? (lang === 'ru' ? 'Редактировать цель' : 'Edit Trading Target')
-                : (lang === 'ru' ? 'Новая торговая цель' : 'New Trading Target')}
+                ? (lang === 'ru' ? 'Редактировать заметку' : 'Edit Note')
+                : (lang === 'ru' ? 'Новая заметка' : 'New Note')}
             </h3>
             <p className="text-xs text-slate-500 dark:text-[#a3a29d]">
-              {lang === 'ru' ? 'Сохраните пороги цен, объемы или заметку по сделке' : 'Save target prices, volume or arbitrage note'}
+              {lang === 'ru'
+                ? 'Текст заметки сохранится в вашем профиле'
+                : 'Your note will be saved privately in your profile'}
             </p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Category Tag Selection */}
-          <div>
-            <label className="block text-xs font-comfortaa font-bold text-slate-600 dark:text-[#a3a29d] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Tag className="w-3.5 h-3.5 text-[#00e5ff]" />
-              <span>{lang === 'ru' ? 'Категория цели:' : 'Target Category:'}</span>
-            </label>
-            <div className="grid grid-cols-4 gap-2">
-              {tags.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setTag(t.id)}
-                  className={`py-2 px-2 rounded-xl text-xs font-comfortaa font-bold border transition-all text-center cursor-pointer ${
-                    tag === t.id
-                      ? `${t.color} shadow-sm scale-[1.02]`
-                      : 'bg-slate-50 dark:bg-[#070a10] border-slate-200 dark:border-white/[0.08] text-slate-500 hover:text-slate-900 dark:text-[#71717a] dark:hover:text-white'
-                  }`}
-                >
-                  {lang === 'ru' ? t.labelRu : t.labelEn}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Title input */}
-          <div>
-            <label className="block text-xs font-comfortaa font-bold text-slate-600 dark:text-[#a3a29d] uppercase tracking-wider mb-1.5">
-              {lang === 'ru' ? 'Заголовок:' : 'Title:'}
-            </label>
-            <input
-              type="text"
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={lang === 'ru' ? 'Напр: Скупка Зарядки по 1300п...' : 'e.g. Buy Energize under 1300p...'}
-              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#070a10] border border-slate-200 dark:border-white/[0.1] focus:border-[#00e5ff] rounded-2xl text-sm font-sans text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-[#71717a] outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#00e5ff]/30"
-            />
-          </div>
-
           {/* Content textarea */}
           <div>
-            <label className="block text-xs font-comfortaa font-bold text-slate-600 dark:text-[#a3a29d] uppercase tracking-wider mb-1.5">
-              {lang === 'ru' ? 'Содержание заметки:' : 'Details & Thresholds:'}
-            </label>
             <textarea
-              rows={4}
+              ref={textareaRef}
+              rows={6}
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder={lang === 'ru' ? 'Пороги покупки/продажи, контакты продавцов, заметки по ценам...' : 'Price thresholds, trader contacts, trade notes...'}
-              className="w-full px-4 py-3 bg-slate-50 dark:bg-[#070a10] border border-slate-200 dark:border-white/[0.1] focus:border-[#00e5ff] rounded-2xl text-sm font-sans text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-[#71717a] outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#00e5ff]/30 resize-none"
+              onKeyDown={handleKeyDownOnTextarea}
+              placeholder={
+                lang === 'ru'
+                  ? 'Введите текст заметки, цену, билд, ник продавца или напоминание...'
+                  : 'Type your note text, price, build, seller whisper or reminder...'
+              }
+              className="w-full px-4 py-3 bg-slate-50 dark:bg-[#070a10] border border-slate-200 dark:border-white/[0.1] focus:border-[#00e5ff] rounded-2xl text-sm font-sans text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-[#71717a] outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#00e5ff]/30 resize-none leading-relaxed"
             />
+            <div className="flex items-center justify-between mt-1.5 px-1 text-[11px] text-slate-400 dark:text-[#71717a]">
+              <span>{content.length > 0 ? `${content.length} симв.` : ''}</span>
+              <span className="flex items-center gap-1 font-mono">
+                <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.1] text-[10px]">Ctrl+Enter</kbd>
+                <span>{lang === 'ru' ? 'быстрое сохранение' : 'quick save'}</span>
+              </span>
+            </div>
           </div>
 
           {/* Actions */}
@@ -167,7 +140,7 @@ export const NoteModal: React.FC<NoteModalProps> = ({
 
             <button
               type="submit"
-              disabled={isSubmitting || (!title.trim() && !content.trim())}
+              disabled={isSubmitting || !content.trim()}
               className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-[#00e5ff] to-[#00b4d8] text-[#070a0e] text-xs font-comfortaa font-bold shadow-[0_0_20px_rgba(0,229,255,0.4)] hover:shadow-[0_0_28px_rgba(0,229,255,0.6)] hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:pointer-events-none transition-all cursor-pointer flex items-center gap-1.5"
             >
               <Check className="w-4 h-4" />
@@ -176,7 +149,7 @@ export const NoteModal: React.FC<NoteModalProps> = ({
                   ? (lang === 'ru' ? 'Сохранение...' : 'Saving...')
                   : isEditing
                     ? (lang === 'ru' ? 'Сохранить изменения' : 'Save Changes')
-                    : (lang === 'ru' ? 'Сохранить цель' : 'Save Target')}
+                    : (lang === 'ru' ? 'Сохранить заметку' : 'Save Note')}
               </span>
             </button>
           </div>

@@ -187,15 +187,15 @@ app.get('/api/notes', requireAuth, async (req: any, res) => {
 
 app.post('/api/notes', requireAuth, async (req: any, res) => {
   const { title, content, tag } = req.body;
-  if (!title && !content) {
-    return res.status(400).json({ error: 'Title or content required.' });
+  if (!content && !title) {
+    return res.status(400).json({ error: 'Content required.' });
   }
   try {
     const userId = req.user?.id || 1;
-    const cleanTag = tag || 'СНАЙПИНГ';
+    const cleanTag = tag || '';
     const result = await db.run(
       'INSERT INTO notes (user_id, title, content, tag) VALUES (?, ?, ?, ?)',
-      [userId, title || 'Без названия', content || '', cleanTag]
+      [userId, title || '', content || '', cleanTag]
     );
     res.json({ success: true, id: result.lastID });
   } catch (err: any) {
@@ -205,16 +205,16 @@ app.post('/api/notes', requireAuth, async (req: any, res) => {
 
 app.put('/api/notes/:id', requireAuth, async (req: any, res) => {
   const { title, content, tag } = req.body;
-  if (!title && !content) {
-    return res.status(400).json({ error: 'Title or content required.' });
+  if (!content && !title) {
+    return res.status(400).json({ error: 'Content required.' });
   }
   try {
     const userId = req.user?.id || 1;
     const noteId = req.params.id;
-    const cleanTag = tag || 'СНАЙПИНГ';
+    const cleanTag = tag || '';
     await db.run(
       'UPDATE notes SET title = ?, content = ?, tag = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
-      [title || 'Без названия', content || '', cleanTag, noteId, userId]
+      [title || '', content || '', cleanTag, noteId, userId]
     );
     res.json({ success: true });
   } catch (err: any) {
