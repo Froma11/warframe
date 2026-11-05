@@ -1,20 +1,60 @@
 # 🌌 Warframe Market Intelligence & Trading Terminal — Handover Guide
 
-> **Назначение документа**: Этот файл содержит полное и исчерпывающее описание архитектуры, функционала, базы данных, API, правил разработки и истории изменений проекта **Warframe Market Analytics**. Он предназначен для передачи контекста любому новому ИИ-ассистенту или разработчику для мгновенного продолжения работы без потери деталей.
+> **Назначение документа**: Этот файл содержит полное и исчерпывающее описание архитектуры, функционала, базы данных SQLite, API, правил разработки, регламента боевого деплоя и истории изменений проекта **Warframe Market Analytics**.  
+> Он предназначен для передачи контекста любому новому ИИ-ассистенту (Antigravity, Cursor, Claude Code и др.) для мгновенного продолжения работы в новом чате без потери деталей.
 
 ---
 
 ## 📌 1. Обзор проекта и концепция
 
-Проект представляет собой специализированный торговый терминал и аналитический хаб для игры **Warframe**, разработанный с упором на эстетику оригинального интерфейса (Star Chart, Void, Tenno UI) и максимальную эргономику для торговли на **warframe.market**.
+Проект представляет собой высокоскоростной торговый терминал и аналитический хаб для игры **Warframe**, разработанный в аутентичной эстетике интерфейса Tenno (Star Chart, Void Energy, Glassmorphism, Orokin accents) с максимальной эргономикой для торговли и арбитража на **warframe.market**.
 
-### Ключевые возможности:
-1. **Звездная карта (Star Chart / Orrery)** — интерактивная трехмерная звездная карта на базе Three.js с орбитами, солнцем, планетами и эффектами «живого космоса» (мерцающие звезды, падающие метеоры, космические туманности).
-2. **Каталог Мистификаторов (Маркет / Седна)** — трейдинговый терминал по 170 мистификаторам с реальными ценами Warframe Market, историей сделок, поиском (RU/EN), кастомной сортировкой, снайпинг-скидками и спарклайнами цен.
-3. **Детальная карточка и аналитика сделок (Arcane Drawer)** — график цен с разбивкой по рангам (Ранг 0 vs Макс Ранг), спреды, скорость сделок (сделок в час) и прямые ссылки на warframe.market.
-4. **Личный кабинет оператора (Профиль / Земля)** — авторизация в SQLite, сохранение торговых целей и приватных заметок по арбитражу с фильтрами, поиском и модальным редактированием.
-5. **Памятка сборки мистификаторов** — таблица затрат копий для прокачки рангов (до 21 копии для R5) с возможностью переключения на PNG-памятку и скачивания.
-6. **Двухтемный интерфейс (Dark / Light)** — глубокая космическая тема по умолчанию + светлая тема для карточек и таблиц, при этом **Звездная карта ВСЕГДА остается в космической темноте**.
+### 🌟 Ключевые функциональные модули:
+
+1. **Звездная карта (Star Chart / Orrery) — Главное меню**:
+   - Интерактивная трехмерная звездная карта на базе Three.js с орбитами, солнцем, планетами и эффектами «живого космоса» (мерцающие звезды, падающие метеоры, космические туманности).
+   - Узлы навигации ведут в три основных функциональных раздела:
+     - 🪐 **Маркет (бывш. Седна)** — Терминал мистификаторов.
+     - 🌍 **Профиль (бывш. Земля)** — Личный кабинет, приватные заметки, памятка рангов.
+     - 🌕 **МР в Эндо (бывш. Венера)** — Аналитика и арбитраж модов разлома.
+
+2. **Каталог Мистификаторов (Маркет / Седна)**:
+   - Полный каталог по 170 мистификаторам с реальными ценами Warframe Market.
+   - Поиск на двух языках (RU и EN), официальная русская локализация из игры.
+   - Фильтры по тирам редкости (Common, Uncommon, Rare, Legendary) и категориям.
+   - Сортировки по профиту, популярности, спредам, снайпинг-скидкам.
+   - Быстрые спарклайны цен в карточках с динамическим градиентом.
+
+3. **Детальная аналитика мистификатора (Arcane Drawer)**:
+   - Интерактивный кинематический график цен с неоновым свечением «лазерной нити Бездны» (Void Energy Beam) и скраббингом при наведении курсора.
+   - Переключение рангов (Ранг 0 vs Макс Ранг R5/R3).
+   - Таймфреймы:
+     - **24H** — отображает **реальные часы** сделок за последние сутки (`14:00`, `18:00`, `22:00` и т.д.) с количеством завершенных сделок в этот час.
+     - **7D, 30D, 90D** — суточная история цен с автоматической агрегацией текущего дня.
+   - Метрики: Скорость сбыта (сделок в час), Дисконт стакана, Диапазон цен, прямая ссылка на warframe.market.
+
+4. **МР в Эндо / Арбитраж Модов Разлома (Венера)**:
+   - Анализ 420+ видов оружия (Винтовки, Дробовики, Пистолеты, Ближний бой, Комплекты, Арчвинг).
+   - Официальный каталог оружия из API Warframe Market с синергией (disposition) и требованиями ранга мастерства.
+   - Расчет растворения в Эндо по официальной формуле DE с учетом ранга и количества роллов (рероллов):
+     $$\text{Endo} = (\text{MR} - 8) \times 100 + \text{Rank} \times 22.5 + \text{Rerolls} \times 200$$
+   - Расчет эффективности растворения: **Эндо / 1 Платина** ($\text{Endo} / \text{Price}$).
+   - Мгновенная клиентская фильтрация (`useMemo`):
+     - Тип лота: «Все», «Прямая покупка» (`is_direct_sell`), «Аукционы».
+     - Статус продавца: «Только онлайн / в игре» или «Все».
+     - Сортировка: «Макс Эндо/Платина», «Мин цена», «Макс Эндо».
+   - Пагинация по 15 лотов с динамической навигацией страниц.
+   - Детальная модалка лота с подсветкой положительных/отрицательных характеристик и кнопкой копирования текста шепота `/w [seller] Hi! ...`.
+
+5. **Личный кабинет оператора (Профиль / Земля)**:
+   - Авторизация оператора (JWT + bcrypt в SQLite).
+   - **Заметки**: максимально упрощенный и эргономичный блок без лишних полей (заголовок и категории удалены). Простое быстрое поле ввода текста, сохранение по кнопке или `Ctrl + Enter`.
+   - Кнопка копирования заметки копирует **исключительно текст заметки** без каких-либо служебных префиксов или заголовков.
+   - Памятка прокачки мистификаторов (таблица 21 копии для R5 + переключатель на оригинальный PNG с возможностью скачивания).
+
+6. **Двухтемный интерфейс (Dark / Light)**:
+   - Глубокая космическая темная тема по умолчанию + светлая тема для карточек и таблиц.
+   - ⚠️ **Звездная карта ВСЕГДА остается в космической темноте**.
 
 ---
 
@@ -27,197 +67,305 @@
   - `Comfortaa` (`@fontsource/comfortaa`) — стилизованные заголовки, кнопки меню, бейджи
   - `Onest` (`@fontsource/onest`) — основной интерфейсный текст, таблицы, списки
   - `JetBrains Mono` / `Raleway` — моноширинные числовые показатели, таймкоды, технические данные
-- **Three.js** — процедурные 3D-сферы планет, анимированные текстуры, орбиты и траектории
-- **Lucide React** — векторные иконки интерфейса
-- **Lightweight Charts** / SVG Sparklines — интерактивные графики цен
+- **Three.js** — интерактивное 3D Оррери звездной карты Warframe
+- **Lucide React** — векторная графика и иконки
+- **Аутентичные ассеты**: Векторная иконка платины (`PlatinumIcon.tsx`), аутентичный значок Эндо (`endo_icon.png` / `EndoIcon.tsx`).
 
 ### Backend:
 - **Node.js** + **Express** + **TypeScript**
 - **База данных**: **SQLite** (режим WAL — Write-Ahead Logging) через `sqlite3` / `sqlite` промисы
 - **Безопасность**: `bcryptjs` для хеширования паролей, `jsonwebtoken` для JWT-токенов, `cookie-parser` с `httpOnly` куками
-- **Фоновый скрапер**: `scraper.ts` — регулярная синхронизация (каждые 15 минут) цен, стаканов и истории с официального API `warframe.market` с защитой от rate-limit
-
-### Порты и сеть:
-- **4000** — Основной Express-сервер (раздает собранный SPA из `client/dist` и обслуживает `/api/*`).
-- **3000** — Vite Dev Server (проксирует запросы `/api` на порт `4000`).
-- **VPS / Домен**: `zero.nofuture.me` (порт 4000).
-- ⚠️ **СТРОЖАЙШИЙ ЗАПРЕТ**: Не трогать файлы UniHub на VPS (`/var/www/html/`, `/etc/nginx/sites-available/default`, `/var/www/data/unihub.db`, порты `5000` и `3005`).
+- **Фоновые сервисы**:
+  - `scraper.ts` — регулярная синхронизация (каждые 15 минут) цен, стаканов, суточных объемов, истории 90 дней и почасовой истории 48 часов для 170 мистификаторов.
+  - `rivenService.ts` — фоновый парсинг лотов модов разлома (каждые 30 секунд цикл ротации по активному оружию), пакетные транзакции (`BEGIN TRANSACTION` / `COMMIT`) для мгновенной записи тысяч лотов за 15 мс.
 
 ---
 
-## 📐 3. Архитектура файлов проекта
+## 🌐 3. Боевой сервер, хостинг и регламент деплоя
 
+### Параметры VPS:
+- **Хостинг**: Contabo Cloud VPS (Ubuntu 24.04 LTS)
+- **IP-адрес**: `75.119.157.81`
+- **Пользователь**: `ubuntu` (sudo без пароля)
+- **Боевой домен**: **https://zero.nofuture.me**
+- **SSH-ключ на компьютере разработчика (Windows)**:
+  `C:\Users\black\Downloads\ssh-key-2026-09-15.key`
+- **Рабочая директория проекта на сервере**: `/var/www/zero/`
+- **Служба systemd**: `zero-app.service`
+- **Скрипт автоматического деплоя**: `/var/www/zero/deploy.sh`
+
+### ⛔ СТРОЖАЙШИЙ РЕГЛАМЕНТ БЕЗОПАСНОСТИ (UniHub Isolation):
+На этом же сервере работает боевой портал университета **UniHub** (`nofuture.me`).
+**КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО**:
+1. Трогать директорию `/var/www/html/` (фронтенд UniHub).
+2. Редактировать `/etc/nginx/sites-available/default` (конфиг `nofuture.me`).
+3. Трогать сервисы `unihub-api.service` и `zoom_checker`.
+4. Занимать порты `5000` (UniHub API) и `3005` (Zoom Sniper).
+5. Наш проект `zero` изолирован:
+   - Слушает локальный порт `4000` (`http://localhost:4000`).
+   - Nginx проксирует поддомен `zero.nofuture.me` на порт `4000` через отдельный конфиг `/etc/nginx/sites-available/zero.nofuture.me`.
+
+---
+
+## 🚀 4. Инструкция по обновлению и деплою (Deploy Flow)
+
+Любые доработки выполняются локально в репозитории `D:\rezerv\warframecomeback`, коммитятся, пушатся на GitHub и раскатываются одной командой на VPS:
+
+### Шаг 1: Проверка и коммит локально (PowerShell):
+```powershell
+# Проверить статус
+git status
+
+# Добавить изменения
+git add .
+
+# Сделать коммит
+git commit -m "feat(module): описание изменений"
+
+# Запушить в GitHub
+git push origin main
 ```
-warframecomeback/
-├── client/                              # React Frontend
-│   ├── public/
-│   │   ├── arcane_upgrade_guide.png     # Памятка прокачки мистификаторов
-│   │   └── favicon.ico
-│   ├── src/
-│   │   ├── assets/                      # Локальные шрифты (Raleway, JetBrains Mono)
-│   │   ├── components/
-│   │   │   ├── profile/
-│   │   │   │   ├── ArcaneUpgradeGuide.tsx # Таблица рангов и переключатель PNG
-│   │   │   │   ├── AuthModal.tsx          # Модалка Входа и Регистрации
-│   │   │   │   ├── NoteDetailModal.tsx    # Полный просмотр заметки с действиями
-│   │   │   │   ├── NoteModal.tsx          # Создание и редактирование цели
-│   │   │   │   ├── NotesGrid.tsx          # Сетка заметок с поиском и тегами
-│   │   │   │   ├── ProfileView.tsx        # Главный эргономичный экран Профиля
-│   │   │   │   └── UserHeaderCard.tsx     # Статус оператора, SQLite бейдж, аватар
-│   │   │   ├── ArcaneCard.tsx           # Карточка мистика (спотлайт, спарклайн)
-│   │   │   ├── ArcaneDrawer.tsx         # Детальная панель с графиками
-│   │   │   ├── GatekeeperScreen.tsx     # Экран ввода мастер-пароля
-│   │   │   ├── Header.tsx               # Верхняя навигация, кнопка меню, тема, RU/EN
-│   │   │   ├── PlatinumIcon.tsx         # Векторная аутентичная иконка платины
-│   │   │   ├── SednaView.tsx            # Каталог Маркета, тулбар, пагинация
-│   │   │   ├── StarChartView.tsx        # 3D Оррери звездной карты Warframe
-│   │   │   └── ThemeToggle.tsx          # Переключатель темной и светлой темы
-│   │   ├── context/
-│   │   │   └── ThemeContext.tsx         # React Context смены темы (dark/light)
-│   │   ├── data/
-│   │   │   └── mockArcanes.ts           # Резервные данные мистификаторов
-│   │   ├── types/
-│   │   │   └── arcane.ts                # TypeScript интерфейсы
-│   │   ├── App.tsx                      # Корневой роутер состояний
-│   │   ├── index.css                    # Глобальные стили, переменные, анимации
-│   │   └── main.tsx                     # Точка входа React
-│   ├── tailwind.config.js               # Конфиг Tailwind с плагином light:
-│   ├── vite.config.ts                   # Конфиг Vite с прокси на localhost:4000
-│   └── package.json
-├── server/                              # Node.js + Express Backend
-│   ├── data/
-│   │   └── warframe_market.db           # База данных SQLite в режиме WAL
-│   ├── src/
-│   │   ├── services/
-│   │   │   └── scraper.ts               # Фоновый скрапер warframe.market
-│   │   ├── auth.ts                      # JWT-аутентификация и куки
-│   │   ├── db.ts                        # Инициализация SQLite таблиц
-│   │   └── index.ts                     # Express сервер, роуты и раздача статики
-│   ├── tsconfig.json
-│   └── package.json
-├── package.json                         # Корневой package.json для билда
-└── README.md
+
+### Шаг 2: Запуск автоматического деплоя на боевом сервере:
+```powershell
+ssh -i "C:\Users\black\Downloads\ssh-key-2026-09-15.key" -o StrictHostKeyChecking=no ubuntu@75.119.157.81 "bash /var/www/zero/deploy.sh"
+```
+
+### Что делает скрипт `/var/www/zero/deploy.sh`:
+1. `git pull origin main` — затягивает свежие коммиты.
+2. `npm --prefix client run build` — компилирует React-бандл в `client/dist`.
+3. `npm --prefix server run build` — компилирует TypeScript бэкенда в `server/dist`.
+4. `sudo systemctl restart zero-app.service` — перезапускает сервис с нулевым простоем.
+5. Выводит статус `zero-app.service`.
+
+### Полезные команды диагностики VPS:
+```powershell
+# Проверить логи бэкенда в реальном времени:
+ssh -i "C:\Users\black\Downloads\ssh-key-2026-09-15.key" -o StrictHostKeyChecking=no ubuntu@75.119.157.81 "journalctl -u zero-app.service --no-pager -n 30"
+
+# Проверить статус службы:
+ssh -i "C:\Users\black\Downloads\ssh-key-2026-09-15.key" -o StrictHostKeyChecking=no ubuntu@75.119.157.81 "sudo systemctl status zero-app.service --no-pager"
+
+# Проверить доступность сайта по HTTPS:
+curl.exe -s -I https://zero.nofuture.me
 ```
 
 ---
 
-## 🗄 4. База данных SQLite (`warframe_market.db`)
+## 🗄 5. База данных SQLite (`warframe_market.db`)
 
-Инициализируется в `server/src/db.ts` с включенным режимом `PRAGMA journal_mode = WAL`.
+Путь к базе данных:
+- Локально: `server/data/warframe_market.db`
+- На VPS: `/var/www/zero/server/data/warframe_market.db`
 
-### Основные таблицы:
-1. `users`:
+Включен режим `PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;`.
+
+### Структура таблиц:
+
+1. **`users`**:
    - `id` (INTEGER PRIMARY KEY AUTOINCREMENT)
-   - `username` (TEXT UNIQUE)
-   - `password_hash` (TEXT)
+   - `username` (TEXT UNIQUE NOT NULL)
+   - `password_hash` (TEXT NOT NULL)
    - `theme` (TEXT DEFAULT 'dark')
    - `created_at` (DATETIME DEFAULT CURRENT_TIMESTAMP)
 
-2. `notes`:
+2. **`notes`**:
    - `id` (INTEGER PRIMARY KEY AUTOINCREMENT)
-   - `user_id` (INTEGER REFERENCES users(id))
-   - `title` (TEXT)
-   - `content` (TEXT)
-   - `tag` (TEXT: `'СНАЙПИНГ'`, `'ТОРГОВЛЯ'`, `'ФАРМ'`, `'ИНВЕСТ'`)
-   - `created_at` (DATETIME DEFAULT CURRENT_TIMESTAMP)
-   - `updated_at` (DATETIME DEFAULT CURRENT_TIMESTAMP)
+   - `user_id` (INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE)
+   - `title` (TEXT DEFAULT '')
+   - `content` (TEXT NOT NULL) — основной текст заметки
+   - `tag` (TEXT DEFAULT '')
+   - `created_at`, `updated_at` (DATETIME)
 
-3. `items`:
+3. **`items` (Каталог мистификаторов)**:
+   - `id` (TEXT PRIMARY KEY)
+   - `slug` (TEXT UNIQUE NOT NULL) — идентификатор Warframe Market (например, `arcane_energize`)
+   - `name_en` (TEXT NOT NULL), `name_ru` (TEXT NOT NULL)
+   - `rarity` (TEXT), `max_rank` (INTEGER DEFAULT 5)
+   - `icon_url`, `thumb_url`, `effect`, `tags`, `trading_tax`
+   - `updated_at` (DATETIME)
+
+4. **`market_snapshots`**:
    - `id` (INTEGER PRIMARY KEY AUTOINCREMENT)
-   - `slug` (TEXT UNIQUE, urlName на warframe.market)
-   - `name_en` (TEXT)
-   - `name_ru` (TEXT, официальное название на русском)
-   - `rarity` (TEXT: Common, Uncommon, Rare, Legendary)
-   - `max_rank` (INTEGER DEFAULT 5)
-   - `icon_url`, `thumb_url`, `effect`, `source`
+   - `item_slug` (TEXT NOT NULL)
+   - `rank` (INTEGER NOT NULL)
+   - `min_sell`, `max_buy`, `spread`, `spread_pct`, `median_price`
+   - `sellers_count`, `buyers_count`
+   - `timestamp` (DATETIME DEFAULT CURRENT_TIMESTAMP)
 
-4. `market_snapshots`:
-   - Снимки цен каждого ранга: `min_sell`, `max_buy`, `median_price`, `sellers_count`, `buyers_count`.
+5. **`price_history` (Суточная история торгов)**:
+   - `id` (INTEGER PRIMARY KEY AUTOINCREMENT)
+   - `item_slug` (TEXT NOT NULL), `rank` (INTEGER NOT NULL), `date` (TEXT NOT NULL, `YYYY-MM-DD`)
+   - `median_price` (REAL NOT NULL), `volume` (INTEGER DEFAULT 0), `min_price`, `max_price`
+   - `UNIQUE(item_slug, rank, date)`
+   - *Примечание*: Текущий незавершенный день автоматически агрегируется из почасовых данных `price_history_hourly`.
 
----
+6. **`price_history_hourly` (Почасовая история за 48 часов)**:
+   - `id` (INTEGER PRIMARY KEY AUTOINCREMENT)
+   - `item_slug` (TEXT NOT NULL), `rank` (INTEGER NOT NULL), `datetime` (TEXT NOT NULL, ISO)
+   - `median_price` (REAL NOT NULL), `volume` (INTEGER DEFAULT 0), `min_price`, `max_price`
+   - `UNIQUE(item_slug, rank, datetime)`
 
-## 🔌 5. Спецификация API (REST)
+7. **`riven_weapons` (Каталог оружия модов разлома)**:
+   - `id` (TEXT PRIMARY KEY), `slug` (TEXT UNIQUE NOT NULL)
+   - `name_en` (TEXT NOT NULL), `name_ru` (TEXT NOT NULL)
+   - `group_type` (TEXT: `rifle`, `shotgun`, `pistol`, `melee`, `kitgun`, `zaw`, `archwing`)
+   - `riven_type` (TEXT)
+   - `disposition` (REAL DEFAULT 1.0) — синергия от 0.5 до 1.55 (1–5 точек)
+   - `req_mr` (INTEGER DEFAULT 0)
+   - `icon_url`, `thumb_url`
 
-Все эндпоинты `/api` возвращают JSON.
-
-### Аутентификация и Профиль:
-- `GET /api/auth/check` — Проверка авторизации гейткипера и пользователя.
-- `POST /api/auth/gate` — Вход в терминал по мастер-паролю (по умолчанию: `tenno2026`).
-- `POST /api/auth/register` — Регистрация в базе SQLite (`{ username, password }`).
-- `POST /api/auth/login` — Вход в учетную запись оператора (`{ username, password }`).
-- `GET /api/auth/me` — Получение профиля текущего авторизованного пользователя.
-- `POST /api/auth/logout` — Выход и очистка сессионных кук.
-- `PUT /api/auth/theme` — Сохранение выбранной темы пользователя (`{ theme: 'dark' | 'light' }`).
-
-### Заметки и торговые цели:
-- `GET /api/notes` — Получение всех заметок авторизованного пользователя (или гостя `user_id=1`).
-- `POST /api/notes` — Создание новой цели (`{ title, content, tag }`).
-- `PUT /api/notes/:id` — Редактирование цели (`{ title, content, tag }`).
-- `DELETE /api/notes/:id` — Удаление заметки по ID.
-
-### Маркет и данные мистификаторов:
-- `GET /api/arcanes` — Список всех 170 мистификаторов с актуальными ценами ранга 0, максимального ранга, спредами и суточным объемом сделок.
-- `GET /api/arcanes/:slug` — Детальная информация по конкретному предмету и его историческим свечам/точкам для графиков.
-- `GET /api/status` — Системный статус бэкенда, число предметов (170) и количество сохраненных снимков.
-
----
-
-## 🎨 6. Дизайн-система и правила UI
-
-1. **Строгое правило названий на Звездной карте**:
-   - На планетных узлах Звездной карты **НИ В КОЕМ СЛУЧАЕ НЕ ПИСАТЬ НАЗВАНИЯ ПЛАНЕТ** («Седна», «Земля» запрещены!).
-   - Разрешены только функциональные названия разделов: **«Маркет»** и **«Профиль»**.
-2. **Абсолютная изоляция темы Звездной карты**:
-   - Главное меню (`StarChartView`) **ВСЕГДА ДОЛЖНО ОСТАВАТЬСЯ ТЕМНЫМ КОСМОСОМ** (`#020509`).
-   - Светлая тема включается только внутри разделов (Маркет, Профиль, модалки, списки), но звездная карта никогда не должна становиться белой.
-3. **Эргономика Профиля**:
-   - Никаких блоков, растянутых на 1920px на весь экран.
-   - 2-колоночная компоновка: Заметки (7 колонок слева) + Таблица прокачки мистификаторов (5 колонок справа).
-   - Любая карточка заметки должна открываться в модальном окне `NoteDetailModal` для полного чтения, копирования и редактирования.
-4. **Шапка (Header)**:
-   - В шапке **НЕ ДОЛЖНО БЫТЬ** счетчиков мистиков, значков платины и текста синхронизации.
-   - В центре шапки находится стилизованная кнопка `В главное меню`, которая видна **только** при переходе в один из разделов и скрыта в самом главном меню.
-5. **Телеметрия Маркета**:
-   - В тулбаре раздела Маркет (`SednaView`) размещен бейдж `170 мистификаторов онлайн` с иконкой слоев `<Layers>` (строго без значка платины).
-   - Индикатор времени обновления: `Синхронизировано: X мин назад` с пульсирующей зеленой точкой.
-6. **Официальные переводы мистификаторов**:
-   - Не использовать машинный перевод. Названия берутся строго из официальной русской локализации Warframe (`nameRu` из базы данных).
+8. **`riven_lots` (Лоты аукционов и прямых продаж МР)**:
+   - `id` (TEXT PRIMARY KEY) — ID аукциона Warframe Market
+   - `weapon_slug` (TEXT NOT NULL)
+   - `seller_name` (TEXT NOT NULL), `seller_status` (`ingame` | `online` | `offline`), `seller_reputation` (INTEGER)
+   - `is_direct_sell` (BOOLEAN) — прямая покупка или аукцион со ставками
+   - `buyout_price` (INTEGER) — цена выкупа в платине
+   - `starting_price`, `top_bid` (INTEGER)
+   - `mod_name` (TEXT), `mod_rank` (INTEGER), `re_rolls` (INTEGER), `mastery_level` (INTEGER), `polarity` (TEXT)
+   - `attributes` (TEXT JSON) — статы мода
+   - `endo_value` (INTEGER) — рассчитанное количество эндо при растворении
+   - `efficiency` (REAL) — показатель Эндо / 1 Платина
+   - `lot_created_at`, `lot_updated_at`, `fetched_at` (DATETIME)
 
 ---
 
-## 🚫 7. Критические ограничения для ИИ
+## 🔌 6. Спецификация REST API
 
-1. **КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО ДЕЛАТЬ АВТОМАТИЧЕСКИЕ СКРИНШОТЫ**.
-   - Пользователь дал жесткое указание: *«главная просьба перестань делать скрины после каждого моего задания»*.
-   - Не запускать скрипты Playwright или скриншотеры без прямого указания пользователя.
-2. **НЕ ИЗМЕНЯТЬ ФАЙЛЫ ДРУГИХ ПРОЕКТОВ НА СЕРВЕРЕ**:
-   - Не трогать конфигурации UniHub, порты 5000 и 3005. Работать строго на порту 4000.
-3. **ФОРМАТ КОМАНД POWERSHELL**:
-   - Операционная система пользователя — Windows (PowerShell). Символ `&&` в однострочниках может вызывать синтаксическую ошибку. Использовать `;` или перенос строк.
+Все эндпоинты работают с префиксом `/api`:
+
+### Аутентификация:
+- `GET /api/auth/check` — Проверка сессии гейткипера и оператора.
+- `POST /api/auth/gate` — Ввод мастер-пароля терминала (`tenno2026`).
+- `POST /api/auth/register` — Регистрация `{ username, password }`.
+- `POST /api/auth/login` — Вход `{ username, password }`.
+- `POST /api/auth/logout` — Выход из сессии.
+- `GET /api/auth/me` — Данные текущего пользователя.
+- `PUT /api/auth/theme` — Переключение темы `{ theme: 'dark' | 'light' }`.
+
+### Заметки оператора:
+- `GET /api/notes` — Получение заметок пользователя.
+- `POST /api/notes` — Создание `{ content }`.
+- `PUT /api/notes/:id` — Редактирование `{ content }`.
+- `DELETE /api/notes/:id` — Удаление заметки.
+
+### Каталог мистификаторов:
+- `GET /api/arcanes` — Список 170 предметов со сводными метриками.
+- `GET /api/arcanes/:slug` — Детальная карточка с суточной (`history`) и почасовой (`hourly`) телеметрией.
+- `GET /api/status` — Системный статус фонового скрапера.
+
+### Моды Разлома (МР в Эндо):
+- `GET /api/rivens/weapons?search=&group=` — Каталог 420+ видов оружия с поиском и категориями.
+- `GET /api/rivens/lots?weapon=&sortBy=&order=&isDirectSell=&onlineOnly=&page=&limit=` — Получение лотов по выбранному оружию с расчетом эндо и эффективности.
+- `POST /api/rivens/sync/:weaponSlug` — Ручной запуск парсинга свежих лотов с warframe.market.
 
 ---
 
-## 🚀 8. Как запускать проект
+## 🎨 7. Важнейшие правила UI/UX и договоренности с пользователем
 
-### Сборка:
-```bash
-npm run build
+1. **Поведение всех модальных окон (Strict Modal UX Rule)**:
+   - **ВСЕ БЕЗ ИСКЛЮЧЕНИЯ** модалки и панели в проекте (`NoteModal`, `NoteDetailModal`, `AuthModal`, `ArcaneDrawer`, `ArcaneDetailModal`, `RivenDetailModal`):
+     - **Закрываются по нажатию Escape**: перехватчик событий настроен на фазе `capture: true` (`window.addEventListener('keydown', handleKeyDown, true)`), поэтому Escape закрывает окно даже если курсор находится в поле ввода (`textarea` или `input`).
+     - **Закрываются по клику в пустоту / бэкдроп**: проверка `e.target === e.currentTarget` для `onClick` и `onMouseDown`, а на внутреннем теле модалки установлен `e.stopPropagation()`.
+2. **Шапка сайта (Fixed Header)**:
+   - Зафиксирована на экране (`fixed top-0 left-0 right-0 h-[57px] backdrop-blur-xl z-50`).
+   - На страницах контента добавлен верхний отступ `pt-[57px]`, чтобы шапка не перекрывала элементы.
+   - Кнопка **«В главное меню»** всегда доступна при скролле.
+   - Логотип «Warframe» выполнен контрастным белым цветом со свечением и неоновым акцентом `#00e5ff`.
+3. **Отсутствие полос прокрутки (No Scrollbar Slop)**:
+   - Полоса прокрутки имеет прозрачный трек (`background: transparent !important`) и аккуратный полупрозрачный ползунок.
+   - На экране Звездной карты скролл на `body` и контейнере заблокирован (`overflow: hidden`), паразитные серые полосы отсутствуют.
+4. **Мгновенная фильтрация в МР в Эндо**:
+   - Переключение фильтров (прямая продажа/аукцион, онлайн/все, сортировки) выполняется мгновенно в памяти клиента (`useMemo`) без лишних спиннеров и сетевых задержек.
+5. **Заметки (Clean Notes)**:
+   - Никаких полей «Заголовок» и «Категория». Только чистое поле ввода заметки.
+   - Кнопка копирования копирует **исключительно полезный текст заметки**.
+6. **Названия на Звездной карте**:
+   - Никаких названий планет! Только названия функциональных модулей: **«Маркет»**, **«Профиль»**, **«МР в Эндо»**.
+7. **Абсолютная изоляция темы космоса**:
+   - Экран Звездной карты (`StarChartView`) всегда остается в глубокой космической темноте (`#020509`), независимо от выбранной темы в разделах.
+8. **Официальные значки**:
+   - Использовать только официальные или аутентичные векторные значки (Платина, Эндо), никаких неподходящих эмодзи или машинных иконок.
+
+---
+
+## 🚫 8. Критические ограничения для ИИ
+
+1. **КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО ДЕЛАТЬ АВТОМАТИЧЕСКИЕ СКРИНШОТЫ**:
+   - Пользователь дал прямое указание: не делать скриншоты после каждого ответа.
+   - Не запускать утилиты скриншотов или Playwright, если пользователь прямо об этом не попросил.
+2. **СТРОГО СОБЛЮДАТЬ ИЗОЛЯЦИЮ СЕРВЕРА**:
+   - Не трогать UniHub (`/var/www/html/`, `/etc/nginx/sites-available/default`, порты `5000` и `3005`).
+3. **POWERSHELL СИНТАКСИС НА WINDOWS**:
+   - Локальная ОС пользователя — Windows (PowerShell). Символ `&&` не работает в стандартном PowerShell 5.1; использовать `;` или отдельные строки.
+4. **ФОНОВЫЕ ПРОЦЕССЫ**:
+   - Не оставлять висеть ненужные процессы в фоне. Все вспомогательные задачи после выполнения должны завершаться.
+
+---
+
+## 📂 9. Архитектура директорий проекта
+
 ```
-*(собирает `client` через Vite в папку `client/dist`, затем компилирует TypeScript сервера `server` в `server/dist`).*
-
-### Запуск в Production (рекомендуется):
-```bash
-node server/dist/index.js
+warframecomeback/
+├── client/                                  # React Frontend (Vite 8, Tailwind)
+│   ├── public/
+│   │   ├── arcane_upgrade_guide.png         # Памятка прокачки мистификаторов
+│   │   └── endo_icon.png                    # Аутентичный значок Эндо
+│   ├── src/
+│   │   ├── assets/                          # Шрифты Raleway, JetBrains Mono
+│   │   ├── components/
+│   │   │   ├── profile/                     # Блок профиля и заметок
+│   │   │   │   ├── ArcaneUpgradeGuide.tsx
+│   │   │   │   ├── AuthModal.tsx            # Модалка логина/регистрации
+│   │   │   │   ├── NoteDetailModal.tsx      # Детальный просмотр и копирование
+│   │   │   │   ├── NoteModal.tsx            # Создание/редактирование заметки
+│   │   │   │   ├── NotesGrid.tsx            # Сетка заметок
+│   │   │   │   ├── ProfileView.tsx
+│   │   │   │   └── UserHeaderCard.tsx
+│   │   │   ├── rivens/                      # Модуль МР в Эндо (Венера)
+│   │   │   │   ├── EndoIcon.tsx             # Векторный значок Эндо
+│   │   │   │   ├── RivenDetailModal.tsx     # Модалка детального лота МР
+│   │   │   │   ├── RivenLotCard.tsx         # Карточка лота с эффективностью
+│   │   │   │   └── RivensEndoView.tsx       # Экран каталога оружия и лотов
+│   │   │   ├── ArcaneCard.tsx               # Карточка мистификатора
+│   │   │   ├── ArcaneDrawer.tsx             # График цен и аналитика мистика
+│   │   │   ├── GatekeeperScreen.tsx         # Экран мастер-пароля tenno2026
+│   │   │   ├── Header.tsx                   # Фиксированная верхняя навигация
+│   │   │   ├── PlatinumIcon.tsx             # Векторная иконка платины
+│   │   │   ├── SednaView.tsx                # Каталог Маркета
+│   │   │   └── StarChartView.tsx            # 3D Оррери звездной карты
+│   │   ├── context/
+│   │   │   └── ThemeContext.tsx             # Управление темной/светлой темой
+│   │   ├── types/
+│   │   │   ├── arcane.ts
+│   │   │   └── riven.ts
+│   │   ├── App.tsx                          # Роутер состояний экранов
+│   │   ├── index.css                        # Стили, переменные, скроллбар
+│   │   └── main.tsx
+│   └── package.json
+├── server/                                  # Express Backend
+│   ├── data/
+│   │   └── warframe_market.db               # SQLite база данных (WAL)
+│   ├── src/
+│   │   ├── db/
+│   │   │   └── index.ts                     # Инициализация всех таблиц и миграций
+│   │   ├── services/
+│   │   │   ├── scraper.ts                   # Скрапер мистификаторов и истории
+│   │   │   └── rivenService.ts              # Каталог 420 видов оружия и лоты МР
+│   │   ├── auth.ts                          # JWT и куки авторизации
+│   │   └── index.ts                         # REST API роуты
+│   └── package.json
+├── HANDOVER_CONTEXT.md                      # Данный документ передачи контекста
+├── ZERO_SUBDOMAIN_AGENT_GUIDE.md            # Инструкция изоляции боевого VPS
+└── package.json
 ```
-- Доступно по адресу: **http://localhost:4000**
-- Мастер-пароль на вход: `tenno2026`
 
-### Запуск в Dev-режиме (с HMR):
-```bash
-# Терминал 1: Сервер API
-node server/dist/index.js
+---
 
-# Терминал 2: Клиент Vite
-npm --prefix client run dev
-```
-- Доступно по адресу: **http://localhost:3000** (с авто-прокси на порт 4000).
+## 🏆 10. Последние коммиты и текущий статус
+
+- `1cab404`: fix(ui): brand logo contrast, remove scrollbar strip, instant client-side riven filtering, and fixed sticky header
+- `b93d3ab`: feat(profile): streamline notes UI, remove redundant title & categories, fix copy to text-only
+- `d121cf6`: fix(modal): ensure all modals close reliably on Escape and backdrop click
+- `c37ca01`: fix(arcanes): capture hourly trades (48h), aggregate current-day stats into price history, and display accurate 24h timeline
+- **Текущее состояние**: Сайт полностью собран, протестирован, задеплоен на `https://zero.nofuture.me`, база данных на VPS активно наполняется лотами и почасовой статистикой. Фоновые процессы на локальной машине очищены.
