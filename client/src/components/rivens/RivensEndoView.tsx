@@ -145,49 +145,43 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
     fetchWeapons();
   }, [activeGroup]);
 
-  // Load lots for the selected weapon
+  // Load lots for the selected weapon (fetches on weapon switch, NOT on every filter click)
   useEffect(() => {
     if (!selectedWeapon) return;
 
+    let isMounted = true;
     const fetchLots = async () => {
       setIsLoadingLots(true);
       try {
-        const params = new URLSearchParams({
-          type: filterType,
-          onlineOnly: onlineOnly ? 'true' : 'false',
-          sortBy: sortBy,
-        });
-
-        const res = await fetch(`/api/rivens/lots/${selectedWeapon.slug}?${params.toString()}`);
+        const res = await fetch(`/api/rivens/lots/${selectedWeapon.slug}`);
         if (res.ok) {
           const json = await res.json();
-          if (json.success && Array.isArray(json.data)) {
+          if (isMounted && json.success && Array.isArray(json.data)) {
             setLots(json.data);
           }
         }
       } catch (err) {
         console.error('Failed to fetch lots:', err);
       } finally {
-        setIsLoadingLots(false);
+        if (isMounted) {
+          setIsLoadingLots(false);
+        }
       }
     };
 
     fetchLots();
-  }, [selectedWeapon, filterType, onlineOnly, sortBy]);
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedWeapon?.slug]);
 
-  // Real-time automatic background polling (every 8 seconds quietly updates lots without resetting view)
+  // Real-time automatic background polling (every 8 seconds quietly updates lots without resetting view or showing loader)
   useEffect(() => {
     if (!selectedWeapon) return;
 
     const silentPoll = async () => {
       try {
-        const params = new URLSearchParams({
-          type: filterType,
-          onlineOnly: onlineOnly ? 'true' : 'false',
-          sortBy: sortBy,
-        });
-
-        const res = await fetch(`/api/rivens/lots/${selectedWeapon.slug}?${params.toString()}`);
+        const res = await fetch(`/api/rivens/lots/${selectedWeapon.slug}`);
         if (res.ok) {
           const json = await res.json();
           if (json.success && Array.isArray(json.data)) {
@@ -201,7 +195,7 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
 
     const interval = setInterval(silentPoll, 8000);
     return () => clearInterval(interval);
-  }, [selectedWeapon, filterType, onlineOnly, sortBy]);
+  }, [selectedWeapon?.slug]);
 
   // Filter weapons by search query
   const filteredWeapons = useMemo(() => {
@@ -215,14 +209,56 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
     });
   }, [weapons, searchQuery]);
 
+  // Instant zero-lag in-memory filtering & sorting
+  const filteredLots = useMemo(() => {
+    let list = [...lots];
+
+    // 1. Trade type filter
+    if (filterType === 'direct') {
+      list = list.filter((lot) => lot.is_direct_sell);
+    } else if (filterType === 'auction') {
+      list = list.filter((lot) => !lot.is_direct_sell);
+    }
+
+    // 2. Online only filter
+    if (onlineOnly) {
+      list = list.filter((lot) => lot.seller_status === 'online' || lot.seller_status === 'ingame');
+    }
+
+    // 3. Sorting
+    list.sort((a, b) => {
+      const priceA = a.is_direct_sell ? a.buyout_price || 0 : a.top_bid || a.starting_price || 0;
+      const priceB = b.is_direct_sell ? b.buyout_price || 0 : b.top_bid || b.starting_price || 0;
+
+      switch (sortBy) {
+        case 'price_asc':
+          return (priceA || 999999) - (priceB || 999999);
+        case 'price_desc':
+          return (priceB || 0) - (priceA || 0);
+        case 'endo_desc':
+          return (b.endo_value || 0) - (a.endo_value || 0);
+        case 'efficiency_desc':
+          return (b.efficiency || 0) - (a.efficiency || 0);
+        case 'date_desc':
+        default: {
+          const timeA = new Date(a.lot_created_at || 0).getTime();
+          const timeB = new Date(b.lot_created_at || 0).getTime();
+          return timeB - timeA;
+        }
+      }
+    });
+
+    return list;
+  }, [lots, filterType, onlineOnly, sortBy]);
+
   // Pagination calculation
-  const totalPages = Math.max(1, Math.ceil(lots.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(filteredLots.length / pageSize));
   const safeCurrentPage = Math.min(currentPage, totalPages);
   const paginatedLots = useMemo(() => {
-    if (pageSize >= 9999) return lots;
+    if (pageSize >= 9999) return filteredLots;
     const start = (safeCurrentPage - 1) * pageSize;
-    return lots.slice(start, start + pageSize);
-  }, [lots, safeCurrentPage, pageSize]);
+    return filteredLots.slice(start, start + pageSize);
+  }, [filteredLots, safeCurrentPage, pageSize]);
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
@@ -240,12 +276,7 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
       });
       // Re-fetch lots for the selected weapon immediately
       if (selectedWeapon) {
-        const params = new URLSearchParams({
-          type: filterType,
-          onlineOnly: onlineOnly ? 'true' : 'false',
-          sortBy: sortBy,
-        });
-        const res = await fetch(`/api/rivens/lots/${selectedWeapon.slug}?${params.toString()}`);
+        const res = await fetch(`/api/rivens/lots/${selectedWeapon.slug}`);
         if (res.ok) {
           const json = await res.json();
           if (json.success && Array.isArray(json.data)) {
@@ -724,7 +755,7 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
                     {lang === 'ru' ? 'Загрузка лотов из БД...' : 'Loading lots from database...'}
                   </p>
                 </div>
-              ) : lots.length === 0 ? (
+              ) : filteredLots.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-12 text-center rounded-3xl bg-white dark:bg-[#070c14] border border-slate-200 dark:border-white/[0.08]">
                   <EndoIcon size={48} className="mb-3 opacity-60" />
                   <h3 className="font-comfortaa font-bold text-base text-slate-900 dark:text-white">
@@ -953,10 +984,10 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
                         <span>
                           {lang === 'ru' ? 'Показано' : 'Showing'}{' '}
                           <strong className="text-slate-900 dark:text-white font-mono font-bold">
-                            {(safeCurrentPage - 1) * pageSize + 1}–{Math.min(safeCurrentPage * pageSize, lots.length)}
+                            {(safeCurrentPage - 1) * pageSize + 1}–{Math.min(safeCurrentPage * pageSize, filteredLots.length)}
                           </strong>{' '}
                           {lang === 'ru' ? 'из' : 'of'}{' '}
-                          <strong className="text-[#00e5ff] font-mono font-bold">{lots.length}</strong>{' '}
+                          <strong className="text-[#00e5ff] font-mono font-bold">{filteredLots.length}</strong>{' '}
                           {lang === 'ru' ? 'лотов' : 'lots'}
                         </span>
 

@@ -68,7 +68,7 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
     <div
       ref={containerRef}
       onMouseMove={handleMouseMove}
-      className="relative w-full h-[calc(100vh-53px)] min-h-[640px] bg-[#020509] overflow-hidden select-none flex items-center justify-center"
+      className="relative w-full h-full flex-1 bg-[#020509] overflow-hidden select-none flex items-center justify-center"
     >
       
       {/* 1. RICH VOLUMETRIC SPACE NEBULA (Matching official Warframe Star Chart palette) */}

@@ -17,23 +17,22 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   return (
     <header
-      className={`w-full backdrop-blur-md px-4 sm:px-6 py-2.5 sticky top-0 z-40 select-none transition-colors border-b ${
+      className={`fixed top-0 left-0 right-0 h-[57px] backdrop-blur-xl px-4 sm:px-6 py-2.5 z-50 select-none transition-colors border-b ${
         isStarChart
           ? 'bg-[#05080c]/95 border-white/[0.08] text-white'
           : 'bg-white/95 dark:bg-[#05080c]/95 border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-white'
       }`}
     >
-      <div className="max-w-[1920px] mx-auto flex items-center justify-between relative">
+      <div className="max-w-[1920px] mx-auto h-full flex items-center justify-between relative">
         
         {/* Left: Brand Identity */}
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#00e5ff]/20 to-[#0077ff]/20 border border-[#00e5ff]/40 flex items-center justify-center shadow-[0_0_12px_rgba(0,229,255,0.25)]">
             <Compass className="w-4 h-4 text-[#00e5ff]" />
           </div>
-          <span className={`font-comfortaa font-bold text-sm sm:text-base tracking-wide ${
-            isStarChart ? 'text-white' : 'text-slate-900 dark:text-white'
-          }`}>
-            Warframe <span className="text-[#00e5ff]">Market</span>
+          <span className="font-comfortaa font-bold text-sm sm:text-base tracking-wide flex items-center gap-1.5">
+            <span className="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]">Warframe</span>
+            <span className="text-[#00e5ff] drop-shadow-[0_0_12px_rgba(0,229,255,0.6)]">Market</span>
           </span>
         </div>
 

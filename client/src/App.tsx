@@ -73,8 +73,12 @@ export const App: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'starchart') {
       document.body.style.backgroundColor = '#020509';
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
     } else {
       document.body.style.backgroundColor = '';
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
     }
   }, [activeTab]);
 
@@ -92,13 +96,13 @@ export const App: React.FC = () => {
 
   return (
     <div
-      className={`min-h-screen w-full overflow-x-hidden flex flex-col font-sans antialiased select-none transition-colors duration-200 ${
+      className={`w-full flex flex-col font-sans antialiased select-none transition-colors duration-200 ${
         isStarChart
-          ? 'bg-[#020509] text-[#e9e8e4]'
-          : 'bg-slate-100 dark:bg-[#04060a] text-slate-900 dark:text-[#e9e8e4]'
+          ? 'h-screen overflow-hidden pt-[57px] bg-[#020509] text-[#e9e8e4]'
+          : 'min-h-screen pt-[57px] bg-slate-100 dark:bg-[#04060a] text-slate-900 dark:text-[#e9e8e4]'
       }`}
     >
-      {/* 1. TOP STATUS BAR */}
+      {/* 1. TOP STATUS BAR (Sticky / Fixed at top across all scroll positions) */}
       <Header
         lang={lang}
         onToggleLang={() => setLang((prev) => (prev === 'ru' ? 'en' : 'ru'))}
@@ -108,8 +112,8 @@ export const App: React.FC = () => {
 
       {/* 2. MAIN VIEW ENGINE */}
       {isStarChart ? (
-        // A. FULL ORRERY STAR CHART (Always dark cosmic space)
-        <main className="flex-1 w-full bg-[#020509]">
+        // A. FULL ORRERY STAR CHART (Always dark cosmic space, zero scrollbar)
+        <main className="flex-1 h-full w-full bg-[#020509] flex flex-col overflow-hidden">
           <StarChartView
             onSelectPlanet={(planet) => setActiveTab(planet)}
             lang={lang}
