@@ -13,6 +13,7 @@ type Timeframe = '24h' | '7d' | '30d' | '90d';
 
 interface ChartPoint {
   timeLabel: string;
+  axisLabel?: string;
   price: number;
   volume: number;
 }
@@ -50,6 +51,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
   const [timeframe, setTimeframe] = useState<Timeframe>('7d');
   const [hoveredPoint, setHoveredPoint] = useState<{ point: ChartPoint; x: number; y: number } | null>(null);
   const [historyByRank, setHistoryByRank] = useState<{ [rank: number]: any[] }>({});
+  const [hourlyByRank, setHourlyByRank] = useState<{ [rank: number]: any[] }>({});
 
   // Keyboard Escape listener & body scroll lock
   useEffect(() => {
@@ -99,6 +101,15 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
           }
           setHistoryByRank(grouped);
         }
+        if (res.success && Array.isArray(res.data?.hourly)) {
+          const groupedHourly: { [rank: number]: any[] } = {};
+          for (const item of res.data.hourly) {
+            const r = item.rank ?? 5;
+            if (!groupedHourly[r]) groupedHourly[r] = [];
+            groupedHourly[r].push(item);
+          }
+          setHourlyByRank(groupedHourly);
+        }
       })
       .catch((err) => {
         console.warn('History fetch error:', err);
@@ -143,11 +154,37 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
 
   // Generate or map authentic closed trade data points with ZERO lag on rank switch
   const chartPoints = useMemo<ChartPoint[]>(() => {
-    const rawHistory = historyByRank[selectedRank];
-    if (rawHistory && rawHistory.length >= 2) {
+    const rawHistory = historyByRank[selectedRank] || [];
+    const rawHourly = hourlyByRank[selectedRank] || [];
+
+    const monthRu = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+    const monthEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    // 1. 24H: Prefer real hourly data
+    if (timeframe === '24h' && rawHourly.length >= 2) {
+      const recentHourly = rawHourly.slice(-24);
+      const step = Math.max(1, Math.floor(recentHourly.length / 8));
+      const sampled = recentHourly.filter((_, i) => i % step === 0 || i === recentHourly.length - 1);
+      return sampled.map((h) => {
+        const d = new Date(h.datetime);
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        const day = d.getDate();
+        const m = lang === 'ru' ? monthRu[d.getMonth()] : monthEn[d.getMonth()];
+        return {
+          timeLabel: `${day} ${m}, ${hh}:${mm}`,
+          axisLabel: `${hh}:${mm}`,
+          price: Math.max(1, Math.round(h.medianPrice || basePrice)),
+          volume: h.volume || 0,
+        };
+      });
+    }
+
+    // 2. 7D, 30D, 90D or daily fallback
+    if (rawHistory.length >= 2) {
       let filtered = [...rawHistory];
       if (timeframe === '24h') {
-        filtered = filtered.slice(-3);
+        filtered = filtered.slice(-2);
       } else if (timeframe === '7d') {
         filtered = filtered.slice(-7);
       } else if (timeframe === '30d') {
@@ -162,11 +199,12 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
       if (filtered.length >= 2) {
         return filtered.map((h) => {
           const d = new Date(h.date);
-          const monthRu = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'][d.getMonth()];
-          const monthEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.getMonth()];
+          const m = lang === 'ru' ? monthRu[d.getMonth()] : monthEn[d.getMonth()];
           const day = d.getDate();
+          const label = lang === 'ru' ? `${day} ${m}` : `${m} ${day}`;
           return {
-            timeLabel: lang === 'ru' ? `${day} ${monthRu}` : `${monthEn} ${day}`,
+            timeLabel: label,
+            axisLabel: label,
             price: Math.max(1, Math.round(h.medianPrice || basePrice)),
             volume: h.volume || 0,
           };
@@ -174,14 +212,38 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
       }
     }
 
-    const daysRu = ['29 Окт', '30 Окт', '31 Окт', '01 Ноя', '02 Ноя', '03 Ноя', '04 Ноя'];
-    const daysEn = ['Oct 29', 'Oct 30', 'Oct 31', 'Nov 01', 'Nov 02', 'Nov 03', 'Nov 04'];
-    return (lang === 'ru' ? daysRu : daysEn).map((d) => ({
-      timeLabel: d,
-      price: basePrice,
-      volume: 10,
-    }));
-  }, [historyByRank, selectedRank, timeframe, basePrice, lang]);
+    // Dynamic real-time fallback based on current date
+    const now = new Date();
+    const count = timeframe === '24h' ? 6 : 7;
+    const fallbackPts: ChartPoint[] = [];
+    for (let i = count - 1; i >= 0; i--) {
+      if (timeframe === '24h') {
+        const d = new Date(now.getTime() - i * 4 * 3600 * 1000);
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = '00';
+        const day = d.getDate();
+        const m = lang === 'ru' ? monthRu[d.getMonth()] : monthEn[d.getMonth()];
+        fallbackPts.push({
+          timeLabel: `${day} ${m}, ${hh}:${mm}`,
+          axisLabel: `${hh}:${mm}`,
+          price: basePrice,
+          volume: 5,
+        });
+      } else {
+        const d = new Date(now.getTime() - i * 24 * 3600 * 1000);
+        const m = lang === 'ru' ? monthRu[d.getMonth()] : monthEn[d.getMonth()];
+        const day = d.getDate();
+        const label = lang === 'ru' ? `${day} ${m}` : `${m} ${day}`;
+        fallbackPts.push({
+          timeLabel: label,
+          axisLabel: label,
+          price: basePrice,
+          volume: 10,
+        });
+      }
+    }
+    return fallbackPts;
+  }, [historyByRank, hourlyByRank, selectedRank, timeframe, basePrice, lang]);
 
   // SCRUBBING & DYNAMIC PRICE CALCULATION
   const activePoint = hoveredPoint?.point || null;
@@ -729,7 +791,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
 
               {/* X-Axis Dates Labels */}
               {coords.map((c, i) => {
-                if (timeframe === '24h' && i % 2 !== 0 && i !== coords.length - 1) return null;
+                if (coords.length > 8 && i % 2 !== 0 && i !== coords.length - 1) return null;
                 return (
                   <text
                     key={i}
@@ -740,7 +802,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
                     fontSize="11"
                     fontFamily="JetBrains Mono"
                   >
-                    {c.point.timeLabel}
+                    {c.point.axisLabel || c.point.timeLabel}
                   </text>
                 );
               })}

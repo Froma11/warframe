@@ -186,9 +186,11 @@ class WarframeMarketScraper {
           max_price = excluded.max_price
       `;
 
+      const coveredDates = new Set<string>();
       for (const record of d90) {
         if (ranksToProcess.includes(record.mod_rank)) {
           const dateStr = record.datetime.split('T')[0];
+          coveredDates.add(`${record.mod_rank}_${dateStr}`);
           await db.run(upsertHistory, [
             slug,
             record.mod_rank,
@@ -198,6 +200,75 @@ class WarframeMarketScraper {
             record.min_price || 0,
             record.max_price || 0,
           ]);
+        }
+      }
+
+      // Upsert hourly statistics (last 48h) into price_history_hourly
+      const upsertHourly = `
+        INSERT INTO price_history_hourly (item_slug, rank, datetime, median_price, volume, min_price, max_price)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(item_slug, rank, datetime) DO UPDATE SET
+          median_price = excluded.median_price,
+          volume = excluded.volume,
+          min_price = excluded.min_price,
+          max_price = excluded.max_price
+      `;
+
+      // Also aggregate hourly data into price_history for any current/recent date not yet published in d90
+      const hourlyByRankAndDate: { [key: string]: { rank: number; date: string; volume: number; minPrice: number; maxPrice: number; weightedSum: number; count: number } } = {};
+
+      for (const record of h48) {
+        if (ranksToProcess.includes(record.mod_rank)) {
+          await db.run(upsertHourly, [
+            slug,
+            record.mod_rank,
+            record.datetime,
+            record.median || record.wa_price || record.avg_price || 0,
+            record.volume || 0,
+            record.min_price || 0,
+            record.max_price || 0,
+          ]);
+
+          const dateStr = record.datetime.split('T')[0];
+          const key = `${record.mod_rank}_${dateStr}`;
+          if (!hourlyByRankAndDate[key]) {
+            hourlyByRankAndDate[key] = {
+              rank: record.mod_rank,
+              date: dateStr,
+              volume: 0,
+              minPrice: record.min_price || 999999,
+              maxPrice: record.max_price || 0,
+              weightedSum: 0,
+              count: 0,
+            };
+          }
+          const agg = hourlyByRankAndDate[key];
+          const vol = record.volume || 0;
+          agg.volume += vol;
+          if (record.min_price && record.min_price < agg.minPrice) agg.minPrice = record.min_price;
+          if (record.max_price && record.max_price > agg.maxPrice) agg.maxPrice = record.max_price;
+          const price = record.wa_price || record.median || record.avg_price || 0;
+          agg.weightedSum += price * (vol > 0 ? vol : 1);
+          agg.count += (vol > 0 ? vol : 1);
+        }
+      }
+
+      // If recent dates (today/yesterday) are not yet finalized in d90, upsert the aggregated stats from h48
+      for (const key of Object.keys(hourlyByRankAndDate)) {
+        if (!coveredDates.has(key)) {
+          const agg = hourlyByRankAndDate[key];
+          const medianPrice = agg.count > 0 ? Math.round(agg.weightedSum / agg.count) : 0;
+          if (medianPrice > 0) {
+            await db.run(upsertHistory, [
+              slug,
+              agg.rank,
+              agg.date,
+              medianPrice,
+              agg.volume,
+              agg.minPrice === 999999 ? medianPrice : agg.minPrice,
+              agg.maxPrice === 0 ? medianPrice : agg.maxPrice,
+            ]);
+          }
         }
       }
 

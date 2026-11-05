@@ -104,6 +104,19 @@ export async function initDatabase() {
       FOREIGN KEY (item_slug) REFERENCES items(slug) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS price_history_hourly (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      item_slug TEXT NOT NULL,
+      rank INTEGER NOT NULL,
+      datetime TEXT NOT NULL,
+      median_price REAL NOT NULL,
+      volume INTEGER DEFAULT 0,
+      min_price INTEGER,
+      max_price INTEGER,
+      UNIQUE(item_slug, rank, datetime),
+      FOREIGN KEY (item_slug) REFERENCES items(slug) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS notes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -153,6 +166,7 @@ export async function initDatabase() {
 
     CREATE INDEX IF NOT EXISTS idx_snapshots_slug_time ON market_snapshots(item_slug, timestamp);
     CREATE INDEX IF NOT EXISTS idx_history_slug_date ON price_history(item_slug, date);
+    CREATE INDEX IF NOT EXISTS idx_history_hourly_slug_time ON price_history_hourly(item_slug, datetime);
     CREATE INDEX IF NOT EXISTS idx_notes_user ON notes(user_id);
     CREATE INDEX IF NOT EXISTS idx_riven_weapons_group ON riven_weapons(group_type);
     CREATE INDEX IF NOT EXISTS idx_riven_lots_weapon ON riven_lots(weapon_slug);

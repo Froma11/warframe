@@ -338,11 +338,19 @@ app.get('/api/arcanes/:slug', requireAuth, async (req, res) => {
       ORDER BY date ASC
     `, [slug]);
 
+    const hourly = await db.all(`
+      SELECT rank, datetime, median_price as medianPrice, volume, min_price as minPrice, max_price as maxPrice
+      FROM price_history_hourly
+      WHERE item_slug = ?
+      ORDER BY datetime ASC
+    `, [slug]);
+
     res.json({
       success: true,
       data: {
         item,
         history,
+        hourly,
       },
     });
   } catch (err: any) {
