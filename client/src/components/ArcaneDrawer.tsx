@@ -56,17 +56,19 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
     if (!arcane) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' || e.code === 'Escape' || e.keyCode === 27) {
+        e.preventDefault();
+        e.stopPropagation();
         onClose();
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, true);
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keydown', handleKeyDown, true);
       document.body.style.overflow = originalOverflow;
     };
   }, [arcane, onClose]);
@@ -271,16 +273,22 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
   return (
     // Backdrop with deep radial vignette & blur
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md transition-all duration-300"
-      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md transition-all duration-300 cursor-pointer"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       {/* Ambient Void Aura Spotlight behind the modal */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(0,229,255,0.08)_0%,transparent_70%)] pointer-events-none" />
 
       {/* High-Tech Glassmorphic Modal Frame */}
       <div
-        className="relative w-full max-w-2xl bg-gradient-to-b from-[#0c1017]/98 via-[#080b11]/98 to-[#04060a]/98 border border-white/[0.12] rounded-3xl p-5 sm:p-7 shadow-[0_30px_100px_rgba(0,0,0,0.95),0_0_60px_rgba(0,229,255,0.12)] overflow-hidden font-sans text-left select-none animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-2xl bg-gradient-to-b from-[#0c1017]/98 via-[#080b11]/98 to-[#04060a]/98 border border-white/[0.12] rounded-3xl p-5 sm:p-7 shadow-[0_30px_100px_rgba(0,0,0,0.95),0_0_60px_rgba(0,229,255,0.12)] overflow-hidden font-sans text-left select-none animate-in zoom-in-95 duration-200 cursor-default"
         onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Anamorphic Specular Edge on Top Lip */}
         <div className="absolute top-0 left-8 right-8 h-[1.5px] bg-gradient-to-r from-transparent via-[#00e5ff]/60 to-transparent pointer-events-none" />

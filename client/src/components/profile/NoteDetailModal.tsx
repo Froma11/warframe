@@ -21,6 +21,19 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
 
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.code === 'Escape' || e.keyCode === 27) {
+        e.preventDefault();
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [isOpen, onClose]);
+
   if (!isOpen || !note) return null;
 
   const noteText = note.content || note.title || '';
@@ -32,6 +45,14 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      e.preventDefault();
+      e.stopPropagation();
+      onClose();
+    }
+  };
+
   const formattedDate = new Date(note.created_at).toLocaleDateString(
     lang === 'ru' ? 'ru-RU' : 'en-US',
     { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }
@@ -39,12 +60,14 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 select-none font-sans"
-      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 select-none font-sans cursor-pointer"
+      onClick={handleBackdropClick}
+      onMouseDown={handleBackdropClick}
     >
       <div
-        className="relative w-full max-w-lg bg-white dark:bg-[#0c121d] border border-slate-200 dark:border-white/[0.12] rounded-3xl p-6 sm:p-7 shadow-[0_25px_70px_rgba(0,0,0,0.4),0_0_40px_rgba(0,229,255,0.15)] text-left"
+        className="relative w-full max-w-lg bg-white dark:bg-[#0c121d] border border-slate-200 dark:border-white/[0.12] rounded-3xl p-6 sm:p-7 shadow-[0_25px_70px_rgba(0,0,0,0.4),0_0_40px_rgba(0,229,255,0.15)] text-left cursor-default"
         onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button

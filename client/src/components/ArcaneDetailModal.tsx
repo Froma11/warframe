@@ -12,7 +12,28 @@ export const ArcaneDetailModal: React.FC<ArcaneDetailModalProps> = ({ arcane, on
   const [selectedRank, setSelectedRank] = useState<0 | 5>(5);
   const [copiedSeller, setCopiedSeller] = useState<string | null>(null);
 
+  React.useEffect(() => {
+    if (!arcane) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.code === 'Escape' || e.keyCode === 27) {
+        e.preventDefault();
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [arcane, onClose]);
+
   if (!arcane) return null;
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      e.preventDefault();
+      e.stopPropagation();
+      onClose();
+    }
+  };
 
   const handleCopy = (sellerName: string, price: number) => {
     const whisper = `/w ${sellerName} Привет! Хочу купить [${arcane.name}] (ранг ${selectedRank}) за ${price} платины. (warframe.market)`;
@@ -39,12 +60,14 @@ export const ArcaneDetailModal: React.FC<ArcaneDetailModalProps> = ({ arcane, on
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
-      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer"
+      onClick={handleBackdropClick}
+      onMouseDown={handleBackdropClick}
     >
       <div
-        className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-[#111622] border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl"
+        className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-[#111622] border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl cursor-default"
         onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
