@@ -148,7 +148,7 @@ export const SednaView: React.FC<SednaViewProps> = ({
       <div ref={catalogTopRef} className="scroll-mt-4" />
 
       {/* Modern Redesigned Filter & Controls Toolbar */}
-      <div className="bg-[#0b1019]/90 border border-white/[0.1] p-4 sm:p-5 rounded-3xl flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 shadow-2xl backdrop-blur-md">
+      <div className="relative z-30 bg-[#0b1019]/90 border border-white/[0.1] p-4 sm:p-5 rounded-3xl flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 shadow-2xl backdrop-blur-md">
         
         {/* Left: Search Box & Modern Badge */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 flex-1">
@@ -213,9 +213,9 @@ export const SednaView: React.FC<SednaViewProps> = ({
               <ChevronDown className={`w-3.5 h-3.5 text-[#a3a29d] transition-transform duration-200 ${isSortOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {/* Floating Dropdown Modal / Popover */}
+            {/* Floating Dropdown Modal / Popover (High z-index to float above all cards) */}
             {isSortOpen && (
-              <div className="absolute right-0 mt-2 w-72 bg-[#0a0f18] border border-white/[0.15] rounded-2xl shadow-2xl p-2 z-40 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
+              <div className="absolute right-0 mt-2 w-72 bg-[#0c121d] border border-[#00e5ff]/35 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.95)] p-2 z-50 backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150">
                 <div className="px-3.5 py-2 text-[11px] font-comfortaa font-bold uppercase tracking-wider text-[#a3a29d] border-b border-white/[0.06] mb-1">
                   {lang === 'ru' ? 'Сортировать по:' : 'Sort items by:'}
                 </div>
@@ -336,8 +336,9 @@ export const SednaView: React.FC<SednaViewProps> = ({
                     </td>
 
                     <td className="py-3.5 px-6 text-right">
-                      <div className="text-white font-bold text-base font-sans">
-                        {arcane.rank0.minPrice} <PlatinumIcon size={13} className="text-[#00e5ff] inline ml-0.5" />
+                      <div className="font-bold text-base font-sans flex items-center justify-end gap-1">
+                        <span className="text-white font-bold">{arcane.rank0.minPrice}</span>
+                        <PlatinumIcon size={13} className="text-[#00e5ff] inline ml-0.5" />
                       </div>
                       <div className="text-xs text-[#a3a29d] font-sans">
                         {lang === 'ru' ? 'ср' : 'avg'}: {arcane.rank0.avgPrice}
@@ -345,8 +346,9 @@ export const SednaView: React.FC<SednaViewProps> = ({
                     </td>
 
                     <td className="py-3.5 px-6 text-right">
-                      <div className="text-[#00e5ff] font-bold text-base font-sans">
-                        {arcane.rank5.minPrice} <PlatinumIcon size={13} className="text-[#00e5ff] inline ml-0.5" />
+                      <div className="font-bold text-base font-sans flex items-center justify-end gap-1">
+                        <span className="text-[#00e5ff] font-bold drop-shadow-[0_0_8px_rgba(0,229,255,0.4)]">{arcane.rank5.minPrice}</span>
+                        <PlatinumIcon size={13} className="text-[#00e5ff] inline ml-0.5" />
                       </div>
                       <div className="text-xs text-[#a3a29d] font-sans">
                         {lang === 'ru' ? 'ср' : 'avg'}: {arcane.rank5.avgPrice}

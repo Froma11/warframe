@@ -119,5 +119,13 @@ export async function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_notes_user ON notes(user_id);
   `);
 
+  // Safe incremental schema migrations
+  try {
+    await db.exec("ALTER TABLE users ADD COLUMN theme TEXT DEFAULT 'dark'");
+  } catch {}
+  try {
+    await db.exec("ALTER TABLE notes ADD COLUMN tag TEXT DEFAULT 'СНАЙПИНГ'");
+  } catch {}
+
   console.log('[DB] SQLite Database initialized with WAL mode at:', dbPath);
 }

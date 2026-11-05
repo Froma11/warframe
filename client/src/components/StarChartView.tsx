@@ -128,52 +128,6 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
         ))}
       </div>
 
-      {/* 3.1 LIVING SHOOTING STARS / COMETS (Lightweight GPU Keyframes) */}
-      <div
-        className={`absolute inset-0 pointer-events-none overflow-hidden transition-opacity duration-300 ${
-          isTransitioning ? 'opacity-0' : 'opacity-100'
-        }`}
-      >
-        {/* Meteor 1: Cyan High Orbit */}
-        <div
-          className="absolute w-32 sm:w-44 h-[1.5px] rounded-full pointer-events-none"
-          style={{
-            top: '16%',
-            right: '18%',
-            background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(0,229,255,0.3) 30%, rgba(255,255,255,0.95) 100%)',
-            boxShadow: '0 0 10px rgba(0,229,255,0.8), 0 0 20px rgba(0,229,255,0.4)',
-            animation: 'shootingStar 8s cubic-bezier(0.25, 0.1, 0.25, 1) infinite',
-            animationDelay: '1.2s',
-          }}
-        />
-
-        {/* Meteor 2: Emerald Slanted Orbit */}
-        <div
-          className="absolute w-28 sm:w-36 h-[1.5px] rounded-full pointer-events-none"
-          style={{
-            top: '32%',
-            right: '34%',
-            background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(52,211,153,0.3) 30%, rgba(255,255,255,0.9) 100%)',
-            boxShadow: '0 0 10px rgba(52,211,153,0.8), 0 0 18px rgba(52,211,153,0.4)',
-            animation: 'shootingStar 12s cubic-bezier(0.25, 0.1, 0.25, 1) infinite',
-            animationDelay: '5.4s',
-          }}
-        />
-
-        {/* Meteor 3: Golden Outer Deep Trail */}
-        <div
-          className="absolute w-36 sm:w-48 h-[1.5px] rounded-full pointer-events-none"
-          style={{
-            top: '22%',
-            right: '65%',
-            background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,200,100,0.3) 30%, rgba(255,255,255,0.95) 100%)',
-            boxShadow: '0 0 10px rgba(255,200,100,0.8), 0 0 22px rgba(255,180,80,0.4)',
-            animation: 'shootingStar 15.5s cubic-bezier(0.25, 0.1, 0.25, 1) infinite',
-            animationDelay: '9.2s',
-          }}
-        />
-      </div>
-
       {/* 4. PERSPECTIVE CELESTIAL ORRERY SYSTEM (100% Uncompressed 1:1 Aspect Ratio) */}
       <div
         className="relative w-full h-full flex items-center justify-center transition-transform duration-500 ease-out"

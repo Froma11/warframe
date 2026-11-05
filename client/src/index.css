@@ -94,18 +94,33 @@
 }
 
 :root {
-  --bg: #0e0f11;
-  --surface-1: #141518;
-  --surface-2: #1a1b1f;
-  --surface-3: #212226;
+  --bg: #04060a;
+  --surface-1: #090e17;
+  --surface-2: #0e1422;
+  --surface-3: #141c2e;
   --line: rgba(255, 255, 255, 0.08);
   --line-strong: rgba(255, 255, 255, 0.18);
   --text: #e9e8e4;
   --text-2: #a3a29d;
   --text-3: #6b6a66;
-  --accent: #b9a77a;
-  --gain: #7fa88a;
-  --loss: #c27c70;
+  --accent: #00e5ff;
+  --gain: #10b981;
+  --loss: #f43f5e;
+}
+
+:root.light {
+  --bg: #f8fafc;
+  --surface-1: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-3: #e2e8f0;
+  --line: rgba(15, 23, 42, 0.09);
+  --line-strong: rgba(15, 23, 42, 0.18);
+  --text: #0f172a;
+  --text-2: #475569;
+  --text-3: #94a3b8;
+  --accent: #0284c7;
+  --gain: #059669;
+  --loss: #e11d48;
 }
 
 @layer base {
@@ -122,6 +137,7 @@
     font-family: 'Onest', sans-serif;
     font-weight: 400;
     font-variant-numeric: lining-nums tabular-nums;
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
 
   h1, h2, h3, h4, h5, h6 {

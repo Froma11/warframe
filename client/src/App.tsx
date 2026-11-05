@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { StarChartView } from './components/StarChartView';
 import { SednaView } from './components/SednaView';
-import { EarthView } from './components/EarthView';
+import { ProfileView } from './components/profile/ProfileView';
 import { ArcaneDrawer } from './components/ArcaneDrawer';
 import { GatekeeperScreen } from './components/GatekeeperScreen';
 import { ArcaneItem } from './types/arcane';
@@ -16,7 +16,6 @@ export const App: React.FC = () => {
 
   // Navigation state: Star Chart (default) vs Sedna (Market) vs Earth (Profile)
   const [activeTab, setActiveTab] = useState<'starchart' | 'sedna' | 'earth'>('starchart');
-  const [earthSubTab, setEarthSubTab] = useState<'notes' | 'dossier' | 'database'>('notes');
 
   // Language state: RU or EN
   const [lang, setLang] = useState<'ru' | 'en'>('ru');
@@ -125,11 +124,7 @@ export const App: React.FC = () => {
                 lang={lang}
               />
             ) : (
-              <EarthView
-                subTab={earthSubTab}
-                lang={lang}
-                onLockSession={handleLockSession}
-              />
+              <ProfileView lang={lang} />
             )}
           </main>
         </div>

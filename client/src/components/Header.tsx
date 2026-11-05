@@ -1,6 +1,7 @@
 import React from 'react';
 import { PlatinumIcon } from './PlatinumIcon';
 import { Globe, Compass } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 
 interface HeaderProps {
   lang: 'ru' | 'en';
@@ -88,6 +89,9 @@ export const Header: React.FC<HeaderProps> = ({
               {lang.toUpperCase()}
             </span>
           </button>
+
+          {/* Theme Toggle: Dark / Light */}
+          <ThemeToggle lang={lang} />
 
         </div>
 

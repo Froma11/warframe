@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { db, initDatabase } from './db';
 import { initAuth, generateToken, setAuthCookie, clearAuthCookie, requireAuth } from './auth';
@@ -13,6 +14,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4000;
 const MASTER_KEY = process.env.ACCESS_KEY || 'tenno2026';
+const JWT_SECRET = process.env.JWT_SECRET || 'orokin_void_key_secret_2026_warframe';
 
 // Middleware
 app.use(express.json());
@@ -24,9 +26,120 @@ app.use(
   })
 );
 
-// --- AUTH & GATEKEEPER ROUTES ---
+// --- AUTH & USER PROFILE ROUTES ---
 
-// Verify Gatekeeper Access Key
+// 1. User Registration (Database-backed)
+app.post('/api/auth/register', async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Логин и пароль обязательны' });
+  }
+
+  const cleanUsername = String(username).trim();
+  if (cleanUsername.length < 3) {
+    return res.status(400).json({ error: 'Логин должен содержать минимум 3 символа' });
+  }
+  if (String(password).length < 4) {
+    return res.status(400).json({ error: 'Пароль должен содержать минимум 4 символа' });
+  }
+
+  try {
+    const existing = await db.get('SELECT id FROM users WHERE LOWER(username) = LOWER(?)', [cleanUsername]);
+    if (existing) {
+      return res.status(409).json({ error: 'Пользователь с таким логином уже существует' });
+    }
+
+    const hash = bcrypt.hashSync(String(password), 10);
+    const result = await db.run(
+      'INSERT INTO users (username, password_hash, theme) VALUES (?, ?, ?)',
+      [cleanUsername, hash, 'dark']
+    );
+
+    const newUser = { id: result.lastID, username: cleanUsername, theme: 'dark' };
+    const token = generateToken(newUser);
+    setAuthCookie(res, token);
+
+    return res.json({
+      success: true,
+      user: newUser,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// 2. User Login
+app.post('/api/auth/login', async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Введите логин и пароль' });
+  }
+
+  try {
+    const cleanUsername = String(username).trim();
+    const user = await db.get<any>('SELECT * FROM users WHERE LOWER(username) = LOWER(?)', [cleanUsername]);
+    if (!user || !bcrypt.compareSync(String(password), user.password_hash)) {
+      return res.status(401).json({ error: 'Неверный логин или пароль' });
+    }
+
+    const token = generateToken({ id: user.id, username: user.username });
+    setAuthCookie(res, token);
+
+    return res.json({
+      success: true,
+      user: {
+        id: user.id,
+        username: user.username,
+        theme: user.theme || 'dark',
+        createdAt: user.created_at,
+      },
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// 3. Current User Profile
+app.get('/api/auth/me', async (req, res) => {
+  const token = req.cookies?.tenno_token;
+  if (!token) {
+    return res.json({ authenticated: false, user: null });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const user = await db.get<any>('SELECT id, username, theme, created_at FROM users WHERE id = ?', [decoded.id]);
+    if (!user) {
+      return res.json({ authenticated: false, user: null });
+    }
+    return res.json({
+      authenticated: true,
+      user: {
+        id: user.id,
+        username: user.username,
+        theme: user.theme || 'dark',
+        createdAt: user.created_at,
+      },
+    });
+  } catch {
+    return res.json({ authenticated: false, user: null });
+  }
+});
+
+// 4. Update Theme Preference
+app.put('/api/auth/theme', requireAuth, async (req: any, res) => {
+  const { theme } = req.body;
+  const safeTheme = theme === 'light' ? 'light' : 'dark';
+  try {
+    const userId = req.user?.id || 1;
+    await db.run('UPDATE users SET theme = ? WHERE id = ?', [safeTheme, userId]);
+    return res.json({ success: true, theme: safeTheme });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// 5. Verify Gatekeeper Access Key (Fallback / Gatekeeper)
 app.post('/api/auth/verify-key', async (req, res) => {
   const { key } = req.body;
   if (!key) {
@@ -72,15 +185,16 @@ app.get('/api/notes', requireAuth, async (req: any, res) => {
 });
 
 app.post('/api/notes', requireAuth, async (req: any, res) => {
-  const { title, content } = req.body;
+  const { title, content, tag } = req.body;
   if (!title && !content) {
     return res.status(400).json({ error: 'Title or content required.' });
   }
   try {
     const userId = req.user?.id || 1;
+    const cleanTag = tag || 'СНАЙПИНГ';
     const result = await db.run(
-      'INSERT INTO notes (user_id, title, content) VALUES (?, ?, ?)',
-      [userId, title || 'Без названия', content || '']
+      'INSERT INTO notes (user_id, title, content, tag) VALUES (?, ?, ?, ?)',
+      [userId, title || 'Без названия', content || '', cleanTag]
     );
     res.json({ success: true, id: result.lastID });
   } catch (err: any) {
