@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 
 interface StarChartViewProps {
   onSelectPlanet: (planet: 'sedna' | 'earth') => void;
@@ -13,7 +13,7 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Subtle 3D mouse parallax
+  // Smooth mouse parallax (translation only, no rotation distortion)
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (selectedPlanet) return;
     const { innerWidth, innerHeight } = window;
@@ -27,7 +27,7 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
     const list = [];
     for (let i = 0; i < 95; i++) {
       const top = (i * 19.3 + (i % 7) * 13) % 100;
-      const left = (i * 27.7 + (i % 5) * 17) % 100;
+      const left = (i * 27.7 + (i % 5) * 19) % 100;
       const layer = i % 6 === 0 ? 'bright' : i % 2 === 0 ? 'mid' : 'far';
       const size = layer === 'bright' ? 2.5 : layer === 'mid' ? 1.5 : 1;
       const opacity = layer === 'bright' ? 0.9 : layer === 'mid' ? 0.5 : 0.25;
@@ -36,7 +36,7 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
     return list;
   }, []);
 
-  // Floating cosmic stardust & micro-asteroid debris along the orbits
+  // Floating stardust particles along the orbits
   const stardust = useMemo(() => {
     const list = [];
     for (let i = 0; i < 40; i++) {
@@ -69,7 +69,6 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
       ref={containerRef}
       onMouseMove={handleMouseMove}
       className="relative w-full h-[calc(100vh-53px)] min-h-[640px] bg-[#020509] overflow-hidden select-none flex items-center justify-center"
-      style={{ perspective: '1100px' }}
     >
       
       {/* 1. RICH VOLUMETRIC SPACE NEBULA (Matching official Warframe Star Chart palette) */}
@@ -127,12 +126,11 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
         ))}
       </div>
 
-      {/* 4. TILTED 3D CELESTIAL ORRERY SYSTEM (Isometric Perspective plane as in Warframe) */}
+      {/* 4. PERSPECTIVE CELESTIAL ORRERY SYSTEM (100% Uncompressed 1:1 Aspect Ratio) */}
       <div
-        className="relative w-full h-full flex items-center justify-center transition-all duration-700 ease-out"
+        className="relative w-full h-full flex items-center justify-center transition-transform duration-500 ease-out"
         style={{
-          transformStyle: 'preserve-3d',
-          transform: `rotateX(${26 + mousePos.y * -3}deg) rotateZ(${-3 + mousePos.x * 2.5}deg)`,
+          transform: `translate3d(${mousePos.x * 12}px, ${mousePos.y * 8}px, 0)`,
         }}
       >
         {/* SVG ORRERY COORDINATE SPHERE (Perspective Latitudes + Radial Meridians) */}
@@ -181,7 +179,7 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
                 );
               })}
 
-              {/* CONCENTRIC ORBITAL LATITUDES (Smooth 3D Rings) */}
+              {/* CONCENTRIC ORBITAL LATITUDES (Naturally Perspective Ellipses) */}
               <ellipse cx="500" cy="300" rx="140" ry="82" fill="none" stroke="rgba(0, 229, 255, 0.15)" strokeWidth="0.9" />
               <ellipse cx="500" cy="300" rx="250" ry="148" fill="none" stroke="rgba(0, 229, 255, 0.20)" strokeWidth="1" />
               <ellipse cx="500" cy="300" rx="360" ry="214" fill="none" stroke="rgba(0, 229, 255, 0.24)" strokeWidth="1.1" />
@@ -213,7 +211,7 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
           ))}
         </div>
 
-        {/* 5. CENTRAL SOLAR SINGULARITY (Sun with Anamorphic Lens Flare) */}
+        {/* 5. CENTRAL SOLAR SINGULARITY (100% Perfect Circular Sun with Horizontal Flare) */}
         <div
           className={`absolute pointer-events-none flex items-center justify-center transition-opacity duration-300 ${
             isTransitioning ? 'opacity-0' : 'opacity-100'
@@ -222,17 +220,16 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
             left: '50%',
             top: '50%',
             transform: 'translate(-50%, -50%)',
-            transformStyle: 'preserve-3d',
           }}
         >
           {/* Radiant Solar Corona */}
           <div
-            className="w-36 h-36 rounded-full bg-[radial-gradient(circle,rgba(255,190,80,0.85)_0%,rgba(255,130,30,0.35)_35%,transparent_70%)] animate-pulse"
+            className="w-36 h-36 rounded-full aspect-square bg-[radial-gradient(circle,rgba(255,190,80,0.85)_0%,rgba(255,130,30,0.35)_35%,transparent_70%)] animate-pulse"
             style={{ animationDuration: '3.5s' }}
           />
           
-          {/* White-Hot Solar Core */}
-          <div className="absolute w-8 h-8 rounded-full bg-[#ffffff] shadow-[0_0_30px_rgba(255,255,255,1),0_0_60px_rgba(255,180,60,0.9),0_0_90px_rgba(255,120,20,0.6)]" />
+          {/* White-Hot Solar Core (Strictly 1:1 Aspect Ratio) */}
+          <div className="absolute w-8 h-8 rounded-full aspect-square bg-[#ffffff] shadow-[0_0_30px_rgba(255,255,255,1),0_0_60px_rgba(255,180,60,0.9),0_0_90px_rgba(255,120,20,0.6)]" />
 
           {/* Anamorphic Horizontal Lens Flare (Warframe signature laser streak) */}
           <div
@@ -245,115 +242,99 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
           />
         </div>
 
-        {/* 6. «ПРОФИЛЬ» (Active Sector — Lower-Left Orbit) */}
+        {/* 6. «ПРОФИЛЬ» (Active Sector — Lower-Left Orbit — 100% Round Sphere) */}
         <div
           onClick={() => handlePlanetClick('earth')}
           className={`group absolute cursor-pointer flex flex-col items-center transition-all duration-500 ease-out z-20 ${
             isTransitioning && selectedPlanet !== 'earth' ? 'opacity-0 pointer-events-none' : 'opacity-100'
           }`}
           style={{
-            left: 'calc(50% - 290px)',
-            top: 'calc(50% + 75px)',
+            left: 'calc(50% - 250px)',
+            top: 'calc(50% + 80px)',
             transform: selectedPlanet === 'earth'
-              ? 'translate(290px, -75px) scale(2.4)'
+              ? 'translate(250px, -80px) scale(2.4)'
               : 'translate(-50%, -50%) scale(1)',
             transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
-          {/* Billboarded Upright Sphere (Counter-rotated against 3D plane for perfect spherical shape) */}
-          <div
-            className="flex flex-col items-center"
-            style={{
-              transform: 'rotateX(-26deg) rotateZ(3deg)',
-            }}
-          >
-            {/* Sphere with Directional Sun Illumination (Light hits top-right facing central star) */}
-            <div className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-full overflow-hidden shadow-[0_0_35px_rgba(16,185,129,0.45),inset_18px_18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(16,185,129,0.75)] transition-all duration-300">
-              <img
-                src="/earth_clean.png"
-                alt="Earth"
-                className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin"
-                style={{ animationDuration: '120s' }}
-              />
+          {/* Sphere with Directional Sun Illumination (100% Round Circle) */}
+          <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden shadow-[0_0_35px_rgba(16,185,129,0.45),inset_18px_18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(16,185,129,0.75)] transition-all duration-300">
+            <img
+              src="/earth_clean.png"
+              alt="Profile"
+              className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin aspect-square"
+              style={{ animationDuration: '120s' }}
+            />
 
-              {/* Physical directional solar illumination on the surface facing the sun */}
-              <div
-                className="absolute inset-0 rounded-full pointer-events-none"
-                style={{
-                  background: 'radial-gradient(circle at 72% 28%, rgba(255, 210, 150, 0.35) 0%, transparent 60%)',
-                  boxShadow: 'inset 0 0 20px rgba(16, 185, 129, 0.55)',
-                }}
-              />
-            </div>
-
-            {/* ONLY the label «Профиль» */}
+            {/* Physical directional solar illumination on the surface facing the sun */}
             <div
-              className={`flex flex-col items-center mt-3 transition-opacity duration-200 ${
-                selectedPlanet === 'earth' ? 'opacity-0' : 'opacity-100'
-              }`}
-            >
-              <span className="text-sm sm:text-base font-raleway font-bold text-white tracking-widest uppercase group-hover:text-[#34d399] transition-colors drop-shadow-[0_2px_12px_rgba(16,185,129,0.7)]">
-                {lang === 'ru' ? 'Профиль' : 'Profile'}
-              </span>
-            </div>
+              className="absolute inset-0 rounded-full pointer-events-none aspect-square"
+              style={{
+                background: 'radial-gradient(circle at 72% 28%, rgba(255, 210, 150, 0.35) 0%, transparent 60%)',
+                boxShadow: 'inset 0 0 20px rgba(16, 185, 129, 0.55)',
+              }}
+            />
+          </div>
+
+          {/* ONLY the label «Профиль» */}
+          <div
+            className={`flex flex-col items-center mt-3 transition-opacity duration-200 ${
+              selectedPlanet === 'earth' ? 'opacity-0' : 'opacity-100'
+            }`}
+          >
+            <span className="text-sm sm:text-base font-raleway font-bold text-white tracking-widest uppercase group-hover:text-[#34d399] transition-colors drop-shadow-[0_2px_12px_rgba(16,185,129,0.7)]">
+              {lang === 'ru' ? 'Профиль' : 'Profile'}
+            </span>
           </div>
         </div>
 
-        {/* 7. «МАРКЕТ» (Active Sector — Upper-Right Orbit) */}
+        {/* 7. «МАРКЕТ» (Active Sector — Upper-Right Orbit — 100% Round Sphere) */}
         <div
           onClick={() => handlePlanetClick('sedna')}
           className={`group absolute cursor-pointer flex flex-col items-center transition-all duration-500 ease-out z-20 ${
             isTransitioning && selectedPlanet !== 'sedna' ? 'opacity-0 pointer-events-none' : 'opacity-100'
           }`}
           style={{
-            left: 'calc(50% + 330px)',
-            top: 'calc(50% - 90px)',
+            left: 'calc(50% + 310px)',
+            top: 'calc(50% - 100px)',
             transform: selectedPlanet === 'sedna'
-              ? 'translate(-330px, 90px) scale(2.4)'
+              ? 'translate(-310px, 100px) scale(2.4)'
               : 'translate(-50%, -50%) scale(1)',
             transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
-          {/* Billboarded Upright Sphere */}
-          <div
-            className="flex flex-col items-center"
-            style={{
-              transform: 'rotateX(-26deg) rotateZ(3deg)',
-            }}
-          >
-            {/* Sphere with Directional Sun Illumination (Light hits bottom-left facing central star) */}
-            <div className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-full overflow-hidden shadow-[0_0_35px_rgba(0,229,255,0.45),inset_-18px_-18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(0,229,255,0.75)] transition-all duration-300">
-              <img
-                src="/sedna_clean.png"
-                alt="Sedna"
-                className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin"
-                style={{ animationDuration: '90s' }}
-              />
+          {/* Sphere with Directional Sun Illumination (100% Round Circle) */}
+          <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden shadow-[0_0_35px_rgba(0,229,255,0.45),inset_-18px_-18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(0,229,255,0.75)] transition-all duration-300">
+            <img
+              src="/sedna_clean.png"
+              alt="Market"
+              className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin aspect-square"
+              style={{ animationDuration: '90s' }}
+            />
 
-              {/* Physical directional solar illumination on the surface facing the sun */}
-              <div
-                className="absolute inset-0 rounded-full pointer-events-none"
-                style={{
-                  background: 'radial-gradient(circle at 28% 72%, rgba(255, 210, 150, 0.35) 0%, transparent 60%)',
-                  boxShadow: 'inset 0 0 20px rgba(0, 229, 255, 0.55)',
-                }}
-              />
-            </div>
-
-            {/* ONLY the label «Маркет» */}
+            {/* Physical directional solar illumination on the surface facing the sun */}
             <div
-              className={`flex flex-col items-center mt-3 transition-opacity duration-200 ${
-                selectedPlanet === 'sedna' ? 'opacity-0' : 'opacity-100'
-              }`}
-            >
-              <span className="text-sm sm:text-base font-raleway font-bold text-white tracking-widest uppercase group-hover:text-[#00e5ff] transition-colors drop-shadow-[0_2px_12px_rgba(0,229,255,0.7)]">
-                {lang === 'ru' ? 'Маркет' : 'Market'}
-              </span>
-            </div>
+              className="absolute inset-0 rounded-full pointer-events-none aspect-square"
+              style={{
+                background: 'radial-gradient(circle at 28% 72%, rgba(255, 210, 150, 0.35) 0%, transparent 60%)',
+                boxShadow: 'inset 0 0 20px rgba(0, 229, 255, 0.55)',
+              }}
+            />
+          </div>
+
+          {/* ONLY the label «Маркет» */}
+          <div
+            className={`flex flex-col items-center mt-3 transition-opacity duration-200 ${
+              selectedPlanet === 'sedna' ? 'opacity-0' : 'opacity-100'
+            }`}
+          >
+            <span className="text-sm sm:text-base font-raleway font-bold text-white tracking-widest uppercase group-hover:text-[#00e5ff] transition-colors drop-shadow-[0_2px_12px_rgba(0,229,255,0.7)]">
+              {lang === 'ru' ? 'Маркет' : 'Market'}
+            </span>
           </div>
         </div>
 
-        {/* 8. RESERVED ORBITAL SLOTS (Minimal celestial nodes for future tabs, perfectly balancing the system) */}
+        {/* 8. RESERVED ORBITAL SLOTS (Clean minimal nodes for future tabs) */}
         
         {/* Slot 1: Upper-Left (Orbit 3) */}
         <div
@@ -366,7 +347,7 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
             transform: 'translate(-50%, -50%)',
           }}
         >
-          <div className="w-5 h-5 rounded-full border border-dashed border-[#00e5ff]/50 flex items-center justify-center shadow-[0_0_8px_rgba(0,229,255,0.3)]">
+          <div className="w-5 h-5 rounded-full aspect-square border border-dashed border-[#00e5ff]/50 flex items-center justify-center shadow-[0_0_8px_rgba(0,229,255,0.3)]">
             <div className="w-1.5 h-1.5 rounded-full bg-[#00e5ff]" />
           </div>
         </div>
@@ -377,12 +358,12 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
             isTransitioning ? 'opacity-0' : 'opacity-40'
           }`}
           style={{
-            left: 'calc(50% + 250px)',
-            top: 'calc(50% + 125px)',
+            left: 'calc(50% + 220px)',
+            top: 'calc(50% + 95px)',
             transform: 'translate(-50%, -50%)',
           }}
         >
-          <div className="w-5 h-5 rounded-full border border-dashed border-[#00e5ff]/50 flex items-center justify-center shadow-[0_0_8px_rgba(0,229,255,0.3)]">
+          <div className="w-5 h-5 rounded-full aspect-square border border-dashed border-[#00e5ff]/50 flex items-center justify-center shadow-[0_0_8px_rgba(0,229,255,0.3)]">
             <div className="w-1.5 h-1.5 rounded-full bg-[#00e5ff]" />
           </div>
         </div>
@@ -398,7 +379,7 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
             transform: 'translate(-50%, -50%)',
           }}
         >
-          <div className="w-5 h-5 rounded-full border border-dashed border-[#00e5ff]/50 flex items-center justify-center shadow-[0_0_8px_rgba(0,229,255,0.3)]">
+          <div className="w-5 h-5 rounded-full aspect-square border border-dashed border-[#00e5ff]/50 flex items-center justify-center shadow-[0_0_8px_rgba(0,229,255,0.3)]">
             <div className="w-1.5 h-1.5 rounded-full bg-[#00e5ff]" />
           </div>
         </div>
@@ -414,7 +395,7 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
             transform: 'translate(-50%, -50%)',
           }}
         >
-          <div className="w-5 h-5 rounded-full border border-dashed border-[#00e5ff]/50 flex items-center justify-center shadow-[0_0_8px_rgba(0,229,255,0.3)]">
+          <div className="w-5 h-5 rounded-full aspect-square border border-dashed border-[#00e5ff]/50 flex items-center justify-center shadow-[0_0_8px_rgba(0,229,255,0.3)]">
             <div className="w-1.5 h-1.5 rounded-full bg-[#00e5ff]" />
           </div>
         </div>
