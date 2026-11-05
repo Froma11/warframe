@@ -15,7 +15,7 @@ export const App: React.FC = () => {
     return localStorage.getItem('tenno_gate_auth') === 'true';
   });
 
-  // Navigation state: Star Chart (default) vs Sedna (Market) vs Earth (Profile/Notes)
+  // Navigation state: Star Chart (default) vs Sedna (Market) vs Earth (Profile)
   const [activeTab, setActiveTab] = useState<'starchart' | 'sedna' | 'earth'>('starchart');
   const [earthSubTab, setEarthSubTab] = useState<'notes' | 'dossier' | 'database'>('notes');
 
@@ -133,19 +133,19 @@ export const App: React.FC = () => {
               </span>
             </button>
 
-            {/* Center: Clean planet name and function */}
+            {/* Center: Clean section title (strictly no planet names) */}
             <div className="flex items-center gap-2 text-xs">
               <span className={`w-2 h-2 rounded-full animate-pulse ${
                 activeTab === 'sedna' ? 'bg-[#00e5ff]' : 'bg-[#10b981]'
               }`} />
               <span className="font-bold text-white tracking-wide">
                 {activeTab === 'sedna'
-                  ? (lang === 'ru' ? 'Седна — Маркет' : 'Sedna — Market')
-                  : (lang === 'ru' ? 'Земля — Профиль' : 'Earth — Profile')}
+                  ? (lang === 'ru' ? 'Маркет' : 'Market')
+                  : (lang === 'ru' ? 'Профиль' : 'Profile')}
               </span>
             </div>
 
-            {/* Right: Quick Hop between Sedna and Earth */}
+            {/* Right: Quick Hop between Market and Profile */}
             <button
               onClick={() => setActiveTab(activeTab === 'sedna' ? 'earth' : 'sedna')}
               className="group flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0a0f18] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/20 text-[#a3a29d] hover:text-white transition-all text-[11px]"
@@ -153,8 +153,8 @@ export const App: React.FC = () => {
               <ArrowLeftRight className="w-3 h-3 text-[#64748b] group-hover:text-[#00e5ff] transition-colors" />
               <span className="font-medium text-white group-hover:text-[#00e5ff] transition-colors">
                 {activeTab === 'sedna' 
-                  ? (lang === 'ru' ? 'Земля ➔' : 'Earth ➔') 
-                  : (lang === 'ru' ? 'Седна ➔' : 'Sedna ➔')}
+                  ? (lang === 'ru' ? 'Профиль ➔' : 'Profile ➔') 
+                  : (lang === 'ru' ? 'Маркет ➔' : 'Market ➔')}
               </span>
             </button>
           </section>
