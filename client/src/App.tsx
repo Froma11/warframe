@@ -68,14 +68,14 @@ export const App: React.FC = () => {
     fetchArcanes();
   }, [isAuthenticated]);
 
-  // Lock session back to Gatekeeper
-  const handleLockSession = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-    } catch {}
-    localStorage.removeItem('tenno_gate_auth');
-    setIsAuthenticated(false);
-  };
+  // Ensure Star Chart ALWAYS remains deep dark space, regardless of light theme
+  useEffect(() => {
+    if (activeTab === 'starchart') {
+      document.body.style.backgroundColor = '#020509';
+    } else {
+      document.body.style.backgroundColor = '';
+    }
+  }, [activeTab]);
 
   // If unauthenticated: strictly render Gatekeeper screen
   if (!isAuthenticated) {
@@ -87,27 +87,28 @@ export const App: React.FC = () => {
     );
   }
 
-  const lastUpdatedText = lang === 'ru' 
-    ? `СИНХРОНИЗИРОВАНО: ${lastUpdatedMinutes} МИН НАЗАД`
-    : `SYNCED: ${lastUpdatedMinutes}M AGO`;
+  const isStarChart = activeTab === 'starchart';
 
   return (
-    <div className="min-h-screen bg-[#04060a] text-[#e9e8e4] flex flex-col font-sans antialiased select-none">
-      
+    <div
+      className={`min-h-screen w-full overflow-x-hidden flex flex-col font-sans antialiased select-none transition-colors duration-200 ${
+        isStarChart
+          ? 'bg-[#020509] text-[#e9e8e4]'
+          : 'bg-slate-100 dark:bg-[#04060a] text-slate-900 dark:text-[#e9e8e4]'
+      }`}
+    >
       {/* 1. TOP STATUS BAR */}
       <Header
         lang={lang}
         onToggleLang={() => setLang((prev) => (prev === 'ru' ? 'en' : 'ru'))}
-        itemsCount={arcanes.length}
-        lastUpdatedText={lastUpdatedText}
-        isStarChart={activeTab === 'starchart'}
+        isStarChart={isStarChart}
         onGoToStarChart={() => setActiveTab('starchart')}
       />
 
       {/* 2. MAIN VIEW ENGINE */}
-      {activeTab === 'starchart' ? (
-        // A. FULL ORRERY STAR CHART
-        <main className="flex-1 w-full">
+      {isStarChart ? (
+        // A. FULL ORRERY STAR CHART (Always dark cosmic space)
+        <main className="flex-1 w-full bg-[#020509]">
           <StarChartView
             onSelectPlanet={(planet) => setActiveTab(planet)}
             lang={lang}
@@ -122,6 +123,7 @@ export const App: React.FC = () => {
                 arcanes={arcanes}
                 onOpenDetails={(item) => setSelectedArcane(item)}
                 lang={lang}
+                lastUpdatedMinutes={lastUpdatedMinutes}
               />
             ) : (
               <ProfileView lang={lang} />
@@ -138,7 +140,6 @@ export const App: React.FC = () => {
           lang={lang}
         />
       )}
-
     </div>
   );
 };

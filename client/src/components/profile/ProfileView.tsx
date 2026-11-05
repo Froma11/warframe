@@ -12,7 +12,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ lang }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [notes, setNotes] = useState<NoteItem[]>([]);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
   // 1. Check user session on mount
   const checkSession = async () => {
@@ -43,8 +42,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ lang }) => {
       }
     } catch (err) {
       console.error('Failed to load notes:', err);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -53,21 +50,32 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ lang }) => {
     loadNotes();
   }, []);
 
-  // 3. Handle Add Note
-  const handleAddNote = async (newNote: { title: string; content: string; tag: string }) => {
+  // 3. Handle Add or Edit Note
+  const handleSaveNote = async (
+    noteData: { title: string; content: string; tag: string },
+    id?: number
+  ) => {
     try {
-      const res = await fetch('/api/notes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(newNote),
-      });
-
-      if (res.ok) {
-        loadNotes();
+      if (id) {
+        // Edit existing note via PUT /api/notes/:id
+        await fetch(`/api/notes/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(noteData),
+        });
+      } else {
+        // Create new note via POST /api/notes
+        await fetch('/api/notes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(noteData),
+        });
       }
+      loadNotes();
     } catch (err) {
-      console.error('Failed to create note:', err);
+      console.error('Failed to save note:', err);
     }
   };
 
@@ -114,18 +122,27 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ lang }) => {
         lang={lang}
       />
 
-      {/* 2. Trading Targets & Private Notes Grid */}
-      <NotesGrid
-        notes={notes}
-        onAddNote={handleAddNote}
-        onDeleteNote={handleDeleteNote}
-        lang={lang}
-      />
+      {/* 2. Ergonomic 2-Column Balanced Dashboard (Notes Left 7-Cols, Fusion Guide Right 5-Cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        {/* Left: Trading Targets & Notes */}
+        <div className="lg:col-span-7">
+          <NotesGrid
+            notes={notes}
+            onAddNote={handleSaveNote}
+            onDeleteNote={handleDeleteNote}
+            lang={lang}
+          />
+        </div>
 
-      {/* 3. Arcane Upgrading Reference & Crafting Table */}
-      <ArcaneUpgradeGuide lang={lang} />
+        {/* Right: Arcane Upgrade Fusion Guide */}
+        <div className="lg:col-span-5">
+          <ArcaneUpgradeGuide lang={lang} />
+        </div>
 
-      {/* 4. Login / Registration Modal */}
+      </div>
+
+      {/* 3. Login / Registration Modal */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}

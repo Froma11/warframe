@@ -99,17 +99,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 select-none font-sans"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-md bg-[#0c121d] border border-white/[0.12] rounded-3xl p-6 sm:p-8 shadow-[0_30px_90px_rgba(0,0,0,0.9),0_0_50px_rgba(0,229,255,0.15)] select-none font-sans"
+        className="relative w-full max-w-md bg-white dark:bg-[#0c121d] border border-slate-200 dark:border-white/[0.12] rounded-3xl p-6 sm:p-8 shadow-[0_30px_90px_rgba(0,0,0,0.4),0_0_50px_rgba(0,229,255,0.15)] select-none font-sans"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-xl text-[#71717a] hover:text-white hover:bg-white/[0.06] transition-all cursor-pointer"
+          className="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-slate-900 dark:text-[#71717a] dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-all cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
@@ -119,12 +119,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#00e5ff]/20 to-[#10b981]/20 border border-[#00e5ff]/40 flex items-center justify-center text-[#00e5ff] shadow-[0_0_20px_rgba(0,229,255,0.3)] mb-3">
             <ShieldCheck className="w-6 h-6" />
           </div>
-          <h3 className="font-comfortaa font-bold text-xl text-white">
+          <h3 className="font-comfortaa font-bold text-xl text-slate-900 dark:text-white">
             {tab === 'register'
               ? (lang === 'ru' ? 'Регистрация Профиля' : 'Create Tenno Profile')
               : (lang === 'ru' ? 'Вход в Профиль' : 'Sign In to Profile')}
           </h3>
-          <p className="text-xs text-[#a3a29d] mt-1">
+          <p className="text-xs text-slate-500 dark:text-[#a3a29d] mt-1">
             {lang === 'ru'
               ? 'Хранение личных торговых целей, заметок и настроек'
               : 'Save personal trade targets, notes and custom settings'}
@@ -132,14 +132,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex rounded-2xl bg-[#060a12] p-1 border border-white/[0.08] mb-6">
+        <div className="flex rounded-2xl bg-slate-100 dark:bg-[#060a12] p-1 border border-slate-200 dark:border-white/[0.08] mb-6">
           <button
             type="button"
             onClick={() => setTab('register')}
             className={`flex-1 py-2 rounded-xl text-xs font-comfortaa font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               tab === 'register'
                 ? 'bg-[#00e5ff] text-[#070a0e] shadow-[0_0_12px_rgba(0,229,255,0.35)]'
-                : 'text-[#a3a29d] hover:text-white'
+                : 'text-slate-600 dark:text-[#a3a29d] hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <UserPlus className="w-3.5 h-3.5" />
@@ -151,7 +151,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             className={`flex-1 py-2 rounded-xl text-xs font-comfortaa font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               tab === 'login'
                 ? 'bg-[#00e5ff] text-[#070a0e] shadow-[0_0_12px_rgba(0,229,255,0.35)]'
-                : 'text-[#a3a29d] hover:text-white'
+                : 'text-slate-600 dark:text-[#a3a29d] hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <LogIn className="w-3.5 h-3.5" />
@@ -161,7 +161,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* Error Alert */}
         {error && (
-          <div className="p-3 mb-4 rounded-xl bg-[#f43f5e]/15 border border-[#f43f5e]/40 text-xs text-[#fda4af] font-sans">
+          <div className="p-3 mb-4 rounded-xl bg-rose-50 dark:bg-[#f43f5e]/15 border border-rose-200 dark:border-[#f43f5e]/40 text-xs text-rose-600 dark:text-[#fda4af] font-sans">
             {error}
           </div>
         )}
@@ -169,7 +169,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-comfortaa font-bold text-[#a3a29d] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <label className="block text-xs font-comfortaa font-bold text-slate-600 dark:text-[#a3a29d] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
               <User className="w-3.5 h-3.5 text-[#00e5ff]" />
               <span>{lang === 'ru' ? 'Имя пользователя:' : 'Username:'}</span>
             </label>
@@ -179,12 +179,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder={lang === 'ru' ? 'Введите логин...' : 'Enter username...'}
-              className="w-full px-4 py-2.5 bg-[#060a12] border border-white/[0.1] focus:border-[#00e5ff] rounded-2xl text-sm font-sans text-white placeholder-[#71717a] outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#00e5ff]/30"
+              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#060a12] border border-slate-200 dark:border-white/[0.1] focus:border-[#00e5ff] rounded-2xl text-sm font-sans text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-[#71717a] outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#00e5ff]/30"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-comfortaa font-bold text-[#a3a29d] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <label className="block text-xs font-comfortaa font-bold text-slate-600 dark:text-[#a3a29d] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
               <Lock className="w-3.5 h-3.5 text-[#00e5ff]" />
               <span>{lang === 'ru' ? 'Пароль:' : 'Password:'}</span>
             </label>
@@ -194,14 +194,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-2.5 bg-[#060a12] border border-white/[0.1] focus:border-[#00e5ff] rounded-2xl text-sm font-sans text-white placeholder-[#71717a] outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#00e5ff]/30"
+              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#060a12] border border-slate-200 dark:border-white/[0.1] focus:border-[#00e5ff] rounded-2xl text-sm font-sans text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-[#71717a] outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#00e5ff]/30"
             />
           </div>
 
           {tab === 'register' && (
             <div>
-              <label className="block text-xs font-comfortaa font-bold text-[#a3a29d] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-[#10b981]" />
+              <label className="block text-xs font-comfortaa font-bold text-slate-600 dark:text-[#a3a29d] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-emerald-600 dark:text-[#10b981]" />
                 <span>{lang === 'ru' ? 'Подтвердите пароль:' : 'Confirm Password:'}</span>
               </label>
               <input
@@ -210,7 +210,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-4 py-2.5 bg-[#060a12] border border-white/[0.1] focus:border-[#00e5ff] rounded-2xl text-sm font-sans text-white placeholder-[#71717a] outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#00e5ff]/30"
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#060a12] border border-slate-200 dark:border-white/[0.1] focus:border-[#00e5ff] rounded-2xl text-sm font-sans text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-[#71717a] outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#00e5ff]/30"
               />
             </div>
           )}

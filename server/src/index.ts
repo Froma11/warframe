@@ -202,6 +202,25 @@ app.post('/api/notes', requireAuth, async (req: any, res) => {
   }
 });
 
+app.put('/api/notes/:id', requireAuth, async (req: any, res) => {
+  const { title, content, tag } = req.body;
+  if (!title && !content) {
+    return res.status(400).json({ error: 'Title or content required.' });
+  }
+  try {
+    const userId = req.user?.id || 1;
+    const noteId = req.params.id;
+    const cleanTag = tag || 'СНАЙПИНГ';
+    await db.run(
+      'UPDATE notes SET title = ?, content = ?, tag = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
+      [title || 'Без названия', content || '', cleanTag, noteId, userId]
+    );
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.delete('/api/notes/:id', requireAuth, async (req: any, res) => {
   try {
     const userId = req.user?.id || 1;

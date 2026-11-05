@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { X, Tag, FileText, Check } from 'lucide-react';
+import { NoteItem } from './NotesGrid';
 
 interface NoteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (note: { title: string; content: string; tag: string }) => Promise<void>;
+  onSave: (note: { title: string; content: string; tag: string }, id?: number) => Promise<void>;
+  initialNote?: NoteItem | null;
   lang: 'ru' | 'en';
 }
 
@@ -12,6 +14,7 @@ export const NoteModal: React.FC<NoteModalProps> = ({
   isOpen,
   onClose,
   onSave,
+  initialNote,
   lang,
 }) => {
   const [title, setTitle] = useState('');
@@ -21,11 +24,17 @@ export const NoteModal: React.FC<NoteModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setTitle('');
-      setContent('');
-      setTag('СНАЙПИНГ');
+      if (initialNote) {
+        setTitle(initialNote.title || '');
+        setContent(initialNote.content || '');
+        setTag(initialNote.tag || 'СНАЙПИНГ');
+      } else {
+        setTitle('');
+        setContent('');
+        setTag('СНАЙПИНГ');
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, initialNote]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -37,11 +46,13 @@ export const NoteModal: React.FC<NoteModalProps> = ({
 
   if (!isOpen) return null;
 
+  const isEditing = !!initialNote;
+
   const tags = [
-    { id: 'СНАЙПИНГ', labelRu: 'Снайпинг', labelEn: 'Sniping', color: 'text-[#00e5ff] border-[#00e5ff]/40 bg-[#00e5ff]/10' },
-    { id: 'ТОРГОВЛЯ', labelRu: 'Торговля', labelEn: 'Trading', color: 'text-[#10b981] border-[#10b981]/40 bg-[#10b981]/10' },
-    { id: 'ФАРМ', labelRu: 'Фарм', labelEn: 'Farming', color: 'text-[#fbbf24] border-[#fbbf24]/40 bg-[#fbbf24]/10' },
-    { id: 'ИНВЕСТ', labelRu: 'Инвест', labelEn: 'Invest', color: 'text-[#c084fc] border-[#c084fc]/40 bg-[#c084fc]/10' },
+    { id: 'СНАЙПИНГ', labelRu: 'Снайпинг', labelEn: 'Sniping', color: 'text-[#0284c7] dark:text-[#00e5ff] border-[#00e5ff]/40 bg-[#00e5ff]/10' },
+    { id: 'ТОРГОВЛЯ', labelRu: 'Торговля', labelEn: 'Trading', color: 'text-emerald-600 dark:text-[#10b981] border-[#10b981]/40 bg-[#10b981]/10' },
+    { id: 'ФАРМ', labelRu: 'Фарм', labelEn: 'Farming', color: 'text-amber-600 dark:text-[#fbbf24] border-[#fbbf24]/40 bg-[#fbbf24]/10' },
+    { id: 'ИНВЕСТ', labelRu: 'Инвест', labelEn: 'Invest', color: 'text-purple-600 dark:text-[#c084fc] border-[#c084fc]/40 bg-[#c084fc]/10' },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,7 +60,7 @@ export const NoteModal: React.FC<NoteModalProps> = ({
     if (!title.trim() && !content.trim()) return;
     setIsSubmitting(true);
     try {
-      await onSave({ title: title.trim(), content: content.trim(), tag });
+      await onSave({ title: title.trim(), content: content.trim(), tag }, initialNote?.id);
       onClose();
     } finally {
       setIsSubmitting(false);
@@ -58,17 +69,17 @@ export const NoteModal: React.FC<NoteModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 select-none font-sans"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-lg bg-[#0c121d] border border-white/[0.12] rounded-3xl p-6 sm:p-7 shadow-[0_25px_70px_rgba(0,0,0,0.9),0_0_40px_rgba(0,229,255,0.15)] select-none font-sans"
+        className="relative w-full max-w-lg bg-white dark:bg-[#0c121d] border border-slate-200 dark:border-white/[0.12] rounded-3xl p-6 sm:p-7 shadow-[0_25px_70px_rgba(0,0,0,0.4),0_0_40px_rgba(0,229,255,0.15)] text-left"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-xl text-[#71717a] hover:text-white hover:bg-white/[0.06] transition-all cursor-pointer"
+          className="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-slate-900 dark:text-[#71717a] dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-all cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
@@ -79,10 +90,12 @@ export const NoteModal: React.FC<NoteModalProps> = ({
             <FileText className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-comfortaa font-bold text-lg text-white">
-              {lang === 'ru' ? 'Новая торговая цель' : 'New Trading Target'}
+            <h3 className="font-comfortaa font-bold text-lg text-slate-900 dark:text-white">
+              {isEditing
+                ? (lang === 'ru' ? 'Редактировать цель' : 'Edit Trading Target')
+                : (lang === 'ru' ? 'Новая торговая цель' : 'New Trading Target')}
             </h3>
-            <p className="text-xs text-[#a3a29d]">
+            <p className="text-xs text-slate-500 dark:text-[#a3a29d]">
               {lang === 'ru' ? 'Сохраните пороги цен, объемы или заметку по сделке' : 'Save target prices, volume or arbitrage note'}
             </p>
           </div>
@@ -91,7 +104,7 @@ export const NoteModal: React.FC<NoteModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Category Tag Selection */}
           <div>
-            <label className="block text-xs font-comfortaa font-bold text-[#a3a29d] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <label className="block text-xs font-comfortaa font-bold text-slate-600 dark:text-[#a3a29d] uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <Tag className="w-3.5 h-3.5 text-[#00e5ff]" />
               <span>{lang === 'ru' ? 'Категория цели:' : 'Target Category:'}</span>
             </label>
@@ -104,7 +117,7 @@ export const NoteModal: React.FC<NoteModalProps> = ({
                   className={`py-2 px-2 rounded-xl text-xs font-comfortaa font-bold border transition-all text-center cursor-pointer ${
                     tag === t.id
                       ? `${t.color} shadow-sm scale-[1.02]`
-                      : 'bg-[#070a10] border-white/[0.08] text-[#71717a] hover:text-white'
+                      : 'bg-slate-50 dark:bg-[#070a10] border-slate-200 dark:border-white/[0.08] text-slate-500 hover:text-slate-900 dark:text-[#71717a] dark:hover:text-white'
                   }`}
                 >
                   {lang === 'ru' ? t.labelRu : t.labelEn}
@@ -115,7 +128,7 @@ export const NoteModal: React.FC<NoteModalProps> = ({
 
           {/* Title input */}
           <div>
-            <label className="block text-xs font-comfortaa font-bold text-[#a3a29d] uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-comfortaa font-bold text-slate-600 dark:text-[#a3a29d] uppercase tracking-wider mb-1.5">
               {lang === 'ru' ? 'Заголовок:' : 'Title:'}
             </label>
             <input
@@ -124,13 +137,13 @@ export const NoteModal: React.FC<NoteModalProps> = ({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={lang === 'ru' ? 'Напр: Скупка Зарядки по 1300п...' : 'e.g. Buy Energize under 1300p...'}
-              className="w-full px-4 py-2.5 bg-[#070a10] border border-white/[0.1] focus:border-[#00e5ff] rounded-2xl text-sm font-sans text-white placeholder-[#71717a] outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#00e5ff]/30"
+              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#070a10] border border-slate-200 dark:border-white/[0.1] focus:border-[#00e5ff] rounded-2xl text-sm font-sans text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-[#71717a] outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#00e5ff]/30"
             />
           </div>
 
           {/* Content textarea */}
           <div>
-            <label className="block text-xs font-comfortaa font-bold text-[#a3a29d] uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-comfortaa font-bold text-slate-600 dark:text-[#a3a29d] uppercase tracking-wider mb-1.5">
               {lang === 'ru' ? 'Содержание заметки:' : 'Details & Thresholds:'}
             </label>
             <textarea
@@ -138,16 +151,16 @@ export const NoteModal: React.FC<NoteModalProps> = ({
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder={lang === 'ru' ? 'Пороги покупки/продажи, контакты продавцов, заметки по ценам...' : 'Price thresholds, trader contacts, trade notes...'}
-              className="w-full px-4 py-3 bg-[#070a10] border border-white/[0.1] focus:border-[#00e5ff] rounded-2xl text-sm font-sans text-white placeholder-[#71717a] outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#00e5ff]/30 resize-none"
+              className="w-full px-4 py-3 bg-slate-50 dark:bg-[#070a10] border border-slate-200 dark:border-white/[0.1] focus:border-[#00e5ff] rounded-2xl text-sm font-sans text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-[#71717a] outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#00e5ff]/30 resize-none"
             />
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/[0.08]">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-white/[0.08]">
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 rounded-2xl bg-[#070a10] hover:bg-white/[0.06] border border-white/[0.08] text-xs font-comfortaa font-bold text-[#a3a29d] hover:text-white transition-all cursor-pointer"
+              className="px-5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#070a10] dark:hover:bg-white/[0.06] border border-slate-200 dark:border-white/[0.08] text-xs font-comfortaa font-bold text-slate-600 dark:text-[#a3a29d] hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer"
             >
               {lang === 'ru' ? 'Отмена' : 'Cancel'}
             </button>
@@ -158,7 +171,13 @@ export const NoteModal: React.FC<NoteModalProps> = ({
               className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-[#00e5ff] to-[#00b4d8] text-[#070a0e] text-xs font-comfortaa font-bold shadow-[0_0_20px_rgba(0,229,255,0.4)] hover:shadow-[0_0_28px_rgba(0,229,255,0.6)] hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:pointer-events-none transition-all cursor-pointer flex items-center gap-1.5"
             >
               <Check className="w-4 h-4" />
-              <span>{isSubmitting ? (lang === 'ru' ? 'Сохранение...' : 'Saving...') : (lang === 'ru' ? 'Сохранить цель' : 'Save Target')}</span>
+              <span>
+                {isSubmitting
+                  ? (lang === 'ru' ? 'Сохранение...' : 'Saving...')
+                  : isEditing
+                    ? (lang === 'ru' ? 'Сохранить изменения' : 'Save Changes')
+                    : (lang === 'ru' ? 'Сохранить цель' : 'Save Target')}
+              </span>
             </button>
           </div>
         </form>

@@ -57,7 +57,7 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = ({ arcane, onOpenDetails, l
       data-arcane-card="true"
       onClick={() => onOpenDetails(arcane)}
       onMouseMove={handleMouseMove}
-      className="group relative cursor-pointer bg-[#0e1117] hover:bg-[#121620] border border-white/[0.08] hover:border-transparent p-5 rounded-3xl transition-all duration-300 ease-out flex flex-col justify-between shadow-[0_10px_30px_rgba(0,0,0,0.5)] hover:shadow-[0_18px_45px_rgba(0,0,0,0.7),0_0_30px_rgba(16,185,129,0.12)] hover:-translate-y-1.5 overflow-hidden select-none font-sans"
+      className="group relative cursor-pointer bg-white dark:bg-[#0e1117] hover:bg-slate-50 dark:hover:bg-[#121620] border border-slate-200 dark:border-white/[0.08] hover:border-transparent p-5 rounded-3xl transition-all duration-300 ease-out flex flex-col justify-between shadow-sm dark:shadow-[0_10px_30px_rgba(0,0,0,0.5)] hover:shadow-xl dark:hover:shadow-[0_18px_45px_rgba(0,0,0,0.7),0_0_30px_rgba(16,185,129,0.12)] hover:-translate-y-1.5 overflow-hidden select-none font-sans"
     >
       {/* 1. INTERACTIVE SPOTLIGHT: Dynamic radial beam follows cursor along border */}
       <div
@@ -90,13 +90,13 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = ({ arcane, onOpenDetails, l
             <div className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_center,rgba(0,229,255,0.22)_0%,rgba(16,185,129,0.12)_45%,transparent_75%)] opacity-70 group-hover:opacity-100 group-hover:scale-125 transition-all duration-300 pointer-events-none" />
             
             {/* Translucent Base Plate */}
-            <div className="absolute inset-0 rounded-2xl bg-[#080b10]/90 border border-white/[0.08] group-hover:border-[#00e5ff]/40 shadow-inner transition-colors duration-300" />
+            <div className="absolute inset-0 rounded-2xl bg-slate-100 dark:bg-[#080b10]/90 border border-slate-200 dark:border-white/[0.08] group-hover:border-[#00e5ff]/40 shadow-inner transition-colors duration-300" />
             
             {/* Floating Artifact with spring levitation on hover */}
             <img
               src={arcane.icon}
               alt={displayName}
-              className="relative z-10 w-13 h-13 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)] group-hover:drop-shadow-[0_8px_18px_rgba(0,229,255,0.5)] group-hover:-translate-y-1 group-hover:scale-105 transition-all duration-300 ease-out select-none"
+              className="relative z-10 w-13 h-13 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.15)] dark:drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)] group-hover:drop-shadow-[0_8px_18px_rgba(0,229,255,0.5)] group-hover:-translate-y-1 group-hover:scale-105 transition-all duration-300 ease-out select-none"
               loading="lazy"
             />
           </div>
@@ -104,17 +104,17 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = ({ arcane, onOpenDetails, l
           <div className="flex-1 min-w-0">
             {/* Rank badge */}
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-comfortaa font-bold text-[#10b981] bg-[#10b981]/15 px-2.5 py-0.5 rounded-full border border-[#10b981]/35">
+              <span className="text-[11px] font-comfortaa font-bold text-emerald-600 dark:text-[#10b981] bg-emerald-500/10 dark:bg-[#10b981]/15 px-2.5 py-0.5 rounded-full border border-emerald-500/30 dark:border-[#10b981]/35">
                 MAX: R{maxRank}
               </span>
             </div>
 
-            <h3 className="font-comfortaa text-base sm:text-lg font-bold text-white group-hover:text-[#00e5ff] transition-colors truncate">
+            <h3 className="font-comfortaa text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-[#0284c7] dark:group-hover:text-[#00e5ff] transition-colors truncate">
               {displayName}
             </h3>
 
             {/* Sparkline & Trade volume */}
-            <div className="flex items-center justify-between mt-1 text-xs text-[#a3a29d]">
+            <div className="flex items-center justify-between mt-1 text-xs text-slate-500 dark:text-[#a3a29d]">
               <span className="font-sans">{arcane.trades24h} {lang === 'ru' ? 'сделок / 24ч' : 'trades / 24h'}</span>
               
               <svg width={w} height={h} className="overflow-visible opacity-85 group-hover:opacity-100 transition-opacity">
@@ -170,53 +170,53 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = ({ arcane, onOpenDetails, l
           </div>
         </div>
 
-        {/* DRAMATIC PRICE HIERARCHY: BASE VS MAX */}
+        {/* PRICE HIERARCHY: BASE VS MAX */}
         <div className="grid grid-cols-2 gap-3 my-3">
           
           {/* RANK 0 BLOCK (Base) */}
-          <div className="bg-[#090b0e] border border-white/[0.07] p-3.5 rounded-2xl flex flex-col justify-between group-hover:border-white/[0.12] transition-colors">
-            <div className="text-xs text-[#71717a] flex items-center justify-between">
+          <div className="bg-slate-50 dark:bg-[#090b0e] border border-slate-200 dark:border-white/[0.07] p-3.5 rounded-2xl flex flex-col justify-between group-hover:border-slate-300 dark:group-hover:border-white/[0.12] transition-colors">
+            <div className="text-xs text-slate-500 dark:text-[#71717a] flex items-center justify-between">
               <span className="font-comfortaa font-bold tracking-wider">{lang === 'ru' ? 'РАНГ 0' : 'RANK 0'}</span>
-              <span className="text-[10px] text-[#52525b] uppercase font-comfortaa">{lang === 'ru' ? 'база' : 'base'}</span>
+              <span className="text-[10px] text-slate-400 dark:text-[#52525b] uppercase font-comfortaa">{lang === 'ru' ? 'база' : 'base'}</span>
             </div>
 
             <div className="my-1.5 flex items-center gap-1.5">
-              <span className="text-2xl font-sans font-bold tabular-nums text-[#e4e4e7] tracking-tight">
+              <span className="text-2xl font-sans font-bold tabular-nums text-slate-900 dark:text-[#e4e4e7] tracking-tight">
                 {arcane.rank0.avgPrice}
               </span>
               <PlatinumIcon size={18} />
             </div>
 
-            <div className="text-xs text-[#a1a1aa] flex items-center justify-between pt-1.5 border-t border-white/[0.05]">
-              <span className="text-[11px] text-[#71717a]">{lang === 'ru' ? 'лучшая:' : 'min:'}</span>
-              <span className="text-[#f4f4f5] font-semibold tabular-nums flex items-center gap-1">
+            <div className="text-xs text-slate-500 dark:text-[#a1a1aa] flex items-center justify-between pt-1.5 border-t border-slate-200 dark:border-white/[0.05]">
+              <span className="text-[11px] text-slate-400 dark:text-[#71717a]">{lang === 'ru' ? 'лучшая:' : 'min:'}</span>
+              <span className="text-slate-800 dark:text-[#f4f4f5] font-semibold tabular-nums flex items-center gap-1">
                 {arcane.rank0.minPrice} <PlatinumIcon size={12} />
               </span>
             </div>
           </div>
 
           {/* RANK MAX BLOCK (Luminous Max Rank) */}
-          <div className="bg-gradient-to-b from-[#0f1722] to-[#090e15] border border-[#00e5ff]/30 p-3.5 rounded-2xl flex flex-col justify-between shadow-[0_0_15px_rgba(0,229,255,0.06)] group-hover:border-[#00e5ff]/60 group-hover:shadow-[0_0_24px_rgba(0,229,255,0.18)] transition-all">
+          <div className="bg-gradient-to-b from-sky-50 to-slate-50 dark:from-[#0f1722] dark:to-[#090e15] border border-sky-300 dark:border-[#00e5ff]/30 p-3.5 rounded-2xl flex flex-col justify-between shadow-sm dark:shadow-[0_0_15px_rgba(0,229,255,0.06)] group-hover:border-[#00e5ff] dark:group-hover:border-[#00e5ff]/60 group-hover:shadow-md dark:group-hover:shadow-[0_0_24px_rgba(0,229,255,0.18)] transition-all">
             <div className="text-xs flex items-center justify-between">
-              <span className="font-comfortaa font-bold text-[#00e5ff] tracking-wider">
+              <span className="font-comfortaa font-bold text-[#0284c7] dark:text-[#00e5ff] tracking-wider">
                 {lang === 'ru' ? `МАКС (R${maxRank})` : `MAX (R${maxRank})`}
               </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#00e5ff]/15 text-[#38bdf8] font-bold border border-[#00e5ff]/30 font-comfortaa">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#00e5ff]/15 text-[#0284c7] dark:text-[#38bdf8] font-bold border border-[#00e5ff]/30 font-comfortaa">
                 MAX
               </span>
             </div>
 
             {/* High-Contrast Luminous Cyan Price */}
             <div className="my-1.5 flex items-center gap-1.5">
-              <span className="text-2xl font-sans font-extrabold tabular-nums text-[#00e5ff] tracking-tight drop-shadow-[0_0_10px_rgba(0,229,255,0.45)]">
+              <span className="text-2xl font-sans font-extrabold tabular-nums text-[#0284c7] dark:text-[#00e5ff] tracking-tight drop-shadow-[0_0_10px_rgba(0,229,255,0.35)]">
                 {arcane.rank5.avgPrice}
               </span>
               <PlatinumIcon size={18} />
             </div>
 
-            <div className="text-xs text-[#94a3b8] flex items-center justify-between pt-1.5 border-t border-[#00e5ff]/15">
-              <span className="text-[11px] text-[#64748b]">{lang === 'ru' ? 'лучшая:' : 'min:'}</span>
-              <span className="text-[#38bdf8] font-bold tabular-nums flex items-center gap-1">
+            <div className="text-xs text-slate-500 dark:text-[#94a3b8] flex items-center justify-between pt-1.5 border-t border-sky-200 dark:border-[#00e5ff]/15">
+              <span className="text-[11px] text-slate-400 dark:text-[#64748b]">{lang === 'ru' ? 'лучшая:' : 'min:'}</span>
+              <span className="text-[#0284c7] dark:text-[#38bdf8] font-bold tabular-nums flex items-center gap-1">
                 {arcane.rank5.minPrice} <PlatinumIcon size={12} />
               </span>
             </div>
@@ -226,13 +226,13 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = ({ arcane, onOpenDetails, l
       </div>
 
       {/* MINIMALIST FOOTER */}
-      <div className="relative z-10 mt-3.5 pt-3 border-t border-white/[0.06] flex items-center justify-end text-xs">
+      <div className="relative z-10 mt-3.5 pt-3 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-end text-xs">
         <a
           href={`https://warframe.market/items/${arcane.urlName}`}
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="group/link inline-flex items-center gap-1.5 py-1 px-3 rounded-xl text-[#71717a] hover:text-[#00e5ff] hover:bg-[#00e5ff]/10 transition-all duration-200 text-xs font-comfortaa font-bold"
+          className="group/link inline-flex items-center gap-1.5 py-1 px-3 rounded-xl text-slate-400 hover:text-[#0284c7] hover:bg-sky-50 dark:text-[#71717a] dark:hover:text-[#00e5ff] dark:hover:bg-[#00e5ff]/10 transition-all duration-200 text-xs font-comfortaa font-bold"
           title={lang === 'ru' ? 'Открыть страницу на warframe.market' : 'Open on warframe.market'}
         >
           <span className="tracking-wide">warframe.market</span>
