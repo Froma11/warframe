@@ -92,7 +92,7 @@ class WarframeMarketScraper {
   public async syncArcanesCatalog(): Promise<number> {
     console.log('[Scraper] Fetching all items from Warframe Market v2...');
     try {
-      const json = await this.rateLimitedFetch(`${this.baseUrl}/items`);
+      const json = await this.rateLimitedFetch(`${this.baseUrl}/items`, { Language: 'ru' });
       const allItems: RawItem[] = json.data || [];
 
       // Filter arcanes

@@ -8,8 +8,10 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        raleway: ['Raleway', 'sans-serif'],
-        sans: ['Raleway', 'sans-serif'],
+        comfortaa: ['Comfortaa', 'cursive', 'sans-serif'],
+        heading: ['Comfortaa', 'cursive', 'sans-serif'],
+        onest: ['Onest', 'sans-serif'],
+        sans: ['Onest', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       colors: {

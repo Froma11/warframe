@@ -279,7 +279,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
 
       {/* High-Tech Glassmorphic Modal Frame */}
       <div
-        className="relative w-full max-w-2xl bg-gradient-to-b from-[#0c1017]/98 via-[#080b11]/98 to-[#04060a]/98 border border-white/[0.12] rounded-3xl p-5 sm:p-7 shadow-[0_30px_100px_rgba(0,0,0,0.95),0_0_60px_rgba(0,229,255,0.12)] overflow-hidden font-mono text-left select-none animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-2xl bg-gradient-to-b from-[#0c1017]/98 via-[#080b11]/98 to-[#04060a]/98 border border-white/[0.12] rounded-3xl p-5 sm:p-7 shadow-[0_30px_100px_rgba(0,0,0,0.95),0_0_60px_rgba(0,229,255,0.12)] overflow-hidden font-sans text-left select-none animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Anamorphic Specular Edge on Top Lip */}
@@ -337,7 +337,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
             </div>
 
             {/* Display Title */}
-            <h2 className="font-raleway text-xl sm:text-2xl font-bold text-white tracking-tight truncate drop-shadow-sm">
+            <h2 className="font-comfortaa text-xl sm:text-2xl font-bold text-white tracking-tight truncate drop-shadow-sm">
               {displayName}
             </h2>
 

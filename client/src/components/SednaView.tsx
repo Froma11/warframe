@@ -142,72 +142,72 @@ export const SednaView: React.FC<SednaViewProps> = ({
   };
 
   return (
-    <div className="w-full max-w-[1920px] mx-auto px-6 sm:px-10 py-8 space-y-6 select-none font-mono">
+    <div className="w-full max-w-[1920px] mx-auto px-4 sm:px-8 lg:px-10 py-6 sm:py-8 space-y-6 select-none font-sans">
       
       {/* Scroll anchor for smooth page transitions */}
       <div ref={catalogTopRef} className="scroll-mt-4" />
 
-      {/* Modern Filter & Controls Toolbar */}
-      <div className="bg-[#141518] border border-white/[0.08] p-5 rounded-2xl flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 shadow-xl">
+      {/* Modern Redesigned Filter & Controls Toolbar */}
+      <div className="bg-[#0b1019]/90 border border-white/[0.1] p-4 sm:p-5 rounded-3xl flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 shadow-2xl backdrop-blur-md">
         
-        {/* Left: Search Box & МИСТИФИКАТОРЫ Badge */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 flex-1">
+        {/* Left: Search Box & Modern Badge */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 flex-1">
           {/* Search Box */}
-          <div className="relative min-w-[280px] sm:min-w-[360px]">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#a3a29d]" />
+          <div className="relative min-w-[280px] sm:min-w-[360px] flex-1 max-w-lg">
+            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[#71717a]" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={lang === 'ru' ? 'Поиск мистификатора (RU / EN)...' : 'Search arcane (RU / EN)...'}
-              className="w-full pl-10 pr-9 py-2.5 bg-[#0e0f11] border border-white/[0.1] focus:border-[#00e5ff] rounded-xl text-sm font-mono text-white placeholder-[#6b6a66] outline-none transition-all shadow-inner"
+              className="w-full pl-11 pr-10 h-11 sm:h-12 bg-[#060a12]/90 border border-white/[0.12] focus:border-[#00e5ff] rounded-2xl text-sm font-sans text-white placeholder-[#71717a] outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#00e5ff]/30"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono text-[#a3a29d] hover:text-white"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-[#a3a29d] hover:text-white transition-colors"
               >
                 ✕
               </button>
             )}
           </div>
 
-          {/* Single Clean МИСТИФИКАТОРЫ Badge */}
+          {/* Clean Rounded МИСТИФИКАТОРЫ Badge */}
           <div className="flex items-center">
-            <span className="px-4 py-2 rounded-xl bg-[#10b981]/15 border border-[#10b981]/40 text-[#34d399] text-xs font-mono font-semibold uppercase tracking-wider shadow-[0_0_12px_rgba(16,185,129,0.2)]">
-              {lang === 'ru' ? 'МИСТИФИКАТОРЫ' : 'ARCANES'}
+            <span className="px-4 py-2 rounded-2xl bg-[#10b981]/15 border border-[#10b981]/40 text-[#34d399] text-xs font-comfortaa font-bold uppercase tracking-wider shadow-[0_0_12px_rgba(16,185,129,0.2)]">
+              {lang === 'ru' ? 'Мистификаторы' : 'Arcanes'}
             </span>
           </div>
         </div>
 
-        {/* Right: Matches counter & Page, Custom Sort Dropdown, Layout Switcher */}
-        <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 lg:pt-0 border-t lg:border-t-0 border-white/[0.06]">
+        {/* Right: Matches counter, Custom Sort Dropdown, and View Mode Toggle */}
+        <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 lg:pt-0 border-t lg:border-t-0 border-white/[0.06] flex-wrap">
           
-          {/* Matches & Page Count */}
-          <div className="text-xs font-mono text-[#a3a29d] px-3.5 py-2 rounded-xl bg-[#0e0f11] border border-white/[0.08] flex items-center gap-2">
+          {/* Matches & Page Count Pill */}
+          <div className="text-xs text-[#a3a29d] px-4 py-2.5 rounded-2xl bg-[#060a12]/90 border border-white/[0.1] flex items-center gap-2">
             <span>
-              {lang === 'ru' ? 'НАЙДЕНО:' : 'MATCHES:'}{' '}
+              {lang === 'ru' ? 'Найдено:' : 'Matches:'}{' '}
               <strong className="text-[#00e5ff] font-semibold">{filteredArcanes.length}</strong>
             </span>
             {totalPages > 1 && (
               <>
                 <span className="text-[#52525b]">|</span>
-                <span className="text-white font-medium">{lang === 'ru' ? 'СТР.' : 'PAGE'} {safeCurrentPage}/{totalPages}</span>
+                <span className="text-white font-medium">{lang === 'ru' ? 'Стр.' : 'Page'} {safeCurrentPage}/{totalPages}</span>
               </>
             )}
           </div>
 
-          {/* Modern Custom Sort Dropdown Modal */}
+          {/* Modern Custom Sort Dropdown */}
           <div className="relative" ref={sortDropdownRef}>
             <button
               onClick={() => setIsSortOpen(!isSortOpen)}
-              className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-[#0e0f11] hover:bg-[#1a2332] border border-white/[0.1] hover:border-[#00e5ff]/50 text-xs font-mono text-white transition-all shadow-sm"
+              className="h-11 sm:h-12 px-4 rounded-2xl bg-[#060a12]/90 hover:bg-[#101726] border border-white/[0.12] hover:border-[#00e5ff]/50 text-xs font-sans text-white transition-all shadow-sm flex items-center gap-2.5 cursor-pointer"
             >
-              <ArrowUpDown className="w-3.5 h-3.5 text-[#00e5ff]" />
+              <ArrowUpDown className="w-4 h-4 text-[#00e5ff]" />
               <span className="hidden sm:inline text-[#a3a29d]">
                 {lang === 'ru' ? 'Сортировка:' : 'Sort:'}
               </span>
-              <span className="font-medium text-white max-w-[160px] truncate">
+              <span className="font-semibold text-white max-w-[170px] truncate">
                 {lang === 'ru' ? currentSortLabel?.labelRu : currentSortLabel?.labelEn}
               </span>
               <ChevronDown className={`w-3.5 h-3.5 text-[#a3a29d] transition-transform duration-200 ${isSortOpen ? 'rotate-180' : ''}`} />
@@ -215,8 +215,8 @@ export const SednaView: React.FC<SednaViewProps> = ({
 
             {/* Floating Dropdown Modal / Popover */}
             {isSortOpen && (
-              <div className="absolute right-0 mt-2 w-72 bg-[#0e1014] border border-white/[0.15] rounded-xl shadow-2xl p-2 z-40 backdrop-blur-md animate-in fade-in zoom-in-95 duration-150">
-                <div className="px-3 py-2 text-[11px] font-mono font-semibold uppercase tracking-wider text-[#a3a29d] border-b border-white/[0.06] mb-1">
+              <div className="absolute right-0 mt-2 w-72 bg-[#0a0f18] border border-white/[0.15] rounded-2xl shadow-2xl p-2 z-40 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
+                <div className="px-3.5 py-2 text-[11px] font-comfortaa font-bold uppercase tracking-wider text-[#a3a29d] border-b border-white/[0.06] mb-1">
                   {lang === 'ru' ? 'Сортировать по:' : 'Sort items by:'}
                 </div>
 
@@ -230,7 +230,7 @@ export const SednaView: React.FC<SednaViewProps> = ({
                           setSortBy(opt.id);
                           setIsSortOpen(false);
                         }}
-                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-mono transition-colors text-left ${
+                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-colors text-left cursor-pointer ${
                           isSelected
                             ? 'bg-[#00e5ff]/15 text-[#00e5ff] font-semibold'
                             : 'text-[#cbd5e1] hover:bg-white/[0.06] hover:text-white'
@@ -246,39 +246,39 @@ export const SednaView: React.FC<SednaViewProps> = ({
             )}
           </div>
 
-          {/* View Mode Toggle: Grid vs Table */}
-          <div className="flex items-center border border-white/[0.08] rounded-xl bg-[#0e0f11] p-0.5">
+          {/* View Mode Toggle: Grid vs Table (Comfortable touch targets) */}
+          <div className="flex items-center border border-white/[0.12] rounded-2xl bg-[#060a12]/90 p-1">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer ${
                 viewMode === 'grid'
-                  ? 'bg-[#141518] text-[#00e5ff] shadow-sm'
+                  ? 'bg-[#00e5ff]/20 text-[#00e5ff] shadow-sm border border-[#00e5ff]/30'
                   : 'text-[#a3a29d] hover:text-white'
               }`}
               title="Grid View"
             >
-              <LayoutGrid className="w-4 h-4" />
+              <LayoutGrid className="w-5 h-5" />
             </button>
             <button
               onClick={() => setViewMode('table')}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer ${
                 viewMode === 'table'
-                  ? 'bg-[#141518] text-[#00e5ff] shadow-sm'
+                  ? 'bg-[#00e5ff]/20 text-[#00e5ff] shadow-sm border border-[#00e5ff]/30'
                   : 'text-[#a3a29d] hover:text-white'
               }`}
               title="Table View"
             >
-              <List className="w-4 h-4" />
+              <List className="w-5 h-5" />
             </button>
           </div>
 
         </div>
       </div>
 
-      {/* Main Content: Paginated Grid or Table (Lightning-Fast Rendering) */}
+      {/* Main Content: Paginated Grid or Cleaned Table */}
       {filteredArcanes.length === 0 ? (
-        <div className="bg-[#141518] border border-white/[0.08] rounded-2xl p-16 text-center">
-          <p className="text-base font-mono text-[#a3a29d]">
+        <div className="bg-[#0b1019]/80 border border-white/[0.08] rounded-3xl p-16 text-center">
+          <p className="text-base text-[#a3a29d]">
             {lang === 'ru' ? 'Мистификаторы не найдены. Измените параметры поиска.' : 'No arcanes found matching your query.'}
           </p>
         </div>
@@ -294,96 +294,76 @@ export const SednaView: React.FC<SednaViewProps> = ({
           ))}
         </div>
       ) : (
-        <div className="w-full bg-[#141518] border border-white/[0.08] rounded-2xl overflow-x-auto shadow-xl">
-          <table className="w-full text-left border-collapse text-sm font-mono">
+        <div className="w-full bg-[#0b1019]/90 border border-white/[0.1] rounded-3xl overflow-x-auto shadow-2xl backdrop-blur-md">
+          <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="border-b border-white/[0.08] bg-[#0e0f11] text-xs text-[#a3a29d] uppercase select-none">
-                <th className="py-4 px-5">{lang === 'ru' ? 'МИСТИФИКАТОР' : 'ARCANE'}</th>
-                <th className="py-4 px-5 text-right">{lang === 'ru' ? 'РАНГ 0 (МИН / СРЕД)' : 'RANK 0 (MIN / AVG)'}</th>
-                <th className="py-4 px-5 text-right">{lang === 'ru' ? 'РАНГ MAX (МИН / СРЕД)' : 'MAX RANK (MIN / AVG)'}</th>
-                <th className="py-4 px-5 text-right">{lang === 'ru' ? 'КРАФТ N×R0' : 'CRAFT N×R0'}</th>
-                <th className="py-4 px-5 text-right">{lang === 'ru' ? 'ОТКЛ. МЕД.' : 'DEV.'}</th>
-                <th className="py-4 px-5 text-right">{lang === 'ru' ? 'СДЕЛОК 24Ч' : '24H TRADES'}</th>
-                <th className="py-4 px-5 text-center">{lang === 'ru' ? 'ДЕЙСТВИЯ' : 'ACTIONS'}</th>
+              <tr className="border-b border-white/[0.08] bg-[#060a12]/90 text-xs text-[#a3a29d] uppercase select-none font-comfortaa">
+                <th className="py-4 px-6">{lang === 'ru' ? 'Мистификатор' : 'Arcane'}</th>
+                <th className="py-4 px-6 text-right">{lang === 'ru' ? 'Ранг 0 (Мин / Сред)' : 'Rank 0 (Min / Avg)'}</th>
+                <th className="py-4 px-6 text-right">{lang === 'ru' ? 'Ранг Max (Мин / Сред)' : 'Max Rank (Min / Avg)'}</th>
+                <th className="py-4 px-6 text-right">{lang === 'ru' ? 'Сделок 24ч' : '24h Trades'}</th>
+                <th className="py-4 px-6 text-center">{lang === 'ru' ? 'Действия' : 'Actions'}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.04]">
               {paginatedArcanes.map((arcane) => {
                 const maxRank = (arcane as any).maxRank || 5;
-                const copiesNeeded = ((maxRank + 1) * (maxRank + 2)) / 2;
-                const craftCost = copiesNeeded * arcane.rank0.minPrice;
-                const craftDiff = arcane.rank5.minPrice - craftCost;
-                const median5 = arcane.rank5.avgPrice || arcane.rank5.minPrice;
-                const snipeDev = median5 > 0 ? Math.round(((arcane.rank5.minPrice - median5) / median5) * 100) : 0;
                 const displayName = lang === 'ru' && arcane.nameRu ? arcane.nameRu : arcane.name;
 
                 return (
                   <tr
                     key={arcane.urlName || arcane.id}
                     onClick={() => onOpenDetails(arcane)}
-                    className="hover:bg-white/[0.03] cursor-pointer transition-colors group"
+                    className="hover:bg-[#00e5ff]/[0.04] cursor-pointer transition-colors group"
                   >
-                    <td className="py-3 px-5">
+                    <td className="py-3.5 px-6">
                       <div className="flex items-center gap-3.5">
                         <img
                           src={arcane.icon}
                           alt={displayName}
-                          className="w-10 h-10 object-contain shrink-0"
+                          className="w-11 h-11 object-contain shrink-0 group-hover:scale-105 transition-transform"
                           loading="lazy"
                         />
                         <div className="min-w-0">
-                          <span className="font-raleway text-base font-semibold text-white group-hover:text-[#00e5ff] transition-colors block truncate">
+                          <span className="font-comfortaa text-base font-bold text-white group-hover:text-[#00e5ff] transition-colors block truncate">
                             {displayName}
                           </span>
-                          <span className="text-xs text-[#10b981] block truncate">
-                            MAX R{maxRank}
+                          <span className="text-xs text-[#10b981] font-sans font-medium block truncate">
+                            Max R{maxRank}
                           </span>
                         </div>
                       </div>
                     </td>
 
-                    <td className="py-3 px-5 text-right">
-                      <div className="text-white font-semibold text-base">
-                        {arcane.rank0.minPrice} <PlatinumIcon size={12} className="text-[#00e5ff] inline" />
+                    <td className="py-3.5 px-6 text-right">
+                      <div className="text-white font-bold text-base font-sans">
+                        {arcane.rank0.minPrice} <PlatinumIcon size={13} className="text-[#00e5ff] inline ml-0.5" />
                       </div>
-                      <div className="text-xs text-[#a3a29d]">
-                        ср: {arcane.rank0.avgPrice}
-                      </div>
-                    </td>
-
-                    <td className="py-3 px-5 text-right">
-                      <div className="text-[#00e5ff] font-bold text-base">
-                        {arcane.rank5.minPrice} <PlatinumIcon size={12} className="text-[#00e5ff] inline" />
-                      </div>
-                      <div className="text-xs text-[#a3a29d]">
-                        ср: {arcane.rank5.avgPrice}
+                      <div className="text-xs text-[#a3a29d] font-sans">
+                        {lang === 'ru' ? 'ср' : 'avg'}: {arcane.rank0.avgPrice}
                       </div>
                     </td>
 
-                    <td className="py-3 px-5 text-right text-xs">
-                      <div className="text-white">{copiesNeeded}× = {craftCost}п</div>
-                      <div className={craftDiff > 0 ? 'text-[#34d399] font-medium' : 'text-[#00e5ff]'}>
-                        {craftDiff > 0 ? `+${craftDiff}п выгода` : `готовый дешевле`}
+                    <td className="py-3.5 px-6 text-right">
+                      <div className="text-[#00e5ff] font-bold text-base font-sans">
+                        {arcane.rank5.minPrice} <PlatinumIcon size={13} className="text-[#00e5ff] inline ml-0.5" />
+                      </div>
+                      <div className="text-xs text-[#a3a29d] font-sans">
+                        {lang === 'ru' ? 'ср' : 'avg'}: {arcane.rank5.avgPrice}
                       </div>
                     </td>
 
-                    <td className="py-3 px-5 text-right font-semibold">
-                      <span className={snipeDev <= 0 ? 'text-[#34d399]' : 'text-[#f87171]'}>
-                        {snipeDev > 0 ? `+${snipeDev}%` : `${snipeDev}%`}
-                      </span>
-                    </td>
-
-                    <td className="py-3 px-5 text-right text-sm text-[#e2e8f0]">
+                    <td className="py-3.5 px-6 text-right text-sm text-[#e2e8f0] font-sans font-medium">
                       {arcane.trades24h || arcane.volume24h || 0}
                     </td>
 
-                    <td className="py-3 px-5 text-center">
+                    <td className="py-3.5 px-6 text-center">
                       <a
                         href={`https://warframe.market/items/${arcane.urlName}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="px-3 py-1.5 rounded-lg bg-[#0e0f11] hover:bg-[#10b981]/20 border border-[#10b981]/40 hover:border-[#10b981] text-xs font-mono text-[#34d399] transition-all inline-flex items-center gap-1"
+                        className="px-3.5 py-1.5 rounded-xl bg-[#060a12] hover:bg-[#10b981]/20 border border-[#10b981]/40 hover:border-[#10b981] text-xs font-comfortaa font-bold text-[#34d399] transition-all inline-flex items-center gap-1.5"
                         title="Открыть на warframe.market"
                       >
                         <span>WFM</span>
@@ -400,7 +380,7 @@ export const SednaView: React.FC<SednaViewProps> = ({
 
       {/* High-Performance Pagination Bar */}
       {filteredArcanes.length > 0 && totalPages > 1 && (
-        <div className="bg-[#141518] border border-white/[0.08] p-4 sm:p-5 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl select-none font-mono mt-8">
+        <div className="bg-[#0b1019]/90 border border-white/[0.1] p-4 sm:p-5 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl select-none font-sans mt-8">
           
           {/* Left: Range and Item counter */}
           <div className="text-xs text-[#a3a29d] flex items-center gap-2">
@@ -418,7 +398,7 @@ export const SednaView: React.FC<SednaViewProps> = ({
             <button
               onClick={() => handlePageChange(1)}
               disabled={safeCurrentPage === 1}
-              className="p-2 rounded-xl bg-[#0e0f11] border border-white/[0.08] text-[#a3a29d] hover:text-white hover:border-[#00e5ff]/40 disabled:opacity-30 disabled:pointer-events-none transition-all"
+              className="p-2.5 rounded-xl bg-[#060a12] border border-white/[0.08] text-[#a3a29d] hover:text-white hover:border-[#00e5ff]/40 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
               title={lang === 'ru' ? 'Первая страница' : 'First page'}
             >
               <ChevronsLeft className="w-4 h-4" />
@@ -428,7 +408,7 @@ export const SednaView: React.FC<SednaViewProps> = ({
             <button
               onClick={() => handlePageChange(safeCurrentPage - 1)}
               disabled={safeCurrentPage === 1}
-              className="p-2 rounded-xl bg-[#0e0f11] border border-white/[0.08] text-[#a3a29d] hover:text-white hover:border-[#00e5ff]/40 disabled:opacity-30 disabled:pointer-events-none transition-all"
+              className="p-2.5 rounded-xl bg-[#060a12] border border-white/[0.08] text-[#a3a29d] hover:text-white hover:border-[#00e5ff]/40 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
               title={lang === 'ru' ? 'Предыдущая страница' : 'Previous page'}
             >
               <ChevronLeft className="w-4 h-4" />
@@ -451,10 +431,10 @@ export const SednaView: React.FC<SednaViewProps> = ({
                 <button
                   key={pageNum}
                   onClick={() => handlePageChange(pageNum)}
-                  className={`min-w-[38px] h-9 px-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  className={`min-w-[40px] h-10 px-3 rounded-xl text-xs font-comfortaa font-bold transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-[#00e5ff] text-[#070a0e] shadow-[0_0_15px_rgba(0,229,255,0.45)] font-bold scale-105'
-                      : 'bg-[#0e0f11] text-[#a3a29d] hover:text-white hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/20'
+                      ? 'bg-[#00e5ff] text-[#070a0e] shadow-[0_0_15px_rgba(0,229,255,0.45)] scale-105'
+                      : 'bg-[#060a12] text-[#a3a29d] hover:text-white hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/20'
                   }`}
                 >
                   {pageNum}
@@ -466,7 +446,7 @@ export const SednaView: React.FC<SednaViewProps> = ({
             <button
               onClick={() => handlePageChange(safeCurrentPage + 1)}
               disabled={safeCurrentPage === totalPages}
-              className="p-2 rounded-xl bg-[#0e0f11] border border-white/[0.08] text-[#a3a29d] hover:text-white hover:border-[#00e5ff]/40 disabled:opacity-30 disabled:pointer-events-none transition-all"
+              className="p-2.5 rounded-xl bg-[#060a12] border border-white/[0.08] text-[#a3a29d] hover:text-white hover:border-[#00e5ff]/40 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
               title={lang === 'ru' ? 'Следующая страница' : 'Next page'}
             >
               <ChevronRight className="w-4 h-4" />
@@ -476,7 +456,7 @@ export const SednaView: React.FC<SednaViewProps> = ({
             <button
               onClick={() => handlePageChange(totalPages)}
               disabled={safeCurrentPage === totalPages}
-              className="p-2 rounded-xl bg-[#0e0f11] border border-white/[0.08] text-[#a3a29d] hover:text-white hover:border-[#00e5ff]/40 disabled:opacity-30 disabled:pointer-events-none transition-all"
+              className="p-2.5 rounded-xl bg-[#060a12] border border-white/[0.08] text-[#a3a29d] hover:text-white hover:border-[#00e5ff]/40 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
               title={lang === 'ru' ? 'Последняя страница' : 'Last page'}
             >
               <ChevronsRight className="w-4 h-4" />
@@ -486,7 +466,7 @@ export const SednaView: React.FC<SednaViewProps> = ({
           {/* Right: Items per page selector */}
           <div className="flex items-center gap-2 text-xs text-[#a3a29d]">
             <span>{lang === 'ru' ? 'На странице:' : 'Per page:'}</span>
-            <div className="flex items-center gap-1 bg-[#0e0f11] p-1 rounded-xl border border-white/[0.08]">
+            <div className="flex items-center gap-1 bg-[#060a12] p-1 rounded-2xl border border-white/[0.08]">
               {[24, 48, 96].map((size) => (
                 <button
                   key={size}
@@ -494,7 +474,7 @@ export const SednaView: React.FC<SednaViewProps> = ({
                     setPageSize(size);
                     setCurrentPage(1);
                   }}
-                  className={`px-2.5 py-1 rounded-lg text-xs transition-all ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-sans transition-all cursor-pointer ${
                     pageSize === size
                       ? 'bg-[#00e5ff]/20 text-[#00e5ff] font-bold border border-[#00e5ff]/40'
                       : 'text-[#71717a] hover:text-white'

@@ -42,7 +42,7 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = ({ arcane, onOpenDetails, l
 
   const displayName = lang === 'ru' && arcane.nameRu ? arcane.nameRu : arcane.name;
 
-  // Hardware-accelerated cursor position tracking for 60fps Spotlight effect (0 re-render overhead)
+  // Hardware-accelerated cursor position tracking for 60fps Spotlight effect
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const card = e.currentTarget;
     const rect = card.getBoundingClientRect();
@@ -57,11 +57,11 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = ({ arcane, onOpenDetails, l
       data-arcane-card="true"
       onClick={() => onOpenDetails(arcane)}
       onMouseMove={handleMouseMove}
-      className="group relative cursor-pointer bg-[#0e1117] hover:bg-[#121620] border border-white/[0.08] hover:border-transparent p-5 rounded-2xl transition-all duration-300 ease-out flex flex-col justify-between shadow-[0_10px_30px_rgba(0,0,0,0.5)] hover:shadow-[0_18px_45px_rgba(0,0,0,0.7),0_0_30px_rgba(16,185,129,0.12)] hover:-translate-y-1.5 overflow-hidden select-none"
+      className="group relative cursor-pointer bg-[#0e1117] hover:bg-[#121620] border border-white/[0.08] hover:border-transparent p-5 rounded-3xl transition-all duration-300 ease-out flex flex-col justify-between shadow-[0_10px_30px_rgba(0,0,0,0.5)] hover:shadow-[0_18px_45px_rgba(0,0,0,0.7),0_0_30px_rgba(16,185,129,0.12)] hover:-translate-y-1.5 overflow-hidden select-none font-sans"
     >
       {/* 1. INTERACTIVE SPOTLIGHT: Dynamic radial beam follows cursor along border */}
       <div
-        className="pointer-events-none absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        className="pointer-events-none absolute -inset-px rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
         style={{
           background: 'radial-gradient(350px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(16, 185, 129, 0.55), rgba(0, 229, 255, 0.35) 40%, transparent 80%)',
           mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
@@ -84,13 +84,13 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = ({ arcane, onOpenDetails, l
         {/* Top: Icon Podium, Localized Name, Luminous Sparkline */}
         <div className="flex items-start gap-4 mb-4">
           
-          {/* 2. HOLOGRAPHIC ENERGY PODIUM FOR ARCANE ICON */}
+          {/* Holographic Energy Podium */}
           <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
             {/* Ambient Void Aura Bloom */}
             <div className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_center,rgba(0,229,255,0.22)_0%,rgba(16,185,129,0.12)_45%,transparent_75%)] opacity-70 group-hover:opacity-100 group-hover:scale-125 transition-all duration-300 pointer-events-none" />
             
             {/* Translucent Base Plate */}
-            <div className="absolute inset-0 rounded-xl bg-[#080b10]/90 border border-white/[0.08] group-hover:border-[#00e5ff]/40 shadow-inner transition-colors duration-300" />
+            <div className="absolute inset-0 rounded-2xl bg-[#080b10]/90 border border-white/[0.08] group-hover:border-[#00e5ff]/40 shadow-inner transition-colors duration-300" />
             
             {/* Floating Artifact with spring levitation on hover */}
             <img
@@ -104,18 +104,18 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = ({ arcane, onOpenDetails, l
           <div className="flex-1 min-w-0">
             {/* Rank badge */}
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-mono font-semibold text-[#10b981] bg-[#10b981]/15 px-2 py-0.5 rounded border border-[#10b981]/35">
+              <span className="text-[11px] font-comfortaa font-bold text-[#10b981] bg-[#10b981]/15 px-2.5 py-0.5 rounded-full border border-[#10b981]/35">
                 MAX: R{maxRank}
               </span>
             </div>
 
-            <h3 className="font-raleway text-base sm:text-lg font-semibold text-white group-hover:text-[#00e5ff] transition-colors truncate">
+            <h3 className="font-comfortaa text-base sm:text-lg font-bold text-white group-hover:text-[#00e5ff] transition-colors truncate">
               {displayName}
             </h3>
 
-            {/* 3. LUMINOUS SPARKLINE WITH LIVE PULSING BEACON */}
-            <div className="flex items-center justify-between mt-1 text-xs font-mono text-[#a3a29d]">
-              <span>{arcane.trades24h} {lang === 'ru' ? 'сделок / 24ч' : 'trades / 24h'}</span>
+            {/* Sparkline & Trade volume */}
+            <div className="flex items-center justify-between mt-1 text-xs text-[#a3a29d]">
+              <span className="font-sans">{arcane.trades24h} {lang === 'ru' ? 'сделок / 24ч' : 'trades / 24h'}</span>
               
               <svg width={w} height={h} className="overflow-visible opacity-85 group-hover:opacity-100 transition-opacity">
                 <defs>
@@ -170,53 +170,53 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = ({ arcane, onOpenDetails, l
           </div>
         </div>
 
-        {/* 4. DRAMATIC PRICE HIERARCHY: BASE VS TROPHY */}
+        {/* DRAMATIC PRICE HIERARCHY: BASE VS MAX */}
         <div className="grid grid-cols-2 gap-3 my-3">
           
-          {/* RANK 0 BLOCK (Base Raw Material) */}
-          <div className="bg-[#090b0e] border border-white/[0.07] p-3.5 rounded-xl flex flex-col justify-between group-hover:border-white/[0.12] transition-colors">
-            <div className="text-xs font-mono text-[#71717a] flex items-center justify-between">
-              <span className="font-medium tracking-wider">{lang === 'ru' ? 'РАНГ 0' : 'RANK 0'}</span>
-              <span className="text-[10px] text-[#52525b] uppercase font-mono">{lang === 'ru' ? 'база' : 'base'}</span>
+          {/* RANK 0 BLOCK (Base) */}
+          <div className="bg-[#090b0e] border border-white/[0.07] p-3.5 rounded-2xl flex flex-col justify-between group-hover:border-white/[0.12] transition-colors">
+            <div className="text-xs text-[#71717a] flex items-center justify-between">
+              <span className="font-comfortaa font-bold tracking-wider">{lang === 'ru' ? 'РАНГ 0' : 'RANK 0'}</span>
+              <span className="text-[10px] text-[#52525b] uppercase font-comfortaa">{lang === 'ru' ? 'база' : 'base'}</span>
             </div>
 
             <div className="my-1.5 flex items-center gap-1.5">
-              <span className="text-2xl font-mono font-bold text-[#e4e4e7] tracking-tight">
+              <span className="text-2xl font-sans font-bold tabular-nums text-[#e4e4e7] tracking-tight">
                 {arcane.rank0.avgPrice}
               </span>
               <PlatinumIcon size={18} />
             </div>
 
-            <div className="text-xs font-mono text-[#a1a1aa] flex items-center justify-between pt-1.5 border-t border-white/[0.05]">
+            <div className="text-xs text-[#a1a1aa] flex items-center justify-between pt-1.5 border-t border-white/[0.05]">
               <span className="text-[11px] text-[#71717a]">{lang === 'ru' ? 'лучшая:' : 'min:'}</span>
-              <span className="text-[#f4f4f5] font-semibold flex items-center gap-1">
+              <span className="text-[#f4f4f5] font-semibold tabular-nums flex items-center gap-1">
                 {arcane.rank0.minPrice} <PlatinumIcon size={12} />
               </span>
             </div>
           </div>
 
-          {/* RANK MAX BLOCK (Luminous Prize Trophy) */}
-          <div className="bg-gradient-to-b from-[#0f1722] to-[#090e15] border border-[#00e5ff]/30 p-3.5 rounded-xl flex flex-col justify-between shadow-[0_0_15px_rgba(0,229,255,0.06)] group-hover:border-[#00e5ff]/60 group-hover:shadow-[0_0_24px_rgba(0,229,255,0.18)] transition-all">
-            <div className="text-xs font-mono flex items-center justify-between">
-              <span className="font-semibold text-[#00e5ff] tracking-wider">
-                {lang === 'ru' ? `МАКС РАНГ (R${maxRank})` : `MAX RANK (R${maxRank})`}
+          {/* RANK MAX BLOCK (Luminous Max Rank) */}
+          <div className="bg-gradient-to-b from-[#0f1722] to-[#090e15] border border-[#00e5ff]/30 p-3.5 rounded-2xl flex flex-col justify-between shadow-[0_0_15px_rgba(0,229,255,0.06)] group-hover:border-[#00e5ff]/60 group-hover:shadow-[0_0_24px_rgba(0,229,255,0.18)] transition-all">
+            <div className="text-xs flex items-center justify-between">
+              <span className="font-comfortaa font-bold text-[#00e5ff] tracking-wider">
+                {lang === 'ru' ? `МАКС (R${maxRank})` : `MAX (R${maxRank})`}
               </span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#00e5ff]/15 text-[#38bdf8] font-bold border border-[#00e5ff]/30">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#00e5ff]/15 text-[#38bdf8] font-bold border border-[#00e5ff]/30 font-comfortaa">
                 MAX
               </span>
             </div>
 
             {/* High-Contrast Luminous Cyan Price */}
             <div className="my-1.5 flex items-center gap-1.5">
-              <span className="text-2xl font-mono font-extrabold text-[#00e5ff] tracking-tight drop-shadow-[0_0_10px_rgba(0,229,255,0.45)]">
+              <span className="text-2xl font-sans font-extrabold tabular-nums text-[#00e5ff] tracking-tight drop-shadow-[0_0_10px_rgba(0,229,255,0.45)]">
                 {arcane.rank5.avgPrice}
               </span>
               <PlatinumIcon size={18} />
             </div>
 
-            <div className="text-xs font-mono text-[#94a3b8] flex items-center justify-between pt-1.5 border-t border-[#00e5ff]/15">
+            <div className="text-xs text-[#94a3b8] flex items-center justify-between pt-1.5 border-t border-[#00e5ff]/15">
               <span className="text-[11px] text-[#64748b]">{lang === 'ru' ? 'лучшая:' : 'min:'}</span>
-              <span className="text-[#38bdf8] font-bold flex items-center gap-1">
+              <span className="text-[#38bdf8] font-bold tabular-nums flex items-center gap-1">
                 {arcane.rank5.minPrice} <PlatinumIcon size={12} />
               </span>
             </div>
@@ -225,15 +225,14 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = ({ arcane, onOpenDetails, l
         </div>
       </div>
 
-      {/* 6. MINIMALIST GHOST FOOTER: Clean, balanced, non-intrusive (no PC//Crossplay) */}
-      <div className="relative z-10 mt-3.5 pt-3 border-t border-white/[0.06] flex items-center justify-end text-xs font-mono">
-        {/* Minimalist Ghost Link: calm in resting state, glows cyan on hover */}
+      {/* MINIMALIST FOOTER */}
+      <div className="relative z-10 mt-3.5 pt-3 border-t border-white/[0.06] flex items-center justify-end text-xs">
         <a
           href={`https://warframe.market/items/${arcane.urlName}`}
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="group/link inline-flex items-center gap-1.5 py-1 px-2.5 rounded-md text-[#71717a] hover:text-[#00e5ff] hover:bg-[#00e5ff]/10 transition-all duration-200 text-xs font-mono font-medium"
+          className="group/link inline-flex items-center gap-1.5 py-1 px-3 rounded-xl text-[#71717a] hover:text-[#00e5ff] hover:bg-[#00e5ff]/10 transition-all duration-200 text-xs font-comfortaa font-bold"
           title={lang === 'ru' ? 'Открыть страницу на warframe.market' : 'Open on warframe.market'}
         >
           <span className="tracking-wide">warframe.market</span>

@@ -1,3 +1,13 @@
+@import '@fontsource/comfortaa/400.css';
+@import '@fontsource/comfortaa/500.css';
+@import '@fontsource/comfortaa/600.css';
+@import '@fontsource/comfortaa/700.css';
+@import '@fontsource/onest/300.css';
+@import '@fontsource/onest/400.css';
+@import '@fontsource/onest/500.css';
+@import '@fontsource/onest/600.css';
+@import '@fontsource/onest/700.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -109,13 +119,60 @@
   body {
     background-color: var(--bg);
     color: var(--text);
-    font-family: 'Raleway', sans-serif;
+    font-family: 'Onest', sans-serif;
     font-weight: 400;
-    font-variant-numeric: lining-nums;
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Comfortaa', cursive, sans-serif;
   }
 
   b, strong {
-    font-weight: 500;
+    font-weight: 600;
+  }
+}
+
+/* Cosmic Living Space Animations */
+@keyframes shootingStar {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(-35deg) scaleX(0.2);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+    transform: translate3d(-40px, 40px, 0) rotate(-35deg) scaleX(1);
+  }
+  75% {
+    opacity: 0.8;
+    transform: translate3d(-300px, 300px, 0) rotate(-35deg) scaleX(1.4);
+  }
+  100% {
+    transform: translate3d(-420px, 420px, 0) rotate(-35deg) scaleX(0.1);
+    opacity: 0;
+  }
+}
+
+@keyframes starTwinkle {
+  0%, 100% {
+    opacity: 0.25;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.4);
+  }
+}
+
+@keyframes cosmicDrift {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(15px, -12px, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
   }
 }
 

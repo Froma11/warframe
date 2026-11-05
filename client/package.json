@@ -20,6 +20,8 @@
     "vite": "^8.3.5"
   },
   "dependencies": {
+    "@fontsource/comfortaa": "^5.3.0",
+    "@fontsource/onest": "^5.3.1",
     "clsx": "^2.1.1",
     "framer-motion": "^14.9.1",
     "lightweight-charts": "^5.2.1",
