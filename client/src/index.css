@@ -1,0 +1,211 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Local Fonts: Raleway & JetBrains Mono extracted directly from archive */
+@font-face {
+  font-family: 'Raleway';
+  src: url('./assets/fonts/Raleway-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Raleway';
+  src: url('./assets/fonts/Raleway-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Raleway';
+  src: url('./assets/fonts/Raleway-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Raleway';
+  src: url('./assets/fonts/Raleway-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Raleway';
+  src: url('./assets/fonts/Raleway-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('./assets/fonts/JetBrainsMono-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('./assets/fonts/JetBrainsMono-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('./assets/fonts/JetBrainsMono-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('./assets/fonts/JetBrainsMono-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('./assets/fonts/JetBrainsMono-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --bg: #0e0f11;
+  --surface-1: #141518;
+  --surface-2: #1a1b1f;
+  --surface-3: #212226;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.18);
+  --text: #e9e8e4;
+  --text-2: #a3a29d;
+  --text-3: #6b6a66;
+  --accent: #b9a77a;
+  --gain: #7fa88a;
+  --loss: #c27c70;
+}
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    font-synthesis: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Raleway', sans-serif;
+    font-weight: 400;
+    font-variant-numeric: lining-nums;
+  }
+
+  b, strong {
+    font-weight: 500;
+  }
+}
+
+/* Sedna Celestial Slow Rotation */
+@keyframes sednaSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-sedna-spin {
+  animation: sednaSpin 90s linear infinite;
+}
+
+@keyframes orbitPulse {
+  0%, 100% {
+    opacity: 0.35;
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    opacity: 0.75;
+    transform: rotate(180deg) scale(1.02);
+  }
+}
+
+.animate-orbit-ring {
+  animation: orbitPulse 24s ease-in-out infinite;
+}
+
+/* Anamorphic Lens Flare Line (Warframe Novagraphix HUD) */
+.anamorphic-beam {
+  position: relative;
+  height: 1px;
+  background: linear-gradient(
+    90deg, 
+    transparent 0%, 
+    rgba(0, 229, 255, 0.15) 15%, 
+    rgba(0, 229, 255, 0.6) 35%, 
+    #ffffff 50%, 
+    rgba(0, 229, 255, 0.6) 65%, 
+    rgba(0, 229, 255, 0.15) 85%, 
+    transparent 100%
+  );
+  box-shadow: 
+    0 0 8px rgba(0, 229, 255, 0.7),
+    0 0 16px rgba(0, 229, 255, 0.4),
+    0 0 28px rgba(0, 229, 255, 0.2);
+}
+
+/* Planet Floor Reflection */
+.planet-reflection {
+  -webkit-box-reflect: below 2px linear-gradient(transparent 45%, rgba(0, 0, 0, 0.6) 80%, rgba(0, 0, 0, 0.95) 100%);
+}
+
+/* Authentic Warframe HUD Grid */
+.warframe-grid {
+  background-image: 
+    linear-gradient(to right, rgba(0, 229, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 229, 255, 0.035) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Chamfer / Cut Corner Card */
+.chamfer-card {
+  clip-path: polygon(
+    0 8px, 8px 0,
+    calc(100% - 8px) 0, 100% 8px,
+    100% calc(100% - 8px), calc(100% - 8px) 100%,
+    8px 100%, 0 calc(100% - 8px)
+  );
+}
+
+/* Custom Minimal Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--surface-3);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
