@@ -9,6 +9,7 @@ import { db, initDatabase } from './db';
 import { initAuth, generateToken, setAuthCookie, clearAuthCookie, requireAuth } from './auth';
 import { scraper } from './services/scraper';
 import { rivenService } from './services/rivenService';
+import { extractAuctionId, evaluateRiven, resolveWeaponClass } from './services/rivenEvaluation';
 
 dotenv.config();
 
@@ -408,6 +409,196 @@ app.post('/api/rivens/sync', async (req, res) => {
     res.json({
       success: true,
       syncedCount: count,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 4. Evaluate Riven Mod Auction (AlecaFrame / Semlar Grade Engine)
+app.post('/api/rivens/evaluate', async (req, res) => {
+  try {
+    const { input, variant } = req.body;
+    if (!input || typeof input !== 'string') {
+      return res.status(400).json({ error: 'Укажите ссылку или ID аукциона Warframe Market' });
+    }
+
+    const auctionId = extractAuctionId(input);
+    if (!auctionId) {
+      return res.status(400).json({
+        error: 'Некорректная ссылка или ID аукциона. Ожидается URL вида https://warframe.market/auctions/... или 24-значный hex-идентификатор',
+      });
+    }
+
+    const wfmUrl = `https://api.warframe.market/v1/auctions/entry/${auctionId}`;
+    const response = await fetch(wfmUrl, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        Accept: 'application/json',
+        Language: 'en',
+      },
+    });
+
+    if (response.status === 404) {
+      return res.status(404).json({
+        error: 'Аукцион не найден на Warframe Market (возможно, лот продан или закрыт продавцом)',
+      });
+    }
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error: `Ошибка запроса к Warframe Market API: ${response.status} ${response.statusText}`,
+      });
+    }
+
+    const json: any = await response.json();
+    const auction = json?.payload?.auction;
+    const item = auction?.item;
+
+    if (!item || item.type !== 'riven') {
+      return res.status(400).json({ error: 'Указанный лот не является модом разлома (Riven Mod)' });
+    }
+
+    const weaponSlug = item.weapon_url_name;
+    const declaredRank = Number(item.mod_rank) || 0;
+    const rawAttrs = Array.isArray(item.attributes) ? item.attributes : [];
+
+    const dbWeapon = await db.get<any>(
+      'SELECT slug, name_en, name_ru, group_type, riven_type, disposition, icon_url FROM riven_weapons WHERE slug = ?',
+      [weaponSlug]
+    );
+
+    const groupType = dbWeapon?.group_type || 'primary';
+    const rivenType = dbWeapon?.riven_type || 'rifle';
+    const baseDisp = Number(dbWeapon?.disposition) || 1.0;
+    const weaponClass = resolveWeaponClass(groupType, rivenType);
+
+    const evaluation = evaluateRiven(
+      weaponClass,
+      baseDisp,
+      declaredRank,
+      rawAttrs,
+      weaponSlug,
+      variant
+    );
+
+    const owner = auction.owner || {};
+    const result = {
+      ...evaluation,
+      auction_id: auctionId,
+      seller_info: {
+        name: owner.ingame_name || 'Anonymous',
+        status: owner.status || 'offline',
+        reputation: owner.reputation || 0,
+        price: auction.buyout_price || auction.starting_price || null,
+        is_direct_sell: Boolean(auction.is_direct_sell),
+      },
+      mod_info: {
+        name: `${evaluation.weapon_name_en} ${item.name || ''}`.trim(),
+        rerolls: Number(item.re_rolls) || 0,
+        mastery_level: Number(item.mastery_level) || 8,
+        polarity: item.polarity || 'madurai',
+      },
+      created_at: auction.created,
+      updated_at: auction.updated,
+    };
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 5. Evaluate Riven by GET parameter
+app.get('/api/rivens/evaluate/:auctionId', async (req, res) => {
+  try {
+    const { auctionId } = req.params;
+    const variant = req.query.variant as string | undefined;
+
+    const cleanId = extractAuctionId(auctionId);
+    if (!cleanId) {
+      return res.status(400).json({ error: 'Неверный идентификатор аукциона' });
+    }
+
+    const wfmUrl = `https://api.warframe.market/v1/auctions/entry/${cleanId}`;
+    const response = await fetch(wfmUrl, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        Accept: 'application/json',
+        Language: 'en',
+      },
+    });
+
+    if (response.status === 404) {
+      return res.status(404).json({ error: 'Аукцион не найден на Warframe Market' });
+    }
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error: `Ошибка запроса к Warframe Market API: ${response.status} ${response.statusText}`,
+      });
+    }
+
+    const json: any = await response.json();
+    const auction = json?.payload?.auction;
+    const item = auction?.item;
+
+    if (!item || item.type !== 'riven') {
+      return res.status(400).json({ error: 'Лот не является модом разлома' });
+    }
+
+    const weaponSlug = item.weapon_url_name;
+    const declaredRank = Number(item.mod_rank) || 0;
+    const rawAttrs = Array.isArray(item.attributes) ? item.attributes : [];
+
+    const dbWeapon = await db.get<any>(
+      'SELECT slug, name_en, name_ru, group_type, riven_type, disposition, icon_url FROM riven_weapons WHERE slug = ?',
+      [weaponSlug]
+    );
+
+    const groupType = dbWeapon?.group_type || 'primary';
+    const rivenType = dbWeapon?.riven_type || 'rifle';
+    const baseDisp = Number(dbWeapon?.disposition) || 1.0;
+    const weaponClass = resolveWeaponClass(groupType, rivenType);
+
+    const evaluation = evaluateRiven(
+      weaponClass,
+      baseDisp,
+      declaredRank,
+      rawAttrs,
+      weaponSlug,
+      variant
+    );
+
+    const owner = auction.owner || {};
+    const result = {
+      ...evaluation,
+      auction_id: cleanId,
+      seller_info: {
+        name: owner.ingame_name || 'Anonymous',
+        status: owner.status || 'offline',
+        reputation: owner.reputation || 0,
+        price: auction.buyout_price || auction.starting_price || null,
+        is_direct_sell: Boolean(auction.is_direct_sell),
+      },
+      mod_info: {
+        name: `${evaluation.weapon_name_en} ${item.name || ''}`.trim(),
+        rerolls: Number(item.re_rolls) || 0,
+        mastery_level: Number(item.mastery_level) || 8,
+        polarity: item.polarity || 'madurai',
+      },
+      created_at: auction.created,
+      updated_at: auction.updated,
+    };
+
+    res.json({
+      success: true,
+      data: result,
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

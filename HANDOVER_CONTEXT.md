@@ -255,10 +255,12 @@ curl.exe -s -I https://zero.nofuture.me
 - `GET /api/arcanes/:slug` — Детальная карточка с суточной (`history`) и почасовой (`hourly`) телеметрией.
 - `GET /api/status` — Системный статус фонового скрапера.
 
-### Моды Разлома (МР в Эндо):
+### Моды Разлома (МР в Эндо и Оценка):
 - `GET /api/rivens/weapons?search=&group=` — Каталог 420+ видов оружия с поиском и категориями.
 - `GET /api/rivens/lots?weapon=&sortBy=&order=&isDirectSell=&onlineOnly=&page=&limit=` — Получение лотов по выбранному оружию с расчетом эндо и эффективности.
 - `POST /api/rivens/sync/:weaponSlug` — Ручной запуск парсинга свежих лотов с warframe.market.
+- `POST /api/rivens/evaluate` — Оценка мода разлома по ссылке или ID аукциона (AlecaFrame / Semlar engine) `{ input, variant? }`.
+- `GET /api/rivens/evaluate/:auctionId` — Оценка лота по идентификатору аукциона.
 
 ---
 
