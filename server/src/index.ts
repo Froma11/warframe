@@ -440,9 +440,10 @@ app.post('/api/rivens/evaluate', async (req, res) => {
       },
     });
 
-    if (response.status === 404) {
+    const json: any = await response.json();
+    if (response.status === 404 || json?.error?.auction?.includes('app.form.not_exist')) {
       return res.status(404).json({
-        error: 'Аукцион не найден на Warframe Market (возможно, лот продан или закрыт продавцом)',
+        error: 'Аукцион не найден на Warframe Market (возможно, лот был продан или закрыт продавцом)',
       });
     }
 
@@ -451,8 +452,6 @@ app.post('/api/rivens/evaluate', async (req, res) => {
         error: `Ошибка запроса к Warframe Market API: ${response.status} ${response.statusText}`,
       });
     }
-
-    const json: any = await response.json();
     const auction = json?.payload?.auction;
     const item = auction?.item;
 
@@ -534,8 +533,11 @@ app.get('/api/rivens/evaluate/:auctionId', async (req, res) => {
       },
     });
 
-    if (response.status === 404) {
-      return res.status(404).json({ error: 'Аукцион не найден на Warframe Market' });
+    const json: any = await response.json();
+    if (response.status === 404 || json?.error?.auction?.includes('app.form.not_exist')) {
+      return res.status(404).json({
+        error: 'Аукцион не найден на Warframe Market (возможно, лот был продан или закрыт продавцом)',
+      });
     }
 
     if (!response.ok) {
@@ -543,8 +545,6 @@ app.get('/api/rivens/evaluate/:auctionId', async (req, res) => {
         error: `Ошибка запроса к Warframe Market API: ${response.status} ${response.statusText}`,
       });
     }
-
-    const json: any = await response.json();
     const auction = json?.payload?.auction;
     const item = auction?.item;
 
