@@ -4,6 +4,7 @@ import { StarChartView } from './components/StarChartView';
 import { SednaView } from './components/SednaView';
 import { ProfileView } from './components/profile/ProfileView';
 import { RivensEndoView } from './components/rivens/RivensEndoView';
+import { ModAppraisalView } from './components/mod-appraisal/ModAppraisalView';
 import { ArcaneDrawer } from './components/ArcaneDrawer';
 import { GatekeeperScreen } from './components/GatekeeperScreen';
 import { ArcaneItem } from './types/arcane';
@@ -15,8 +16,8 @@ export const App: React.FC = () => {
     return localStorage.getItem('tenno_gate_auth') === 'true';
   });
 
-  // Navigation state: Star Chart (default) vs Sedna (Market) vs Earth (Profile) vs Venus (Rivens-endo)
-  const [activeTab, setActiveTab] = useState<'starchart' | 'sedna' | 'earth' | 'venus'>('starchart');
+  // Navigation state: Star Chart (default) vs Sedna (Market) vs Earth (Profile) vs Venus (Rivens-endo) vs Mars (Mod Appraisal)
+  const [activeTab, setActiveTab] = useState<'starchart' | 'sedna' | 'earth' | 'venus' | 'mars'>('starchart');
 
   // Language state: RU or EN
   const [lang, setLang] = useState<'ru' | 'en'>('ru');
@@ -132,8 +133,10 @@ export const App: React.FC = () => {
               />
             ) : activeTab === 'venus' ? (
               <RivensEndoView lang={lang} />
-            ) : (
+            ) : activeTab === 'earth' ? (
               <ProfileView lang={lang} />
+            ) : (
+              <ModAppraisalView lang={lang} />
             )}
           </main>
         </div>

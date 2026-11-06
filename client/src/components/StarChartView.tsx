@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 
 interface StarChartViewProps {
-  onSelectPlanet: (planet: 'sedna' | 'earth' | 'venus') => void;
+  onSelectPlanet: (planet: 'sedna' | 'earth' | 'venus' | 'mars') => void;
   lang: 'ru' | 'en';
 }
 
@@ -9,7 +9,7 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
   onSelectPlanet,
   lang,
 }) => {
-  const [selectedPlanet, setSelectedPlanet] = useState<'sedna' | 'earth' | 'venus' | null>(null);
+  const [selectedPlanet, setSelectedPlanet] = useState<'sedna' | 'earth' | 'venus' | 'mars' | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -53,7 +53,7 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
   }, []);
 
   // Handle approach animation: smooth glide to center and scale
-  const handlePlanetClick = (planet: 'sedna' | 'earth' | 'venus') => {
+  const handlePlanetClick = (planet: 'sedna' | 'earth' | 'venus' | 'mars') => {
     if (selectedPlanet) return;
     setSelectedPlanet(planet);
 
@@ -392,23 +392,56 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
           </div>
         </div>
 
-        {/* 9. RESERVED ORBITAL SLOTS (Clean minimal nodes for future tabs) */}
-
-        {/* Slot 2: Lower-Right (Orbit 2) */}
+        {/* 9. «ОЦЕНКА МОДОВ» (Active Sector — Lower-Right Orbit — Mars 100% Round Sphere) */}
         <div
-          className={`absolute pointer-events-none flex items-center justify-center transition-opacity duration-300 ${
-            isTransitioning ? 'opacity-0' : 'opacity-40'
+          onClick={() => handlePlanetClick('mars')}
+          className={`group absolute cursor-pointer flex flex-col items-center transition-all duration-500 ease-out z-20 ${
+            isTransitioning && selectedPlanet !== 'mars' ? 'opacity-0 pointer-events-none' : 'opacity-100'
           }`}
           style={{
-            left: 'calc(50% + 220px)',
-            top: 'calc(50% + 95px)',
-            transform: 'translate(-50%, -50%)',
+            left: 'calc(50% + 240px)',
+            top: 'calc(50% + 110px)',
+            transform: selectedPlanet === 'mars'
+              ? 'translate(-240px, -110px) scale(2.4)'
+              : 'translate(-50%, -50%) scale(1)',
+            transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
-          <div className="w-5 h-5 rounded-full aspect-square border border-dashed border-[#00e5ff]/50 flex items-center justify-center shadow-[0_0_8px_rgba(0,229,255,0.3)]">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#00e5ff]" />
+          {/* Sphere with Directional Sun Illumination (100% Round Circle) */}
+          <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden shadow-[0_0_35px_rgba(249,115,22,0.45),inset_-18px_-18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(249,115,22,0.75)] transition-all duration-300">
+            <img
+              src="/mars_clean.png"
+              alt="Mod Appraisal"
+              className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin aspect-square"
+              style={{ animationDuration: '100s' }}
+            />
+
+            {/* Physical directional solar illumination on the surface facing the sun */}
+            <div
+              className="absolute inset-0 rounded-full pointer-events-none aspect-square"
+              style={{
+                background: 'radial-gradient(circle at 26% 26%, rgba(255, 215, 170, 0.45) 0%, transparent 60%)',
+                boxShadow: 'inset 0 0 20px rgba(249, 115, 22, 0.55)',
+              }}
+            />
+          </div>
+
+          {/* ONLY the label «Оценка модов» (High-contrast Warframe holographic badge) */}
+          <div
+            className={`flex flex-col items-center mt-3.5 transition-all duration-200 ${
+              selectedPlanet === 'mars' ? 'opacity-0 scale-90' : 'opacity-100 scale-100'
+            }`}
+          >
+            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#180a04]/90 border border-[#f97316]/60 shadow-[0_0_16px_rgba(249,115,22,0.4)] group-hover:border-[#ff9800] group-hover:bg-[#240f06] group-hover:shadow-[0_0_24px_rgba(249,115,22,0.7)] group-hover:scale-105 transition-all">
+              <span className="w-2 h-2 rounded-full bg-[#f97316] animate-pulse" />
+              <span className="text-xs sm:text-sm font-comfortaa font-bold text-white tracking-wider uppercase">
+                {lang === 'ru' ? 'Оценка модов' : 'Mod Appraisal'}
+              </span>
+            </div>
           </div>
         </div>
+
+        {/* 10. RESERVED ORBITAL SLOTS (Clean minimal nodes for future tabs) */}
 
         {/* Slot 3: Upper-Center (Orbit 4) */}
         <div

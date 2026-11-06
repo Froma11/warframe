@@ -13,10 +13,11 @@
 
 1. **Звездная карта (Star Chart / Orrery) — Главное меню**:
    - Интерактивная трехмерная звездная карта на базе Three.js с орбитами, солнцем, планетами и эффектами «живого космоса» (мерцающие звезды, падающие метеоры, космические туманности).
-   - Узлы навигации ведут в три основных функциональных раздела:
+   - Узлы навигации ведут в четыре основных функциональных раздела:
      - 🪐 **Маркет (бывш. Седна)** — Терминал мистификаторов.
      - 🌍 **Профиль (бывш. Земля)** — Личный кабинет, приватные заметки, памятка рангов.
      - 🌕 **МР в Эндо (бывш. Венера)** — Аналитика и арбитраж модов разлома.
+     - 🔴 **Оценка модов (Марс)** — Модуль оценки и аналитики модов.
 
 2. **Каталог Мистификаторов (Маркет / Седна)**:
    - Полный каталог по 170 мистификаторам с реальными ценами Warframe Market.
@@ -289,7 +290,92 @@ curl.exe -s -I https://zero.nofuture.me
 
 ---
 
-## 🚫 8. Критические ограничения для ИИ
+## 🪐 8. Регламент: Как добавить новую планету-вкладку на Звездную карту
+
+В кодовой базе реализована модульная система добавления новых разделов через интерактивное 3D Оррери. Для подключения нового экрана необходимо выполнить 3 простых шага:
+
+### Шаг 1: Добавить текстуру планеты
+1. Поместить круглое изображение планеты без фона (PNG с прозрачностью, 1:1 соотношение сторон) в директорию `client/public/` (например, `client/public/mars_clean.png`).
+
+### Шаг 2: Зарегистрировать вкладку в навигации (`client/src/App.tsx`)
+1. Расширить тип `activeTab`:
+   ```typescript
+   const [activeTab, setActiveTab] = useState<'starchart' | 'sedna' | 'earth' | 'venus' | 'new_tab'>('starchart');
+   ```
+2. Создать и импортировать компонент экрана (например, `import { NewTabView } from './components/newtab/NewTabView';`).
+3. Добавить его в условный рендеринг:
+   ```tsx
+   {activeTab === 'sedna' ? (
+     <SednaView ... />
+   ) : activeTab === 'venus' ? (
+     <RivensEndoView lang={lang} />
+   ) : activeTab === 'earth' ? (
+     <ProfileView lang={lang} />
+   ) : (
+     <NewTabView lang={lang} />
+   )}
+   ```
+
+### Шаг 3: Разместить планету в `client/src/components/StarChartView.tsx`
+В файле `StarChartView.tsx` уже размечены готовые резервные орбитальные слоты (`RESERVED ORBITAL SLOTS`):
+- **Слот 1 (Нижний-правый, Орбита 2)**: `left: calc(50% + 220px)`, `top: calc(50% + 95px)`
+- **Слот 2 (Верхний-центр, Орбита 4)**: `left: calc(50% + 50px)`, `top: calc(50% - 220px)`
+- **Слот 3 (Дальний-левый, Орбита 4)**: `left: calc(50% - 460px)`, `top: calc(50% + 10px)`
+
+**Что нужно сделать в коде**:
+1. Обновить типы в `StarChartViewProps` и стейте `selectedPlanet`, добавив `'new_tab'`.
+2. Заменить маркер резервного слота на полноценную интерактивную планету по единому стандарту Warframe:
+   ```tsx
+   <div
+     onClick={() => handlePlanetClick('new_tab')}
+     className={`group absolute cursor-pointer flex flex-col items-center transition-all duration-500 ease-out z-20 ${
+       isTransitioning && selectedPlanet !== 'new_tab' ? 'opacity-0 pointer-events-none' : 'opacity-100'
+     }`}
+     style={{
+       left: 'calc(50% + 220px)',
+       top: 'calc(50% + 95px)',
+       // Вектор сближения: обратный смещению точки для центрирования на экране
+       transform: selectedPlanet === 'new_tab'
+         ? 'translate(-220px, -95px) scale(2.4)'
+         : 'translate(-50%, -50%) scale(1)',
+       transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
+     }}
+   >
+     {/* Сфера со светотенью и вращением */}
+     <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden shadow-[0_0_35px_rgba(0,229,255,0.45),inset_-18px_-18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(0,229,255,0.75)] transition-all duration-300">
+       <img
+         src="/new_planet_clean.png"
+         alt="New Section"
+         className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin aspect-square"
+         style={{ animationDuration: '100s' }}
+       />
+       {/* Светотеневой блик от центрального Солнца */}
+       <div
+         className="absolute inset-0 rounded-full pointer-events-none aspect-square"
+         style={{
+           background: 'radial-gradient(circle at 28% 28%, rgba(255, 210, 150, 0.35) 0%, transparent 60%)',
+           boxShadow: 'inset 0 0 20px rgba(0, 229, 255, 0.55)',
+         }}
+       />
+     </div>
+
+     {/* Голографический бейдж: СТРОГО функциональное название, без планетных имен */}
+     <div className={`flex flex-col items-center mt-3.5 transition-all duration-200 ${
+       selectedPlanet === 'new_tab' ? 'opacity-0 scale-90' : 'opacity-100 scale-100'
+     }`}>
+       <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#040e18]/90 border border-[#00e5ff]/60 shadow-[0_0_16px_rgba(0,229,255,0.4)] group-hover:border-[#00e5ff] group-hover:bg-[#061524] group-hover:shadow-[0_0_24px_rgba(0,229,255,0.7)] group-hover:scale-105 transition-all">
+         <span className="w-2 h-2 rounded-full bg-[#00e5ff] animate-pulse" />
+         <span className="text-xs sm:text-sm font-comfortaa font-bold text-white tracking-wider uppercase">
+           {lang === 'ru' ? 'Название раздела' : 'Section Name'}
+         </span>
+       </div>
+     </div>
+   </div>
+   ```
+
+---
+
+## 🚫 9. Критические ограничения для ИИ
 
 1. **КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО ДЕЛАТЬ АВТОМАТИЧЕСКИЕ СКРИНШОТЫ**:
    - Пользователь дал прямое указание: не делать скриншоты после каждого ответа.
@@ -303,17 +389,23 @@ curl.exe -s -I https://zero.nofuture.me
 
 ---
 
-## 📂 9. Архитектура директорий проекта
+## 📂 10. Архитектура директорий проекта
 
 ```
 warframecomeback/
 ├── client/                                  # React Frontend (Vite 8, Tailwind)
 │   ├── public/
 │   │   ├── arcane_upgrade_guide.png         # Памятка прокачки мистификаторов
-│   │   └── endo_icon.png                    # Аутентичный значок Эндо
+│   │   ├── earth_clean.png                  # Текстура Земли (Профиль)
+│   │   ├── endo_icon.png                    # Аутентичный значок Эндо
+│   │   ├── mars_clean.png                   # Текстура Марса (Оценка модов)
+│   │   ├── sedna_clean.png                  # Текстура Седны (Маркет)
+│   │   └── venus_clean.png                  # Текстура Венеры (МР в Эндо)
 │   ├── src/
 │   │   ├── assets/                          # Шрифты Raleway, JetBrains Mono
 │   │   ├── components/
+│   │   │   ├── mod-appraisal/               # Модуль Оценки модов (Марс)
+│   │   │   │   └── ModAppraisalView.tsx
 │   │   │   ├── profile/                     # Блок профиля и заметок
 │   │   │   │   ├── ArcaneUpgradeGuide.tsx
 │   │   │   │   ├── AuthModal.tsx            # Модалка логина/регистрации
@@ -362,7 +454,7 @@ warframecomeback/
 
 ---
 
-## 🏆 10. Последние коммиты и текущий статус
+## 🏆 11. Последние коммиты и текущий статус
 
 - `1cab404`: fix(ui): brand logo contrast, remove scrollbar strip, instant client-side riven filtering, and fixed sticky header
 - `b93d3ab`: feat(profile): streamline notes UI, remove redundant title & categories, fix copy to text-only
