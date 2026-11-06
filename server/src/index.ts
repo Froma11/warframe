@@ -417,14 +417,15 @@ app.post('/api/rivens/sync', async (req, res) => {
 });
 
 // 4. Evaluate Riven Mod Auction (AlecaFrame / Semlar Grade Engine)
-app.post('/api/rivens/evaluate', async (req, res) => {
+const handleEvaluateAuction = async (req: any, res: any) => {
   try {
-    const { input, variant } = req.body;
-    if (!input || typeof input !== 'string') {
+    const { input, variant } = req.body || {};
+    const rawInput = input || (typeof req.query.url === 'string' ? req.query.url : (typeof req.query.input === 'string' ? req.query.input : ''));
+    if (!rawInput || typeof rawInput !== 'string') {
       return res.status(400).json({ error: 'Укажите ссылку или ID аукциона Warframe Market' });
     }
 
-    const auctionId = extractAuctionId(input);
+    const auctionId = extractAuctionId(rawInput);
     if (!auctionId) {
       return res.status(400).json({
         error: 'Некорректная ссылка или ID аукциона. Ожидается URL вида https://warframe.market/auction/... или 24-значный hex-идентификатор',
@@ -514,9 +515,10 @@ app.post('/api/rivens/evaluate', async (req, res) => {
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
-});
+};
 
-// 5. Evaluate Riven by GET parameter
+app.post('/api/rivens/evaluate', handleEvaluateAuction);
+app.get('/api/rivens/evaluate', handleEvaluateAuction);
 app.get('/api/rivens/evaluate/:auctionId', async (req, res) => {
   try {
     const { auctionId } = req.params;
