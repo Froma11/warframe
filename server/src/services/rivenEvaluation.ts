@@ -214,10 +214,11 @@ export const StatMeta: Record<string, { en: string; ru: string; unit: string }> 
   chance_to_gain_combo_count: { en: 'Chance to Not Gain Combo', ru: 'Шанс не получить комбо', unit: '%' },
 };
 
-export const AUCTION_ID_REGEX = /(?:warframe\.market\/(?:[a-z]{2}\/)?auctions\/|^)([a-f0-9]{24})/i;
+export const AUCTION_ID_REGEX = /(?:(?:auction|auctions)\/|^|[^a-f0-9])([a-f0-9]{24})(?:[^a-f0-9]|$)/i;
 
 export function extractAuctionId(input: string): string | null {
-  const match = input.trim().match(AUCTION_ID_REGEX);
+  const trimmed = input.trim();
+  const match = trimmed.match(AUCTION_ID_REGEX) || trimmed.match(/([a-f0-9]{24})/i);
   return match && match[1] ? match[1].toLowerCase() : null;
 }
 

@@ -1,5 +1,3 @@
-import weaponVariantsData from '../data/weaponVariants.json';
-
 export type WeaponClass = 'Rifle' | 'Shotgun' | 'Pistol' | 'Melee' | 'Archgun';
 
 export interface WFMAttribute {
@@ -227,10 +225,11 @@ export const StatMeta: Record<string, { en: string; ru: string; unit: string }> 
   chance_to_gain_combo_count: { en: 'Chance to Not Gain Combo', ru: 'Шанс не получить комбо', unit: '%' },
 };
 
-export const AUCTION_ID_REGEX = /(?:warframe\.market\/(?:[a-z]{2}\/)?auctions\/|^)([a-f0-9]{24})/i;
+export const AUCTION_ID_REGEX = /(?:(?:auction|auctions)\/|^|[^a-f0-9])([a-f0-9]{24})(?:[^a-f0-9]|$)/i;
 
 export function extractAuctionId(input: string): string | null {
-  const match = input.trim().match(AUCTION_ID_REGEX);
+  const trimmed = input.trim();
+  const match = trimmed.match(AUCTION_ID_REGEX) || trimmed.match(/([a-f0-9]{24})/i);
   return match && match[1] ? match[1].toLowerCase() : null;
 }
 
@@ -313,7 +312,11 @@ export function evaluateRiven(
   declaredRank: number,
   attrs: WFMAttribute[],
   weaponSlug: string = '',
-  selectedVariantName?: string
+  selectedVariantName?: string,
+  providedVariants?: WeaponVariant[],
+  weaponNameEn?: string,
+  weaponNameRu?: string,
+  iconUrl?: string
 ): EvaluationResult {
   let buffCount = 0;
   let hasCurse = false;
@@ -327,12 +330,11 @@ export function evaluateRiven(
 
   const { buffMult, curseMult } = getConfigMultipliers(buffCount, hasCurse);
 
-  // Weapon variants lookup
-  const weaponsDict = weaponVariantsData as Record<string, any>;
-  const weaponMeta = weaponsDict[weaponSlug] || null;
-  const availableVariants: WeaponVariant[] = weaponMeta?.variants || [
-    { name: weaponMeta?.name_en || weaponSlug || 'Standard', disposition },
-  ];
+  // Weapon variants lookup (client uses providedVariants from API/sample to keep bundle tiny)
+  const availableVariants: WeaponVariant[] =
+    providedVariants && providedVariants.length > 0
+      ? providedVariants
+      : [{ name: weaponNameEn || weaponSlug || 'Standard', disposition }];
 
   let activeDisposition = disposition;
   let activeVariantName = availableVariants[0]?.name || 'Standard';
@@ -475,11 +477,11 @@ export function evaluateRiven(
   const overallScorePct = evaluatedStats.length > 0 ? totalQuality / evaluatedStats.length : 0;
 
   return {
-    weapon_slug: weaponSlug || weaponMeta?.slug || '',
-    weapon_name_en: weaponMeta?.name_en || weaponSlug || 'Unknown Weapon',
-    weapon_name_ru: weaponMeta?.name_ru || weaponMeta?.name_en || weaponSlug || 'Неизвестное оружие',
+    weapon_slug: weaponSlug,
+    weapon_name_en: weaponNameEn || weaponSlug || 'Unknown Weapon',
+    weapon_name_ru: weaponNameRu || weaponNameEn || weaponSlug || 'Неизвестное оружие',
     weapon_class: wClass,
-    icon_url: weaponMeta?.icon_url || '',
+    icon_url: iconUrl || '',
     declared_rank: declaredRank,
     effective_rank: effectiveRank,
     rank_mismatch_detected: rankMismatch,

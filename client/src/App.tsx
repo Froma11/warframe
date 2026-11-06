@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Header } from './components/Header';
 import { StarChartView } from './components/StarChartView';
-import { SednaView } from './components/SednaView';
-import { ProfileView } from './components/profile/ProfileView';
-import { RivensEndoView } from './components/rivens/RivensEndoView';
-import { ModAppraisalView } from './components/mod-appraisal/ModAppraisalView';
-import { ArcaneDrawer } from './components/ArcaneDrawer';
 import { GatekeeperScreen } from './components/GatekeeperScreen';
 import { ArcaneItem } from './types/arcane';
 import { MOCK_ARCANES } from './data/mockArcanes';
+
+// Lazy-load secondary planetary workspaces to ensure instant sub-second initial load and zero freeze
+const SednaView = lazy(() => import('./components/SednaView').then((m) => ({ default: m.SednaView })));
+const ProfileView = lazy(() => import('./components/profile/ProfileView').then((m) => ({ default: m.ProfileView })));
+const RivensEndoView = lazy(() => import('./components/rivens/RivensEndoView').then((m) => ({ default: m.RivensEndoView })));
+const ModAppraisalView = lazy(() => import('./components/mod-appraisal/ModAppraisalView').then((m) => ({ default: m.ModAppraisalView })));
+const ArcaneDrawer = lazy(() => import('./components/ArcaneDrawer').then((m) => ({ default: m.ArcaneDrawer })));
 
 export const App: React.FC = () => {
   // Gatekeeper state: strict lock screen
@@ -124,31 +126,41 @@ export const App: React.FC = () => {
         // B. PLANETARY WORKSPACE (Clean, no duplicate sub-header bars)
         <div className="flex-1 flex flex-col w-full animate-in fade-in duration-300">
           <main className="flex-1 w-full pb-16">
-            {activeTab === 'sedna' ? (
-              <SednaView
-                arcanes={arcanes}
-                onOpenDetails={(item) => setSelectedArcane(item)}
-                lang={lang}
-                lastUpdatedMinutes={lastUpdatedMinutes}
-              />
-            ) : activeTab === 'venus' ? (
-              <RivensEndoView lang={lang} />
-            ) : activeTab === 'earth' ? (
-              <ProfileView lang={lang} />
-            ) : (
-              <ModAppraisalView lang={lang} />
-            )}
+            <Suspense
+              fallback={
+                <div className="flex-1 min-h-[50vh] flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full border-2 border-cyan-500/20 border-t-cyan-500 animate-spin" />
+                </div>
+              }
+            >
+              {activeTab === 'sedna' ? (
+                <SednaView
+                  arcanes={arcanes}
+                  onOpenDetails={(item) => setSelectedArcane(item)}
+                  lang={lang}
+                  lastUpdatedMinutes={lastUpdatedMinutes}
+                />
+              ) : activeTab === 'venus' ? (
+                <RivensEndoView lang={lang} />
+              ) : activeTab === 'earth' ? (
+                <ProfileView lang={lang} />
+              ) : (
+                <ModAppraisalView lang={lang} />
+              )}
+            </Suspense>
           </main>
         </div>
       )}
 
       {/* 3. DETAIL DRAWER (TradingView Lightweight Charts & Online Orders) */}
       {selectedArcane && (
-        <ArcaneDrawer
-          arcane={selectedArcane}
-          onClose={() => setSelectedArcane(null)}
-          lang={lang}
-        />
+        <Suspense fallback={null}>
+          <ArcaneDrawer
+            arcane={selectedArcane}
+            onClose={() => setSelectedArcane(null)}
+            lang={lang}
+          />
+        </Suspense>
       )}
     </div>
   );

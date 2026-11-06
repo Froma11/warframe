@@ -10,6 +10,7 @@ import { initAuth, generateToken, setAuthCookie, clearAuthCookie, requireAuth } 
 import { scraper } from './services/scraper';
 import { rivenService } from './services/rivenService';
 import { extractAuctionId, evaluateRiven, resolveWeaponClass } from './services/rivenEvaluation';
+import weaponVariantsData from './data/weaponVariants.json';
 
 dotenv.config();
 
@@ -426,7 +427,7 @@ app.post('/api/rivens/evaluate', async (req, res) => {
     const auctionId = extractAuctionId(input);
     if (!auctionId) {
       return res.status(400).json({
-        error: 'Некорректная ссылка или ID аукциона. Ожидается URL вида https://warframe.market/auctions/... или 24-значный hex-идентификатор',
+        error: 'Некорректная ссылка или ID аукциона. Ожидается URL вида https://warframe.market/auction/... или 24-значный hex-идентификатор',
       });
     }
 
@@ -468,9 +469,12 @@ app.post('/api/rivens/evaluate', async (req, res) => {
       [weaponSlug]
     );
 
-    const groupType = dbWeapon?.group_type || 'primary';
-    const rivenType = dbWeapon?.riven_type || 'rifle';
-    const baseDisp = Number(dbWeapon?.disposition) || 1.0;
+    const weaponsDict = weaponVariantsData as Record<string, any>;
+    const weaponMeta = weaponsDict[weaponSlug] || null;
+
+    const groupType = dbWeapon?.group_type || weaponMeta?.group_type || 'primary';
+    const rivenType = dbWeapon?.riven_type || weaponMeta?.riven_type || 'rifle';
+    const baseDisp = Number(dbWeapon?.disposition) || Number(weaponMeta?.default_disposition) || 1.0;
     const weaponClass = resolveWeaponClass(groupType, rivenType);
 
     const evaluation = evaluateRiven(
@@ -561,9 +565,12 @@ app.get('/api/rivens/evaluate/:auctionId', async (req, res) => {
       [weaponSlug]
     );
 
-    const groupType = dbWeapon?.group_type || 'primary';
-    const rivenType = dbWeapon?.riven_type || 'rifle';
-    const baseDisp = Number(dbWeapon?.disposition) || 1.0;
+    const weaponsDict = weaponVariantsData as Record<string, any>;
+    const weaponMeta = weaponsDict[weaponSlug] || null;
+
+    const groupType = dbWeapon?.group_type || weaponMeta?.group_type || 'primary';
+    const rivenType = dbWeapon?.riven_type || weaponMeta?.riven_type || 'rifle';
+    const baseDisp = Number(dbWeapon?.disposition) || Number(weaponMeta?.default_disposition) || 1.0;
     const weaponClass = resolveWeaponClass(groupType, rivenType);
 
     const evaluation = evaluateRiven(

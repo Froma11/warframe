@@ -35,9 +35,12 @@ const SAMPLE_AUCTIONS = [
     labelRu: 'Torid (Фейк ранг 0)',
     labelEn: 'Torid (Fake 0 Rank)',
     slug: 'torid',
+    nameEn: 'Torid',
+    nameRu: 'Торид',
     rank: 0,
     disposition: 1.3,
     weaponClass: 'Rifle' as const,
+    variants: [{ name: 'Torid', disposition: 1.3 }],
     attrs: [
       { url_name: 'critical_chance', positive: true, value: 182.8 },
       { url_name: 'multishot', positive: true, value: 109.7 },
@@ -51,9 +54,16 @@ const SAMPLE_AUCTIONS = [
     labelRu: 'Latron (Prime / Wraith)',
     labelEn: 'Latron (Prime / Wraith)',
     slug: 'latron',
+    nameEn: 'Latron',
+    nameRu: 'Латрон',
     rank: 8,
     disposition: 1.3,
     weaponClass: 'Rifle' as const,
+    variants: [
+      { name: 'Latron', disposition: 1.3 },
+      { name: 'Latron Prime', disposition: 1.15 },
+      { name: 'Latron Wraith', disposition: 1.25 },
+    ],
     attrs: [
       { url_name: 'critical_chance', positive: true, value: 168.5 },
       { url_name: 'critical_damage', positive: true, value: 134.8 },
@@ -66,9 +76,15 @@ const SAMPLE_AUCTIONS = [
     labelRu: 'Glaive (Ближний бой)',
     labelEn: 'Glaive (Melee)',
     slug: 'glaive',
+    nameEn: 'Glaive',
+    nameRu: 'Глефа',
     rank: 8,
     disposition: 0.7,
     weaponClass: 'Melee' as const,
+    variants: [
+      { name: 'Glaive', disposition: 0.7 },
+      { name: 'Glaive Prime', disposition: 0.7 },
+    ],
     attrs: [
       { url_name: 'range', positive: true, value: 1.35 },
       { url_name: 'critical_damage', positive: true, value: 62.8 },
@@ -146,7 +162,11 @@ export const ModAppraisalView: React.FC<ModAppraisalViewProps> = ({ lang }) => {
       evaluation.declared_rank,
       rawAttrs,
       evaluation.weapon_slug,
-      variantName
+      variantName,
+      evaluation.available_variants,
+      evaluation.weapon_name_en,
+      evaluation.weapon_name_ru,
+      evaluation.icon_url
     );
 
     setEvaluation({
@@ -165,7 +185,11 @@ export const ModAppraisalView: React.FC<ModAppraisalViewProps> = ({ lang }) => {
       sample.disposition,
       sample.rank,
       sample.attrs,
-      sample.slug
+      sample.slug,
+      undefined,
+      sample.variants,
+      sample.nameEn,
+      sample.nameRu
     );
 
     setEvaluation({
@@ -295,8 +319,8 @@ export const ModAppraisalView: React.FC<ModAppraisalViewProps> = ({ lang }) => {
             onChange={(e) => setInputValue(e.target.value)}
             placeholder={
               lang === 'ru'
-                ? 'Вставьте ссылку на аукцион warframe.market/auctions/... или 24-значный ID лота'
-                : 'Paste warframe.market/auctions/... auction link or 24-char lot ID'
+                ? 'Вставьте ссылку на аукцион warframe.market/auction/... или 24-значный ID лота'
+                : 'Paste warframe.market/auction/... auction link or 24-char lot ID'
             }
             className="w-full pl-12 pr-32 sm:pr-40 py-3.5 sm:py-4 rounded-2xl bg-white dark:bg-[#070b12] border border-slate-200 dark:border-white/[0.1] focus:border-orange-500 dark:focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 text-slate-900 dark:text-white font-onest text-sm sm:text-base outline-none shadow-sm transition-all"
           />

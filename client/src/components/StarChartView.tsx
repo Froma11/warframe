@@ -12,14 +12,22 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
   const [selectedPlanet, setSelectedPlanet] = useState<'sedna' | 'earth' | 'venus' | 'mars' | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number | null>(null);
 
-  // Smooth mouse parallax (translation only, no rotation distortion)
+  // Smooth mouse parallax (translation only, throttled strictly via requestAnimationFrame to avoid CPU spikes)
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (selectedPlanet) return;
+    if (rafRef.current !== null) return;
+
+    const { clientX, clientY } = e;
     const { innerWidth, innerHeight } = window;
-    const x = (e.clientX / innerWidth - 0.5) * 2; // -1 to 1
-    const y = (e.clientY / innerHeight - 0.5) * 2; // -1 to 1
-    setMousePos({ x, y });
+
+    rafRef.current = requestAnimationFrame(() => {
+      const x = (clientX / innerWidth - 0.5) * 2; // -1 to 1
+      const y = (clientY / innerHeight - 0.5) * 2; // -1 to 1
+      setMousePos({ x, y });
+      rafRef.current = null;
+    });
   };
 
   // Multi-depth stars
@@ -85,23 +93,13 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
         }}
       />
 
-      {/* 2. DYNAMIC PROCEDURAL SPACE DUST FILTER (Organic gaseous clouds) */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-50 mix-blend-screen">
-        <defs>
-          <filter id="warframeNebulaDust">
-            <feTurbulence type="fractalNoise" baseFrequency="0.014" numOctaves="4" result="dust" />
-            <feColorMatrix
-              type="matrix"
-              values="
-                0 0 0 0 0.04
-                0 0 0 0 0.65
-                0 0 0 0 0.85
-                0 0 0 0.12 0"
-            />
-          </filter>
-        </defs>
-        <rect width="100%" height="100%" filter="url(#warframeNebulaDust)" />
-      </svg>
+      {/* 2. LIGHTWEIGHT GPU-ACCELERATED COSMIC HAZE (Zero CPU filter overhead) */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-40 mix-blend-screen"
+        style={{
+          background: 'radial-gradient(circle at 50% 50%, rgba(0, 185, 220, 0.08) 0%, transparent 60%)',
+        }}
+      />
 
       {/* 3. MULTI-DEPTH COSMIC STARS WITH LIVING TWINKLE */}
       <div
@@ -263,7 +261,7 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
           {/* Sphere with Directional Sun Illumination (100% Round Circle) */}
           <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden shadow-[0_0_35px_rgba(16,185,129,0.45),inset_18px_18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(16,185,129,0.75)] transition-all duration-300">
             <img
-              src="/earth_clean.png"
+              src="/earth_clean.webp"
               alt="Profile"
               className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin aspect-square"
               style={{ animationDuration: '120s' }}
@@ -312,7 +310,7 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
           {/* Sphere with Directional Sun Illumination (100% Round Circle) */}
           <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden shadow-[0_0_35px_rgba(0,229,255,0.45),inset_-18px_-18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(0,229,255,0.75)] transition-all duration-300">
             <img
-              src="/sedna_clean.png"
+              src="/sedna_clean.webp"
               alt="Market"
               className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin aspect-square"
               style={{ animationDuration: '90s' }}
@@ -361,7 +359,7 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
           {/* Sphere with Directional Sun Illumination (100% Round Circle) */}
           <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden shadow-[0_0_35px_rgba(0,229,255,0.35),inset_18px_-18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(0,229,255,0.65)] transition-all duration-300">
             <img
-              src="/venus_clean.png"
+              src="/venus_clean.webp"
               alt="Rivens-endo"
               className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin aspect-square"
               style={{ animationDuration: '110s' }}
@@ -410,7 +408,7 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
           {/* Sphere with Directional Sun Illumination (100% Round Circle) */}
           <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden shadow-[0_0_35px_rgba(249,115,22,0.45),inset_-18px_-18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(249,115,22,0.75)] transition-all duration-300">
             <img
-              src="/mars_clean.png"
+              src="/mars_clean.webp"
               alt="Mod Appraisal"
               className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin aspect-square"
               style={{ animationDuration: '100s' }}
