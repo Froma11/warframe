@@ -63,8 +63,9 @@ export const PlanetEarth: React.FC<PlanetEarthProps> = ({
           }}
         >
           <img
-            src="/earth_clean.png"
+            src="/earth_clean.webp"
             alt="Земля (Earth)"
+            decoding="async"
             className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin"
             style={{
               animationDuration: '100s',

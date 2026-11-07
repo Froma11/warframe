@@ -48,7 +48,7 @@ export const App: React.FC = () => {
     checkAuth();
   }, []);
 
-  // Fetch real items from backend /api/arcanes when authenticated
+  // Fetch real items from backend /api/arcanes when authenticated (deferred to idle to avoid star chart frame drops)
   useEffect(() => {
     if (!isAuthenticated) return;
 
@@ -69,8 +69,18 @@ export const App: React.FC = () => {
       }
     };
 
-    fetchArcanes();
-  }, [isAuthenticated]);
+    if (activeTab === 'starchart') {
+      if (typeof window.requestIdleCallback === 'function') {
+        const handle = window.requestIdleCallback(() => fetchArcanes(), { timeout: 1500 });
+        return () => window.cancelIdleCallback(handle);
+      } else {
+        const timeoutId = setTimeout(fetchArcanes, 400);
+        return () => clearTimeout(timeoutId);
+      }
+    } else {
+      fetchArcanes();
+    }
+  }, [isAuthenticated, activeTab === 'sedna']);
 
   // Ensure Star Chart ALWAYS remains deep dark space, regardless of light theme
   useEffect(() => {

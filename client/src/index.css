@@ -1,12 +1,17 @@
-@import '@fontsource/comfortaa/400.css';
-@import '@fontsource/comfortaa/500.css';
-@import '@fontsource/comfortaa/600.css';
-@import '@fontsource/comfortaa/700.css';
-@import '@fontsource/onest/300.css';
-@import '@fontsource/onest/400.css';
-@import '@fontsource/onest/500.css';
-@import '@fontsource/onest/600.css';
-@import '@fontsource/onest/700.css';
+/* High-performance font loading: Cyrillic & Latin subsets only (Zero unused Vietnamese/Greek/Math bloat) */
+@import '@fontsource/comfortaa/cyrillic-400.css';
+@import '@fontsource/comfortaa/latin-400.css';
+@import '@fontsource/comfortaa/cyrillic-700.css';
+@import '@fontsource/comfortaa/latin-700.css';
+
+@import '@fontsource/onest/cyrillic-400.css';
+@import '@fontsource/onest/latin-400.css';
+@import '@fontsource/onest/cyrillic-500.css';
+@import '@fontsource/onest/latin-500.css';
+@import '@fontsource/onest/cyrillic-600.css';
+@import '@fontsource/onest/latin-600.css';
+@import '@fontsource/onest/cyrillic-700.css';
+@import '@fontsource/onest/latin-700.css';
 
 @tailwind base;
 @tailwind components;

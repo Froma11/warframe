@@ -5,6 +5,28 @@ interface StarChartViewProps {
   lang: 'ru' | 'en';
 }
 
+// Precomputed static cosmic stars (Zero CPU work on mount)
+const STATIC_STARS = Array.from({ length: 95 }, (_, i) => {
+  const top = (i * 19.3 + (i % 7) * 13) % 100;
+  const left = (i * 27.7 + (i % 5) * 19) % 100;
+  const layer = i % 6 === 0 ? 'bright' : i % 2 === 0 ? 'mid' : 'far';
+  const size = layer === 'bright' ? 2.5 : layer === 'mid' ? 1.5 : 1;
+  const opacity = layer === 'bright' ? 0.9 : layer === 'mid' ? 0.5 : 0.25;
+  return { id: i, top, left, size, opacity, layer };
+});
+
+// Precomputed floating stardust particles along the orbits
+const STATIC_STARDUST = Array.from({ length: 40 }, (_, i) => {
+  const angle = (i / 40) * Math.PI * 2 + (i % 3) * 0.2;
+  const radiusX = 260 + (i % 4) * 75;
+  const radiusY = 150 + (i % 4) * 45;
+  const x = Math.cos(angle) * radiusX;
+  const y = Math.sin(angle) * radiusY;
+  const size = 1.2 + (i % 3) * 0.8;
+  const opacity = 0.3 + (i % 5) * 0.12;
+  return { id: i, x, y, size, opacity };
+});
+
 export const StarChartView: React.FC<StarChartViewProps> = ({
   onSelectPlanet,
   lang,
@@ -30,35 +52,8 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
     });
   };
 
-  // Multi-depth stars
-  const stars = useMemo(() => {
-    const list = [];
-    for (let i = 0; i < 95; i++) {
-      const top = (i * 19.3 + (i % 7) * 13) % 100;
-      const left = (i * 27.7 + (i % 5) * 19) % 100;
-      const layer = i % 6 === 0 ? 'bright' : i % 2 === 0 ? 'mid' : 'far';
-      const size = layer === 'bright' ? 2.5 : layer === 'mid' ? 1.5 : 1;
-      const opacity = layer === 'bright' ? 0.9 : layer === 'mid' ? 0.5 : 0.25;
-      list.push({ id: i, top, left, size, opacity, layer });
-    }
-    return list;
-  }, []);
-
-  // Floating stardust particles along the orbits
-  const stardust = useMemo(() => {
-    const list = [];
-    for (let i = 0; i < 40; i++) {
-      const angle = (i / 40) * Math.PI * 2 + (i % 3) * 0.2;
-      const radiusX = 260 + (i % 4) * 75;
-      const radiusY = 150 + (i % 4) * 45;
-      const x = Math.cos(angle) * radiusX;
-      const y = Math.sin(angle) * radiusY;
-      const size = 1.2 + (i % 3) * 0.8;
-      const opacity = 0.3 + (i % 5) * 0.12;
-      list.push({ id: i, x, y, size, opacity });
-    }
-    return list;
-  }, []);
+  const stars = STATIC_STARS;
+  const stardust = STATIC_STARDUST;
 
   // Handle approach animation: smooth glide to center and scale
   const handlePlanetClick = (planet: 'sedna' | 'earth' | 'venus' | 'mars') => {
@@ -259,10 +254,14 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
           }}
         >
           {/* Sphere with Directional Sun Illumination (100% Round Circle) */}
-          <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden shadow-[0_0_35px_rgba(16,185,129,0.45),inset_18px_18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(16,185,129,0.75)] transition-all duration-300">
+          <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden bg-gradient-to-br from-emerald-950 via-[#0a2020] to-[#041014] shadow-[0_0_35px_rgba(16,185,129,0.45),inset_18px_18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(16,185,129,0.75)] transition-all duration-300">
             <img
               src="/earth_clean.webp"
               alt="Profile"
+              width={144}
+              height={144}
+              loading="eager"
+              decoding="async"
               className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin aspect-square"
               style={{ animationDuration: '120s' }}
             />
@@ -308,10 +307,14 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
           }}
         >
           {/* Sphere with Directional Sun Illumination (100% Round Circle) */}
-          <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden shadow-[0_0_35px_rgba(0,229,255,0.45),inset_-18px_-18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(0,229,255,0.75)] transition-all duration-300">
+          <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden bg-gradient-to-br from-[#062438] via-[#051522] to-[#020910] shadow-[0_0_35px_rgba(0,229,255,0.45),inset_-18px_-18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(0,229,255,0.75)] transition-all duration-300">
             <img
               src="/sedna_clean.webp"
               alt="Market"
+              width={144}
+              height={144}
+              loading="eager"
+              decoding="async"
               className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin aspect-square"
               style={{ animationDuration: '90s' }}
             />
@@ -357,10 +360,14 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
           }}
         >
           {/* Sphere with Directional Sun Illumination (100% Round Circle) */}
-          <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden shadow-[0_0_35px_rgba(0,229,255,0.35),inset_18px_-18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(0,229,255,0.65)] transition-all duration-300">
+          <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden bg-gradient-to-br from-[#052030] via-[#041420] to-[#020a12] shadow-[0_0_35px_rgba(0,229,255,0.35),inset_18px_-18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(0,229,255,0.65)] transition-all duration-300">
             <img
               src="/venus_clean.webp"
               alt="Rivens-endo"
+              width={144}
+              height={144}
+              loading="eager"
+              decoding="async"
               className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin aspect-square"
               style={{ animationDuration: '110s' }}
             />
@@ -406,10 +413,14 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
           }}
         >
           {/* Sphere with Directional Sun Illumination (100% Round Circle) */}
-          <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden shadow-[0_0_35px_rgba(249,115,22,0.45),inset_-18px_-18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(249,115,22,0.75)] transition-all duration-300">
+          <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden bg-gradient-to-br from-[#2a1005] via-[#1a0a03] to-[#0d0502] shadow-[0_0_35px_rgba(249,115,22,0.45),inset_-18px_-18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(249,115,22,0.75)] transition-all duration-300">
             <img
               src="/mars_clean.webp"
               alt="Mod Appraisal"
+              width={144}
+              height={144}
+              loading="eager"
+              decoding="async"
               className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin aspect-square"
               style={{ animationDuration: '100s' }}
             />

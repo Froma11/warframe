@@ -97,8 +97,9 @@ export const PlanetNavigation: React.FC<PlanetNavigationProps> = ({
                 }}
               >
                 <img
-                  src="/sedna_clean.png"
+                  src="/sedna_clean.webp"
                   alt="Market"
+                  decoding="async"
                   className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin"
                 />
                 <div
@@ -177,8 +178,9 @@ export const PlanetNavigation: React.FC<PlanetNavigationProps> = ({
                 }}
               >
                 <img
-                  src="/earth_clean.png"
+                  src="/earth_clean.webp"
                   alt="Profile"
+                  decoding="async"
                   className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin"
                   style={{ animationDuration: '120s' }}
                 />

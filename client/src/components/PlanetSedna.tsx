@@ -64,8 +64,9 @@ export const PlanetSedna: React.FC<PlanetSednaProps> = ({
           }}
         >
           <img
-            src="/sedna_clean.png"
+            src="/sedna_clean.webp"
             alt="Седна (Sedna)"
+            decoding="async"
             className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin"
             style={{
               animationDuration: '60s',
