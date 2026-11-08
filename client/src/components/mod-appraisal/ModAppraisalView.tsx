@@ -32,66 +32,66 @@ interface ModAppraisalViewProps {
 // Sample test auctions for quick 1-click verification
 const SAMPLE_AUCTIONS = [
   {
-    labelRu: 'Torid (Фейк ранг 0)',
-    labelEn: 'Torid (Fake 0 Rank)',
+    labelRu: 'Torid (Вирус + Крит. урон)',
+    labelEn: 'Torid (Viral + Crit Dmg)',
     slug: 'torid',
     nameEn: 'Torid',
     nameRu: 'Торид',
-    rank: 0,
-    disposition: 1.3,
+    rank: 8,
+    disposition: 1.2,
     weaponClass: 'Rifle' as const,
-    variants: [{ name: 'Torid', disposition: 1.3 }],
+    variants: [{ name: 'Torid', disposition: 1.2 }],
     attrs: [
-      { url_name: 'critical_chance', positive: true, value: 182.8 },
-      { url_name: 'multishot', positive: true, value: 109.7 },
-      { url_name: 'heat_damage', positive: true, value: 109.7 },
-      { url_name: 'recoil', positive: false, value: 87.7 },
+      { url_name: 'critical_damage', positive: true, value: 135.2 },
+      { url_name: 'multishot', positive: true, value: 101.4 },
+      { url_name: 'viral', positive: true, value: 101.4 },
+      { url_name: 'zoom', positive: false, value: -54.0 },
     ],
-    seller: { name: 'TennoSniper', status: 'ingame', reputation: 48, price: 1200 },
-    modName: 'Torid Crita-ignican',
+    seller: { name: 'TennoSniper', status: 'ingame', reputation: 48, price: 1500 },
+    modName: 'Torid Acri-satitox',
   },
   {
-    labelRu: 'Latron (Prime / Wraith)',
-    labelEn: 'Latron (Prime / Wraith)',
+    labelRu: 'Latron (Слабые места + Крит)',
+    labelEn: 'Latron (Weakpoint + Crit)',
     slug: 'latron',
     nameEn: 'Latron',
     nameRu: 'Латрон',
     rank: 8,
-    disposition: 1.3,
+    disposition: 1.2,
     weaponClass: 'Rifle' as const,
     variants: [
-      { name: 'Latron', disposition: 1.3 },
-      { name: 'Latron Prime', disposition: 1.15 },
-      { name: 'Latron Wraith', disposition: 1.25 },
+      { name: 'Latron', disposition: 1.2 },
+      { name: 'Latron Prime', disposition: 1.2 },
+      { name: 'Latron Wraith', disposition: 1.2 },
     ],
     attrs: [
+      { url_name: 'weak_point_critical_chance', positive: true, value: 168.5 },
       { url_name: 'critical_chance', positive: true, value: 168.5 },
-      { url_name: 'critical_damage', positive: true, value: 134.8 },
       { url_name: 'damage_vs_grineer', positive: false, value: 0.65 },
     ],
     seller: { name: 'OrokinMerchant', status: 'online', reputation: 124, price: 850 },
-    modName: 'Latron Critatis',
+    modName: 'Latron Crita-exitron',
   },
   {
-    labelRu: 'Glaive (Ближний бой)',
-    labelEn: 'Glaive (Melee)',
+    labelRu: 'Glaive (Коррозия + Урон)',
+    labelEn: 'Glaive (Corrosive + Dmg)',
     slug: 'glaive',
     nameEn: 'Glaive',
     nameRu: 'Глефа',
     rank: 8,
-    disposition: 0.7,
+    disposition: 1.2,
     weaponClass: 'Melee' as const,
     variants: [
-      { name: 'Glaive', disposition: 0.7 },
-      { name: 'Glaive Prime', disposition: 0.7 },
+      { name: 'Glaive', disposition: 1.2 },
+      { name: 'Glaive Prime', disposition: 1.2 },
     ],
     attrs: [
-      { url_name: 'range', positive: true, value: 1.35 },
-      { url_name: 'critical_damage', positive: true, value: 62.8 },
+      { url_name: 'base_damage_/_melee_damage', positive: true, value: 185.0 },
+      { url_name: 'corrosive', positive: true, value: 101.2 },
       { url_name: 'impact_damage', positive: false, value: -83.5 },
     ],
     seller: { name: 'VoidTrader', status: 'ingame', reputation: 92, price: 1600 },
-    modName: 'Glaive Locti-acritox',
+    modName: 'Glaive Visi-coriton',
   },
 ];
 
@@ -288,15 +288,17 @@ export const ModAppraisalView: React.FC<ModAppraisalViewProps> = ({ lang }) => {
           </div>
           <p className="font-onest text-sm text-slate-600 dark:text-slate-400">
             {lang === 'ru'
-              ? 'Математическая оценка качества роллов, точность AlecaFrame и автокоррекция рангов по ссылкам Warframe Market'
-              : 'Mathematical roll quality grading, AlecaFrame accuracy, and rank auto-correction via Warframe Market'}
+              ? 'Точная оценка роллов AlecaFrame & Semlar • Единая синергия 4/5 (1.20) • Поддержка Вирус, Взрыв, Коррозия, Слабые места'
+              : 'Precise AlecaFrame & Semlar roll grading • Unified 4/5 (1.20) Synergy • Supports Viral, Blast, Corrosive, Weakpoint stats'}
           </p>
         </div>
 
         {/* Status Pill */}
         <div className="flex items-center gap-2 self-start sm:self-center px-3.5 py-1.5 rounded-full bg-slate-200/60 dark:bg-slate-800/60 border border-slate-300 dark:border-white/[0.08] text-xs font-comfortaa">
           <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-          <span className="font-bold text-slate-700 dark:text-slate-300">AlecaFrame / Semlar Engine</span>
+          <span className="font-bold text-slate-700 dark:text-slate-300">
+            {lang === 'ru' ? 'Синергия 4/5 (1.20) • Новые характеристики' : 'Synergy 4/5 (1.20) • New Attributes'}
+          </span>
         </div>
       </div>
 

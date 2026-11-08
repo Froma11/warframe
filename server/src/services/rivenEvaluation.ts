@@ -2,6 +2,8 @@ import weaponVariantsData from '../data/weaponVariants.json';
 
 export type WeaponClass = 'Rifle' | 'Shotgun' | 'Pistol' | 'Melee' | 'Archgun';
 
+export const UNIFIED_WARFRAME_DISPOSITION = 1.20; // Official Warframe Standard: 4 dots across all weapons
+
 export interface WFMAttribute {
   url_name: string;
   positive: boolean;
@@ -48,6 +50,62 @@ export interface EvaluationResult {
   stats: EvaluatedStat[];
 }
 
+/**
+ * Standardizes attribute keys from varying API conventions into unified internal identifiers.
+ */
+export function canonicalizeAttributeSlug(slug: string): string {
+  const s = (slug || '').toLowerCase().trim();
+  switch (s) {
+    case 'viral_damage':
+      return 'viral';
+    case 'blast_damage':
+      return 'blast';
+    case 'corrosive_damage':
+      return 'corrosive';
+    case 'gas_damage':
+      return 'gas';
+    case 'magnetic_damage':
+      return 'magnetic';
+    case 'radiation_damage':
+      return 'radiation';
+    case 'weakpoint_critical_chance':
+      return 'weak_point_critical_chance';
+    case 'weakpoint_damage':
+      return 'weak_point_damage';
+    case 'damage_to_corpus':
+      return 'damage_vs_corpus';
+    case 'damage_to_grineer':
+      return 'damage_vs_grineer';
+    case 'damage_to_infested':
+      return 'damage_vs_infested';
+    case 'damage_vs_orokin':
+      return 'damage_to_orokin';
+    case 'damage_vs_scaldra':
+      return 'damage_to_scaldra';
+    case 'damage_vs_techrot':
+      return 'damage_to_techrot';
+    case 'base_damage':
+    case 'melee_damage':
+      return 'base_damage_/_melee_damage';
+    case 'fire_rate':
+    case 'attack_speed':
+      return 'fire_rate_/_attack_speed';
+    case 'flight_speed':
+      return 'projectile_speed';
+    case 'weapon_recoil':
+      return 'recoil';
+    case 'melee_range':
+    case 'range_/_melee_range':
+      return 'range';
+    case 'initial_combo':
+      return 'channeling_damage';
+    case 'heavy_attack_efficiency':
+      return 'channeling_efficiency';
+    default:
+      return s;
+  }
+}
+
 export const BaseStatsTable: Record<WeaponClass, Record<string, number>> = {
   Rifle: {
     'base_damage_/_melee_damage': 165.0,
@@ -74,6 +132,32 @@ export const BaseStatsTable: Record<WeaponClass, Record<string, number>> = {
     recoil: 90.0,
     zoom: 59.99,
     punch_through: 2.7,
+    // Modern Elements & Spliced Traits
+    viral: 90.0,
+    viral_damage: 90.0,
+    blast: 90.0,
+    blast_damage: 90.0,
+    corrosive: 90.0,
+    corrosive_damage: 90.0,
+    gas: 90.0,
+    gas_damage: 90.0,
+    magnetic: 90.0,
+    magnetic_damage: 90.0,
+    radiation: 90.0,
+    radiation_damage: 90.0,
+    weak_point_critical_chance: 150.0,
+    weakpoint_critical_chance: 150.0,
+    weak_point_damage: 120.0,
+    weakpoint_damage: 120.0,
+    status_damage: 90.0,
+    damage_to_orokin: 45.0,
+    damage_vs_orokin: 45.0,
+    damage_to_scaldra: 45.0,
+    damage_vs_scaldra: 45.0,
+    damage_to_techrot: 45.0,
+    damage_vs_techrot: 45.0,
+    ammo_efficiency: 50.0,
+    magazine_reloaded_s_when_holstered: 50.0,
   },
   Shotgun: {
     'base_damage_/_melee_damage': 164.7,
@@ -99,6 +183,32 @@ export const BaseStatsTable: Record<WeaponClass, Record<string, number>> = {
     projectile_speed: 89.1,
     recoil: 90.0,
     punch_through: 2.7,
+    // Modern Elements & Spliced Traits
+    viral: 90.0,
+    viral_damage: 90.0,
+    blast: 90.0,
+    blast_damage: 90.0,
+    corrosive: 90.0,
+    corrosive_damage: 90.0,
+    gas: 90.0,
+    gas_damage: 90.0,
+    magnetic: 90.0,
+    magnetic_damage: 90.0,
+    radiation: 90.0,
+    radiation_damage: 90.0,
+    weak_point_critical_chance: 90.0,
+    weakpoint_critical_chance: 90.0,
+    weak_point_damage: 90.0,
+    weakpoint_damage: 90.0,
+    status_damage: 90.0,
+    damage_to_orokin: 45.0,
+    damage_vs_orokin: 45.0,
+    damage_to_scaldra: 45.0,
+    damage_vs_scaldra: 45.0,
+    damage_to_techrot: 45.0,
+    damage_vs_techrot: 45.0,
+    ammo_efficiency: 50.0,
+    magazine_reloaded_s_when_holstered: 50.0,
   },
   Pistol: {
     'base_damage_/_melee_damage': 219.6,
@@ -125,6 +235,32 @@ export const BaseStatsTable: Record<WeaponClass, Record<string, number>> = {
     recoil: 90.0,
     zoom: 80.1,
     punch_through: 2.7,
+    // Modern Elements & Spliced Traits
+    viral: 90.0,
+    viral_damage: 90.0,
+    blast: 90.0,
+    blast_damage: 90.0,
+    corrosive: 90.0,
+    corrosive_damage: 90.0,
+    gas: 90.0,
+    gas_damage: 90.0,
+    magnetic: 90.0,
+    magnetic_damage: 90.0,
+    radiation: 90.0,
+    radiation_damage: 90.0,
+    weak_point_critical_chance: 150.0,
+    weakpoint_critical_chance: 150.0,
+    weak_point_damage: 90.0,
+    weakpoint_damage: 90.0,
+    status_damage: 90.0,
+    damage_to_orokin: 45.0,
+    damage_vs_orokin: 45.0,
+    damage_to_scaldra: 45.0,
+    damage_vs_scaldra: 45.0,
+    damage_to_techrot: 45.0,
+    damage_vs_techrot: 45.0,
+    ammo_efficiency: 50.0,
+    magazine_reloaded_s_when_holstered: 50.0,
   },
   Melee: {
     'base_damage_/_melee_damage': 164.7,
@@ -151,6 +287,30 @@ export const BaseStatsTable: Record<WeaponClass, Record<string, number>> = {
     channeling_damage: 24.3, // Initial Combo
     chance_to_gain_extra_combo_count: 58.77,
     chance_to_gain_combo_count: 99.9,
+    // Modern Elements & Heavy Traits
+    viral: 90.0,
+    viral_damage: 90.0,
+    blast: 90.0,
+    blast_damage: 90.0,
+    corrosive: 90.0,
+    corrosive_damage: 90.0,
+    gas: 90.0,
+    gas_damage: 90.0,
+    magnetic: 90.0,
+    magnetic_damage: 90.0,
+    radiation: 90.0,
+    radiation_damage: 90.0,
+    status_damage: 90.0,
+    damage_to_orokin: 45.0,
+    damage_vs_orokin: 45.0,
+    damage_to_scaldra: 45.0,
+    damage_vs_scaldra: 45.0,
+    damage_to_techrot: 45.0,
+    damage_vs_techrot: 45.0,
+    heavy_attack_wind_up_speed: 54.9,
+    melee_damage_on_heavy_attack: 164.7,
+    parry_angle: 60.0,
+    slam_attack_damage: 164.7,
   },
   Archgun: {
     'base_damage_/_melee_damage': 99.9,
@@ -176,6 +336,31 @@ export const BaseStatsTable: Record<WeaponClass, Record<string, number>> = {
     recoil: 90.0,
     zoom: 59.99,
     punch_through: 2.7,
+    // Modern Elements & Spliced Traits
+    viral: 119.7,
+    viral_damage: 119.7,
+    blast: 119.7,
+    blast_damage: 119.7,
+    corrosive: 119.7,
+    corrosive_damage: 119.7,
+    gas: 119.7,
+    gas_damage: 119.7,
+    magnetic: 119.7,
+    magnetic_damage: 119.7,
+    radiation: 119.7,
+    radiation_damage: 119.7,
+    weak_point_critical_chance: 99.9,
+    weakpoint_critical_chance: 99.9,
+    weak_point_damage: 80.1,
+    weakpoint_damage: 80.1,
+    status_damage: 90.0,
+    damage_to_orokin: 45.0,
+    damage_vs_orokin: 45.0,
+    damage_to_scaldra: 45.0,
+    damage_vs_scaldra: 45.0,
+    damage_to_techrot: 45.0,
+    damage_vs_techrot: 45.0,
+    ammo_efficiency: 50.0,
   },
 };
 
@@ -212,6 +397,36 @@ export const StatMeta: Record<string, { en: string; ru: string; unit: string }> 
   channeling_damage: { en: 'Initial Combo', ru: 'Начальное комбо', unit: '' },
   chance_to_gain_extra_combo_count: { en: 'Additional Combo Count Chance', ru: 'Шанс доп. комбо', unit: '%' },
   chance_to_gain_combo_count: { en: 'Chance to Not Gain Combo', ru: 'Шанс не получить комбо', unit: '%' },
+  // Modern Combat Stats
+  viral: { en: 'Viral Damage', ru: 'Урон вирусом', unit: '%' },
+  viral_damage: { en: 'Viral Damage', ru: 'Урон вирусом', unit: '%' },
+  blast: { en: 'Blast Damage', ru: 'Урон взрывом', unit: '%' },
+  blast_damage: { en: 'Blast Damage', ru: 'Урон взрывом', unit: '%' },
+  corrosive: { en: 'Corrosive Damage', ru: 'Урон коррозией', unit: '%' },
+  corrosive_damage: { en: 'Corrosive Damage', ru: 'Урон коррозией', unit: '%' },
+  gas: { en: 'Gas Damage', ru: 'Урон газом', unit: '%' },
+  gas_damage: { en: 'Gas Damage', ru: 'Урон газом', unit: '%' },
+  magnetic: { en: 'Magnetic Damage', ru: 'Урон магнитом', unit: '%' },
+  magnetic_damage: { en: 'Magnetic Damage', ru: 'Урон магнитом', unit: '%' },
+  radiation: { en: 'Radiation Damage', ru: 'Урон радиацией', unit: '%' },
+  radiation_damage: { en: 'Radiation Damage', ru: 'Урон радиацией', unit: '%' },
+  weak_point_critical_chance: { en: 'Weak Point Crit Chance', ru: 'Крит. шанс по слабым местам', unit: '%' },
+  weakpoint_critical_chance: { en: 'Weak Point Crit Chance', ru: 'Крит. шанс по слабым местам', unit: '%' },
+  weak_point_damage: { en: 'Weak Point Damage', ru: 'Урон по уязвимым местам', unit: '%' },
+  weakpoint_damage: { en: 'Weak Point Damage', ru: 'Урон по уязвимым местам', unit: '%' },
+  status_damage: { en: 'Status Damage', ru: 'Урон статусом', unit: '%' },
+  damage_to_orokin: { en: 'Damage to Orokin', ru: 'Урон Орокин', unit: '%' },
+  damage_vs_orokin: { en: 'Damage to Orokin', ru: 'Урон Орокин', unit: '%' },
+  damage_to_scaldra: { en: 'Damage to Scaldra', ru: 'Урон Скальдре', unit: '%' },
+  damage_vs_scaldra: { en: 'Damage to Scaldra', ru: 'Урон Скальдре', unit: '%' },
+  damage_to_techrot: { en: 'Damage to Techrot', ru: 'Урон Техроту', unit: '%' },
+  damage_vs_techrot: { en: 'Damage to Techrot', ru: 'Урон Техроту', unit: '%' },
+  ammo_efficiency: { en: 'Ammo Efficiency', ru: 'Эффективность боеприпасов', unit: '%' },
+  magazine_reloaded_s_when_holstered: { en: 'Reloaded/s when Holstered', ru: 'Перезарядка/с в кобуре', unit: '%' },
+  heavy_attack_wind_up_speed: { en: 'Heavy Attack Wind Up Speed', ru: 'Скор. подг. тяжёлой атаки', unit: '%' },
+  melee_damage_on_heavy_attack: { en: 'Heavy Attack Melee Damage', ru: 'Урон в ближ. бою при тяж. атаке', unit: '%' },
+  parry_angle: { en: 'Parry Angle', ru: 'Угол парирования', unit: '°' },
+  slam_attack_damage: { en: 'Slam Attack Damage', ru: 'Урон от удара по земле', unit: '%' },
 };
 
 export const AUCTION_ID_REGEX = /(?:(?:auction|auctions)\/|^|[^a-f0-9])([a-f0-9]{24})(?:[^a-f0-9]|$)/i;
@@ -223,10 +438,14 @@ export function extractAuctionId(input: string): string | null {
 }
 
 export function isFactionStat(urlName: string): boolean {
+  const c = canonicalizeAttributeSlug(urlName);
   return (
-    urlName === 'damage_vs_corpus' ||
-    urlName === 'damage_vs_grineer' ||
-    urlName === 'damage_vs_infested'
+    c === 'damage_vs_corpus' ||
+    c === 'damage_vs_grineer' ||
+    c === 'damage_vs_infested' ||
+    c === 'damage_to_orokin' ||
+    c === 'damage_to_scaldra' ||
+    c === 'damage_to_techrot'
   );
 }
 
@@ -289,7 +508,7 @@ export function resolveWeaponClass(groupType: string, rivenType: string): Weapon
   const r = (rivenType || '').toLowerCase();
 
   if (g === 'shotgun' || r === 'shotgun') return 'Shotgun';
-  if (g === 'secondary' || r === 'pistol') return 'Pistol';
+  if (g === 'secondary' || r === 'pistol' || g === 'kitgun') return 'Pistol';
   if (g === 'melee' || r === 'melee' || g === 'zaw') return 'Melee';
   if (g === 'archgun') return 'Archgun';
   return 'Rifle';
@@ -297,11 +516,15 @@ export function resolveWeaponClass(groupType: string, rivenType: string): Weapon
 
 export function evaluateRiven(
   wClass: WeaponClass,
-  disposition: number,
-  declaredRank: number,
-  attrs: WFMAttribute[],
+  disposition: number = UNIFIED_WARFRAME_DISPOSITION,
+  declaredRank: number = 8,
+  attrs: WFMAttribute[] = [],
   weaponSlug: string = '',
-  selectedVariantName?: string
+  selectedVariantName?: string,
+  providedVariants?: WeaponVariant[],
+  providedNameEn?: string,
+  providedNameRu?: string,
+  providedIconUrl?: string
 ): EvaluationResult {
   let buffCount = 0;
   let hasCurse = false;
@@ -318,12 +541,18 @@ export function evaluateRiven(
   // Weapon variants lookup
   const weaponsDict = weaponVariantsData as Record<string, any>;
   const weaponMeta = weaponsDict[weaponSlug] || null;
-  const availableVariants: WeaponVariant[] = weaponMeta?.variants || [
-    { name: weaponMeta?.name_en || weaponSlug || 'Standard', disposition },
-  ];
 
-  // If a specific variant is requested, use its disposition
-  let activeDisposition = disposition;
+  // In modern Warframe, all weapons and variants share the standardized 4-dot disposition (1.20)
+  const rawVariants: WeaponVariant[] = providedVariants || weaponMeta?.variants || [
+    { name: weaponMeta?.name_en || weaponSlug || 'Standard', disposition: UNIFIED_WARFRAME_DISPOSITION },
+  ];
+  const availableVariants: WeaponVariant[] = rawVariants.map((v) => ({
+    name: v.name,
+    disposition: UNIFIED_WARFRAME_DISPOSITION,
+  }));
+
+  // Canonicalize disposition: all weapons now have 1.20 (4 dots)
+  let activeDisposition = UNIFIED_WARFRAME_DISPOSITION;
   let activeVariantName = availableVariants[0]?.name || 'Standard';
 
   if (selectedVariantName) {
@@ -331,39 +560,8 @@ export function evaluateRiven(
       (v) => v.name.toLowerCase() === selectedVariantName.toLowerCase()
     );
     if (matched) {
-      activeDisposition = matched.disposition;
       activeVariantName = matched.name;
     }
-  } else if (availableVariants.length > 1) {
-    // Auto-detect the best fitting variant by testing MSE across variants
-    let bestVar = availableVariants[0];
-    let bestVarScore = Infinity;
-
-    for (const v of availableVariants) {
-      const rankFactor = (Math.max(0, Math.min(8, declaredRank)) + 1) / 9.0;
-      let varMse = 0;
-      let withinBounds = true;
-
-      for (const a of attrs) {
-        const baseVal = BaseStatsTable[wClass][a.url_name];
-        if (!baseVal) continue;
-        const typeMult = a.positive ? buffMult : curseMult;
-        const normVal = normalizeStatValue(a);
-        const avg = baseVal * v.disposition * typeMult * rankFactor;
-        const roll = normVal / avg;
-        varMse += (roll - 1.0) ** 2;
-        if (roll < 0.895 || roll > 1.105) withinBounds = false;
-      }
-
-      // If all stats within strict bounds, strongly prioritize
-      const score = withinBounds ? varMse : varMse + 10.0;
-      if (score < bestVarScore) {
-        bestVarScore = score;
-        bestVar = v;
-      }
-    }
-    activeDisposition = bestVar.disposition;
-    activeVariantName = bestVar.name;
   }
 
   // 1. Calculate Rank Metrics & Auto-detect fake rank 0
@@ -373,10 +571,12 @@ export function evaluateRiven(
     let allValid = true;
 
     for (const a of attrs) {
-      const baseVal = BaseStatsTable[wClass][a.url_name];
-      if (!baseVal) {
-        throw new Error(`Unsupported attribute ${a.url_name} for class ${wClass}`);
-      }
+      const canonName = canonicalizeAttributeSlug(a.url_name);
+      const baseVal =
+        BaseStatsTable[wClass][canonName] ||
+        BaseStatsTable[wClass][a.url_name] ||
+        90.0; // Resilient fallback against unmapped stats
+
       const typeMult = a.positive ? buffMult : curseMult;
       const normVal = normalizeStatValue(a);
       const avg = baseVal * activeDisposition * typeMult * rankFactor;
@@ -387,7 +587,7 @@ export function evaluateRiven(
         allValid = false;
       }
     }
-    return { mse: mse / attrs.length, allValid };
+    return { mse: attrs.length > 0 ? mse / attrs.length : 0, allValid };
   };
 
   let effectiveRank = Math.max(0, Math.min(8, Number(declaredRank) || 0));
@@ -423,7 +623,12 @@ export function evaluateRiven(
   let totalQuality = 0;
 
   for (const a of attrs) {
-    const baseVal = BaseStatsTable[wClass][a.url_name];
+    const canonName = canonicalizeAttributeSlug(a.url_name);
+    const baseVal =
+      BaseStatsTable[wClass][canonName] ||
+      BaseStatsTable[wClass][a.url_name] ||
+      90.0;
+
     const typeMult = a.positive ? buffMult : curseMult;
     const normVal = normalizeStatValue(a);
 
@@ -431,7 +636,7 @@ export function evaluateRiven(
     const minPoss = avg * 0.9;
     const maxPoss = avg * 1.1;
 
-    const rollMult = normVal / avg;
+    const rollMult = avg > 0 ? normVal / avg : 1.0;
     const devPct = (rollMult - 1.0) * 100.0;
 
     let rawPerf = ((rollMult - 0.9) / 0.2) * 100.0;
@@ -440,7 +645,7 @@ export function evaluateRiven(
     const effQual = a.positive ? rawPerf : 100.0 - rawPerf;
     totalQuality += effQual;
 
-    const meta = StatMeta[a.url_name] || {
+    const meta = StatMeta[canonName] || StatMeta[a.url_name] || {
       en: a.url_name,
       ru: a.url_name,
       unit: '%',
@@ -469,10 +674,10 @@ export function evaluateRiven(
 
   return {
     weapon_slug: weaponSlug || weaponMeta?.slug || '',
-    weapon_name_en: weaponMeta?.name_en || weaponSlug || 'Unknown Weapon',
-    weapon_name_ru: weaponMeta?.name_ru || weaponMeta?.name_en || weaponSlug || 'Неизвестное оружие',
+    weapon_name_en: providedNameEn || weaponMeta?.name_en || weaponSlug || 'Unknown Weapon',
+    weapon_name_ru: providedNameRu || weaponMeta?.name_ru || weaponMeta?.name_en || weaponSlug || 'Неизвестное оружие',
     weapon_class: wClass,
-    icon_url: weaponMeta?.icon_url || '',
+    icon_url: providedIconUrl || weaponMeta?.icon_url || '',
     declared_rank: declaredRank,
     effective_rank: effectiveRank,
     rank_mismatch_detected: rankMismatch,

@@ -475,7 +475,7 @@ const handleEvaluateAuction = async (req: any, res: any) => {
 
     const groupType = dbWeapon?.group_type || weaponMeta?.group_type || 'primary';
     const rivenType = dbWeapon?.riven_type || weaponMeta?.riven_type || 'rifle';
-    const baseDisp = Number(dbWeapon?.disposition) || Number(weaponMeta?.default_disposition) || 1.0;
+    const baseDisp = 1.20; // Official Warframe Standard: 4 dots (1.20) for all weapons
     const weaponClass = resolveWeaponClass(groupType, rivenType);
 
     const evaluation = evaluateRiven(
@@ -572,7 +572,7 @@ app.get('/api/rivens/evaluate/:auctionId', async (req, res) => {
 
     const groupType = dbWeapon?.group_type || weaponMeta?.group_type || 'primary';
     const rivenType = dbWeapon?.riven_type || weaponMeta?.riven_type || 'rifle';
-    const baseDisp = Number(dbWeapon?.disposition) || Number(weaponMeta?.default_disposition) || 1.0;
+    const baseDisp = 1.20; // Official Warframe Standard: 4 dots (1.20) for all weapons
     const weaponClass = resolveWeaponClass(groupType, rivenType);
 
     const evaluation = evaluateRiven(

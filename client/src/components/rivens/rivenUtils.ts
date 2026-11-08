@@ -50,20 +50,35 @@ export const RIVEN_STAT_TRANSLATIONS: Record<string, { ru: string; en: string }>
   'impact': { ru: 'Удар', en: 'Impact' },
   'puncture': { ru: 'Пронзание', en: 'Puncture' },
   'slash': { ru: 'Разрез', en: 'Slash' },
-  'blast': { ru: 'Взрыв', en: 'Blast' },
-  'corrosive': { ru: 'Коррозия', en: 'Corrosive' },
-  'gas': { ru: 'Газ', en: 'Gas' },
-  'magnetic': { ru: 'Магнит', en: 'Magnetic' },
-  'radiation': { ru: 'Радиация', en: 'Radiation' },
-  'viral': { ru: 'Вирус', en: 'Viral' },
+  'blast': { ru: 'Урон взрывом', en: 'Blast' },
+  'corrosive': { ru: 'Урон коррозией', en: 'Corrosive' },
+  'gas': { ru: 'Урон газом', en: 'Gas' },
+  'magnetic': { ru: 'Урон магнитом', en: 'Magnetic' },
+  'radiation': { ru: 'Урон радиацией', en: 'Radiation' },
+  'viral': { ru: 'Урон вирусом', en: 'Viral' },
 
-  // Faction Modifiers
+  // Precision & Spliced Combat Stats
+  'weak_point_critical_chance': { ru: 'К шансу крит. по слабым местам', en: 'Weak Point Crit Chance' },
+  'weakpoint_critical_chance': { ru: 'К шансу крит. по слабым местам', en: 'Weak Point Crit Chance' },
+  'weak_point_damage': { ru: 'К урону по уязвимым местам', en: 'Weak Point Damage' },
+  'weakpoint_damage': { ru: 'К урону по уязвимым местам', en: 'Weak Point Damage' },
+  'status_damage': { ru: 'К урону статусом', en: 'Status Damage' },
+  'ammo_efficiency': { ru: 'К эффективности боеприпасов', en: 'Ammo Efficiency' },
+  'magazine_reloaded_s_when_holstered': { ru: 'Перезарядка/с в кобуре', en: 'Reloaded/s Holstered' },
+
+  // Faction Modifiers (Classic & Modern)
   'damage_to_grineer': { ru: 'Урон Гринир', en: 'Damage to Grineer' },
   'damage_vs_grineer': { ru: 'Урон Гринир', en: 'Damage to Grineer' },
   'damage_to_corpus': { ru: 'Урон Корпусу', en: 'Damage to Corpus' },
   'damage_vs_corpus': { ru: 'Урон Корпусу', en: 'Damage to Corpus' },
   'damage_to_infested': { ru: 'Урон Зараженным', en: 'Damage to Infested' },
   'damage_vs_infested': { ru: 'Урон Зараженным', en: 'Damage to Infested' },
+  'damage_to_orokin': { ru: 'Урон Орокин', en: 'Damage to Orokin' },
+  'damage_vs_orokin': { ru: 'Урон Орокин', en: 'Damage to Orokin' },
+  'damage_to_scaldra': { ru: 'Урон Скальдре', en: 'Damage to Scaldra' },
+  'damage_vs_scaldra': { ru: 'Урон Скальдре', en: 'Damage to Scaldra' },
+  'damage_to_techrot': { ru: 'Урон Техроту', en: 'Damage to Techrot' },
+  'damage_vs_techrot': { ru: 'Урон Техроту', en: 'Damage to Techrot' },
 
   // Melee & Combo
   'range': { ru: 'Дальность поражения', en: 'Range' },
@@ -71,10 +86,18 @@ export const RIVEN_STAT_TRANSLATIONS: Record<string, { ru: string; en: string }>
   'range_/_melee_range': { ru: 'Дальность поражения', en: 'Range' },
   'combo_duration': { ru: 'Длительность комбо', en: 'Combo Duration' },
   'initial_combo': { ru: 'Начальное комбо', en: 'Initial Combo' },
+  'channeling_damage': { ru: 'Начальное комбо', en: 'Initial Combo' },
   'combo_count_chance': { ru: 'Шанс доп. комбо', en: 'Combo Count Chance' },
   'chance_to_gain_extra_combo_count': { ru: 'Шанс доп. комбо', en: 'Combo Count Chance' },
+  'chance_to_gain_combo_count': { ru: 'Шанс не получить комбо', en: 'Chance to Not Gain Combo' },
   'heavy_attack_efficiency': { ru: 'Эффект. тяжелой атаки', en: 'Heavy Attack Efficiency' },
+  'channeling_efficiency': { ru: 'Эффект. тяжелой атаки', en: 'Heavy Attack Efficiency' },
   'finisher_damage': { ru: 'Урон добивания', en: 'Finisher Damage' },
+  'heavy_attack_wind_up_speed': { ru: 'Скор. подг. тяжёлой атаки', en: 'Heavy Wind Up Speed' },
+  'melee_damage_on_heavy_attack': { ru: 'Урон в ближ. бою при тяж. атаке', en: 'Heavy Attack Melee Damage' },
+  'parry_angle': { ru: 'Угол парирования', en: 'Parry Angle' },
+  'slam_attack_damage': { ru: 'Урон от удара по земле', en: 'Slam Attack Damage' },
+  'critical_chance_on_slide_attack': { ru: 'Крит. шанс в подкате', en: 'Slide Attack Crit Chance' },
   'chance_to_not_use_combo_count': { ru: 'Шанс не тратить счетчик комбо', en: 'Combo Counter Efficiency' },
 };
 
@@ -106,8 +129,9 @@ export function formatRivenStatName(urlName: string, lang: 'ru' | 'en'): string 
  * 4 dots: 1.12 - 1.30
  * 5 dots: 1.31 - 1.55+
  */
-export function getDispositionDots(disposition: number): number {
-  if (!disposition || disposition <= 0.69) return 1;
+export function getDispositionDots(disposition?: number): number {
+  if (disposition === undefined || disposition === null || disposition === 0) return 4;
+  if (disposition <= 0.69) return 1;
   if (disposition <= 0.89) return 2;
   if (disposition <= 1.11) return 3;
   if (disposition <= 1.30) return 4;

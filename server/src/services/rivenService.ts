@@ -116,6 +116,18 @@ class RivenMarketService {
     }
   }
 
+  // Standardize weapon disposition to 4 dots (1.2) across all weapons in SQLite
+  public async standardizeDispositions(): Promise<void> {
+    try {
+      const res = await db.run('UPDATE riven_weapons SET disposition = 1.2 WHERE disposition != 1.2');
+      if (res.changes && res.changes > 0) {
+        console.log(`[RivenService] Standardized disposition to 1.2 (4 dots) for ${res.changes} weapons in SQLite.`);
+      }
+    } catch (err: any) {
+      console.warn('[RivenService] Error standardizing dispositions:', err.message);
+    }
+  }
+
   private async safeFetch(url: string, headers: Record<string, string> = {}): Promise<any> {
     const now = Date.now();
     const elapsed = now - this.lastFetchTime;
@@ -172,7 +184,7 @@ class RivenMarketService {
         const nameRu = w.i18n?.ru?.name || nameEn;
         const groupType = w.group || 'primary';
         const rivenType = w.rivenType || 'rifle';
-        const disposition = Number(w.disposition) || 1.0;
+        const disposition = 1.2; // Warframe Disposition standard: 1.2 (4 dots) for all weapons
         const reqMr = Number(w.reqMasteryRank) || 0;
         const iconUrl = w.i18n?.ru?.icon || w.i18n?.en?.icon || '';
         const thumbUrl = w.i18n?.ru?.thumb || w.i18n?.en?.thumb || '';
@@ -601,6 +613,7 @@ class RivenMarketService {
     // Initial sync
     setTimeout(async () => {
       await this.cleanupLegacySeeds();
+      await this.standardizeDispositions();
       await this.syncWeaponsCatalog();
       await this.syncLiveAuctions();
     }, 2000);
