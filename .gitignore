@@ -21,6 +21,7 @@ server/data/*.db-shm
 .env
 .env.*
 !.env.example
+cf-proxy-network/accounts.json
 
 # Temporary archives & scratch scripts
 *.zip
@@ -38,3 +39,4 @@ yarn-error.log*
 Thumbs.db
 .vscode/
 .idea/
+.wrangler/

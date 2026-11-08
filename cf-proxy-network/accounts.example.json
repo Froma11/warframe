@@ -1,0 +1,29 @@
+{
+  "proxySecret": "YOUR_SHARED_SECRET_KEY_HERE",
+  "accounts": [
+    {
+      "name": "cf-node-1",
+      "workerName": "zero-wfm-node1",
+      "accountId": "YOUR_CF_ACCOUNT_ID_1",
+      "apiToken": "YOUR_CF_API_TOKEN_1"
+    },
+    {
+      "name": "cf-node-2",
+      "workerName": "zero-wfm-node2",
+      "accountId": "YOUR_CF_ACCOUNT_ID_2",
+      "apiToken": "YOUR_CF_API_TOKEN_2"
+    },
+    {
+      "name": "cf-node-3",
+      "workerName": "zero-wfm-node3",
+      "accountId": "YOUR_CF_ACCOUNT_ID_3",
+      "apiToken": "YOUR_CF_API_TOKEN_3"
+    },
+    {
+      "name": "cf-node-4",
+      "workerName": "zero-wfm-node4",
+      "accountId": "YOUR_CF_ACCOUNT_ID_4",
+      "apiToken": "YOUR_CF_API_TOKEN_4"
+    }
+  ]
+}

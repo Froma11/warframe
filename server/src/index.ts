@@ -9,6 +9,8 @@ import { db, initDatabase } from './db';
 import { initAuth, generateToken, setAuthCookie, clearAuthCookie, requireAuth } from './auth';
 import { scraper } from './services/scraper';
 import { rivenService } from './services/rivenService';
+import { wsMarketClient } from './services/wsMarketClient';
+import { proxyPool } from './services/proxyPool';
 import { extractAuctionId, evaluateRiven, resolveWeaponClass } from './services/rivenEvaluation';
 import weaponVariantsData from './data/weaponVariants.json';
 
@@ -406,7 +408,8 @@ app.get('/api/rivens/lots/:slug', async (req, res) => {
 // 3. Force-sync latest auctions from market
 app.post('/api/rivens/sync', async (req, res) => {
   try {
-    const count = await rivenService.syncLiveAuctions();
+    const weaponSlug = req.body?.weapon || (typeof req.query.weapon === 'string' ? req.query.weapon : undefined);
+    const count = await rivenService.syncLiveAuctions(weaponSlug);
     res.json({
       success: true,
       syncedCount: count,
@@ -433,25 +436,23 @@ const handleEvaluateAuction = async (req: any, res: any) => {
     }
 
     const wfmUrl = `https://api.warframe.market/v1/auctions/entry/${auctionId}`;
-    const response = await fetch(wfmUrl, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        Accept: 'application/json',
-        Language: 'en',
-      },
-    });
-
-    const json: any = await response.json();
-    if (response.status === 404 || json?.error?.auction?.includes('app.form.not_exist')) {
-      return res.status(404).json({
-        error: 'Аукцион не найден на Warframe Market (возможно, лот был продан или закрыт продавцом)',
+    let json: any;
+    try {
+      json = await proxyPool.fetchJson(wfmUrl, { priority: 'HIGH', lang: 'en' });
+    } catch (fetchErr: any) {
+      if (fetchErr.message?.includes('404') || fetchErr.message?.includes('not_exist')) {
+        return res.status(404).json({
+          error: 'Аукцион не найден на Warframe Market (возможно, лот был продан или закрыт продавцом)',
+        });
+      }
+      return res.status(502).json({
+        error: `Ошибка запроса к Warframe Market API: ${fetchErr.message}`,
       });
     }
 
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: `Ошибка запроса к Warframe Market API: ${response.status} ${response.statusText}`,
+    if (json?.error?.auction?.includes('app.form.not_exist')) {
+      return res.status(404).json({
+        error: 'Аукцион не найден на Warframe Market (возможно, лот был продан или закрыт продавцом)',
       });
     }
     const auction = json?.payload?.auction;
@@ -530,25 +531,23 @@ app.get('/api/rivens/evaluate/:auctionId', async (req, res) => {
     }
 
     const wfmUrl = `https://api.warframe.market/v1/auctions/entry/${cleanId}`;
-    const response = await fetch(wfmUrl, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        Accept: 'application/json',
-        Language: 'en',
-      },
-    });
-
-    const json: any = await response.json();
-    if (response.status === 404 || json?.error?.auction?.includes('app.form.not_exist')) {
-      return res.status(404).json({
-        error: 'Аукцион не найден на Warframe Market (возможно, лот был продан или закрыт продавцом)',
+    let json: any;
+    try {
+      json = await proxyPool.fetchJson(wfmUrl, { priority: 'HIGH', lang: 'en' });
+    } catch (fetchErr: any) {
+      if (fetchErr.message?.includes('404') || fetchErr.message?.includes('not_exist')) {
+        return res.status(404).json({
+          error: 'Аукцион не найден на Warframe Market (возможно, лот был продан или закрыт продавцом)',
+        });
+      }
+      return res.status(502).json({
+        error: `Ошибка запроса к Warframe Market API: ${fetchErr.message}`,
       });
     }
 
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: `Ошибка запроса к Warframe Market API: ${response.status} ${response.statusText}`,
+    if (json?.error?.auction?.includes('app.form.not_exist')) {
+      return res.status(404).json({
+        error: 'Аукцион не найден на Warframe Market (возможно, лот был продан или закрыт продавцом)',
       });
     }
     const auction = json?.payload?.auction;
@@ -619,12 +618,17 @@ app.get('/api/status', async (_req, res) => {
   try {
     const itemsCount = await db.get<{ count: number }>('SELECT COUNT(*) as count FROM items');
     const snapshotsCount = await db.get<{ count: number }>('SELECT COUNT(*) as count FROM market_snapshots');
+    const rivensCount = await db.get<{ count: number }>('SELECT COUNT(*) as count FROM riven_lots');
 
     res.json({
       status: 'ONLINE',
       system: 'Tenno Market Intelligence Core',
       itemsCount: itemsCount?.count || 0,
       snapshotsCount: snapshotsCount?.count || 0,
+      rivensCount: rivensCount?.count || 0,
+      websocket: wsMarketClient.getTelemetry(),
+      proxyPool: proxyPool.getTelemetry(),
+      rivenScheduler: rivenService.getSchedulerTelemetry(),
       timestamp: new Date().toISOString(),
     });
   } catch (err: any) {
@@ -647,11 +651,14 @@ async function start() {
   app.listen(PORT, () => {
     console.log(`[SERVER] Warframe Market Analytics running on port ${PORT}`);
     
-    // Start background worker (15 min interval as requested in answer 3)
-    scraper.startBackgroundWorker(15);
+    // Start Real-Time WebSocket client for 170 arcanes
+    wsMarketClient.start();
 
-    // Start riven background worker for live lots accumulation (every 30s)
-    rivenService.startBackgroundWorker(0.5);
+    // Start 3-Tier Priority Riven Scheduler (HOT / WARM / COLD)
+    rivenService.startPriorityScheduler();
+
+    // Start gentle incremental background scraper
+    scraper.startBackgroundWorker(30);
   });
 }
 

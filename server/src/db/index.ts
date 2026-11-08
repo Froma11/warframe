@@ -51,6 +51,7 @@ export const db = {
 export async function initDatabase() {
   await db.run('PRAGMA journal_mode = WAL;');
   await db.run('PRAGMA synchronous = NORMAL;');
+  await db.run('PRAGMA busy_timeout = 5000;');
 
   await db.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -172,6 +173,8 @@ export async function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_riven_lots_weapon ON riven_lots(weapon_slug);
     CREATE INDEX IF NOT EXISTS idx_riven_lots_endo ON riven_lots(endo_value);
     CREATE INDEX IF NOT EXISTS idx_riven_lots_price ON riven_lots(buyout_price);
+    CREATE INDEX IF NOT EXISTS idx_riven_lots_weapon_eff ON riven_lots(weapon_slug, efficiency DESC);
+    CREATE INDEX IF NOT EXISTS idx_riven_weapons_tier ON riven_weapons(priority_tier, last_synced_at);
   `);
 
   // Safe incremental schema migrations
@@ -180,6 +183,18 @@ export async function initDatabase() {
   } catch {}
   try {
     await db.exec("ALTER TABLE notes ADD COLUMN tag TEXT DEFAULT 'СНАЙПИНГ'");
+  } catch {}
+  try {
+    await db.exec("ALTER TABLE riven_weapons ADD COLUMN priority_tier INTEGER DEFAULT 2");
+  } catch {}
+  try {
+    await db.exec("ALTER TABLE riven_weapons ADD COLUMN activity_score REAL DEFAULT 0");
+  } catch {}
+  try {
+    await db.exec("ALTER TABLE riven_weapons ADD COLUMN last_synced_at DATETIME");
+  } catch {}
+  try {
+    await db.exec("ALTER TABLE riven_weapons ADD COLUMN active_lots_count INTEGER DEFAULT 0");
   } catch {}
 
   console.log('[DB] SQLite Database initialized with WAL mode at:', dbPath);
