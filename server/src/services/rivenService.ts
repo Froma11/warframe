@@ -604,8 +604,6 @@ class RivenMarketService {
         break;
     }
 
-    sql += ' LIMIT 250';
-
     const rows = await db.all<any>(sql, params);
 
     const lots: RivenLot[] = rows.map((r) => {
