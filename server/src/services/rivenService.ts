@@ -388,8 +388,12 @@ class RivenMarketService {
         } catch (err: any) {
           console.warn('[RivenService] Scheduler loop warning:', err.message);
         }
-        // Small interval between picking weapons: ~250ms (~4 req/s across network)
-        await new Promise(r => setTimeout(r, 260));
+
+        // Adaptive pacing: If CF nodes are active, cycle faster (~300ms); if relying on DIRECT-VPS, pace safely (~1350ms)
+        const telemetry = proxyPool.getTelemetry();
+        const cfHealthy = telemetry.nodes.filter(n => n.id.startsWith('CF-') && n.status === 'READY').length;
+        const delayMs = cfHealthy > 0 ? 300 : 1350;
+        await new Promise(r => setTimeout(r, delayMs));
       }
     };
 
@@ -547,8 +551,8 @@ class RivenMarketService {
     );
 
     if (!countRow || countRow.count === 0) {
-      // Synchronously fetch for first-time view to populate immediately
-      await this.syncWeaponLots(weaponSlug, 'HIGH');
+      // Trigger background sync without blocking client response
+      this.syncWeaponLots(weaponSlug, 'HIGH').catch(() => {});
     }
 
     let sql = 'SELECT * FROM riven_lots WHERE weapon_slug = ?';

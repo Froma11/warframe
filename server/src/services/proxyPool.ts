@@ -1,30 +1,25 @@
 /**
- * ProxyPoolManager: 5-Node High-Frequency Distributed Proxy Pool
+ * ProxyPoolManager: Distributed Proxy Pool with Strict Per-Node Mutual Exclusion
  * 
- * Supports:
- * - 4 Cloudflare Workers (CF-1 .. CF-4) with token-bucket & 88k req/day quota
- * - 1 Direct Contabo VPS Node (DIRECT-VPS) with 1200ms interval
- * - Non-blocking priority queue (HIGH, NORMAL, LOW)
- * - Automatic 429 backoff & node rotation with transparent retries
- * - Clean fallback to DIRECT-VPS if CF worker URLs are not configured
+ * Features:
+ * - 5 Nodes (4 Cloudflare Workers + 1 Direct Contabo VPS Node)
+ * - Strict per-node concurrency limit (1 active request per node max)
+ * - Token-bucket pacing: 1050ms for CF workers, 1250ms for DIRECT-VPS
+ * - Dynamic 429 backoff using WFM `Retry-After` header (or 60s default)
+ * - Automatic 403 CF Turnstile detection & cooldown
+ * - Zero Event Loop starvation, instant non-blocking queue for HIGH priority requests
  */
-
-export interface ProxyNodeConfig {
-  id: string;
-  url: string | null; // null for DIRECT-VPS
-  minIntervalMs: number;
-  dailyQuota: number | null;
-}
 
 export interface NodeStatus {
   id: string;
-  url: string | null;
+  url: string | null; // null for DIRECT-VPS
   requestsToday: number;
   quota: number | null;
   status: 'READY' | 'COOLDOWN' | 'EXHAUSTED';
   lastUsedAt: number;
   cooldownUntil: number;
   consecutiveErrors: number;
+  isBusy: boolean;
 }
 
 export type RequestPriority = 'HIGH' | 'NORMAL' | 'LOW';
@@ -51,8 +46,8 @@ export class ProxyPoolManager {
   private proxySecret: string = '';
 
   constructor() {
-    this.initNodes();
     this.currentUtcDay = this.getTodayUtcDateString();
+    this.initNodes();
   }
 
   private getTodayUtcDateString(): string {
@@ -61,8 +56,7 @@ export class ProxyPoolManager {
 
   public initNodes(): void {
     this.proxySecret = process.env.PROXY_SECRET || 'zero_secret_proxy_99f4a81bc268d0e74e4c2d3a811';
-    
-    // CF_WORKER_URLS format: comma-separated list of 1 to 4 URLs
+
     const cfUrlsEnv = process.env.CF_WORKER_URLS || '';
     const cfUrls = cfUrlsEnv
       .split(',')
@@ -81,11 +75,12 @@ export class ProxyPoolManager {
         status: 'READY',
         lastUsedAt: 0,
         cooldownUntil: 0,
-        consecutiveErrors: 0
+        consecutiveErrors: 0,
+        isBusy: false
       });
     });
 
-    // Node 5 is always DIRECT (Direct server IP)
+    // Node 5 is always DIRECT (Direct Contabo VPS node)
     this.nodes.push({
       id: 'DIRECT-VPS',
       url: null,
@@ -94,15 +89,13 @@ export class ProxyPoolManager {
       status: 'READY',
       lastUsedAt: 0,
       cooldownUntil: 0,
-      consecutiveErrors: 0
+      consecutiveErrors: 0,
+      isBusy: false
     });
 
     console.log(`[ProxyPool] Initialized pool with ${this.nodes.length} nodes: ${this.nodes.map(n => n.id).join(', ')}`);
   }
 
-  /**
-   * Checks and resets daily quota counters if UTC day has changed
-   */
   private checkUtcMidnightReset(): void {
     const today = this.getTodayUtcDateString();
     if (today !== this.currentUtcDay) {
@@ -118,13 +111,13 @@ export class ProxyPoolManager {
   }
 
   /**
-   * Returns next ready node, respecting cooldowns, quotas and minimum intervals
+   * Finds the best currently available node that is not busy and satisfies minInterval
    */
-  private getReadyNode(): { node: NodeStatus; waitMs: number } | null {
+  private getAvailableNode(): NodeStatus | null {
     this.checkUtcMidnightReset();
     const now = Date.now();
 
-    // Update statuses for nodes whose cooldown has passed
+    // Recover nodes whose cooldown expired
     for (const node of this.nodes) {
       if (node.status === 'COOLDOWN' && now >= node.cooldownUntil) {
         node.status = 'READY';
@@ -135,52 +128,30 @@ export class ProxyPoolManager {
       }
     }
 
-    // Filter eligible nodes
-    const eligible = this.nodes.filter(n => n.status === 'READY');
-    if (eligible.length === 0) {
-      // Find minimum cooldown wait among cooled down nodes
-      const cooldownNodes = this.nodes.filter(n => n.status === 'COOLDOWN');
-      if (cooldownNodes.length > 0) {
-        const nextCool = Math.min(...cooldownNodes.map(n => n.cooldownUntil));
-        return { node: cooldownNodes[0], waitMs: Math.max(50, nextCool - now) };
-      }
-      // If all exhausted, fallback to DIRECT-VPS
-      const direct = this.nodes.find(n => n.id === 'DIRECT-VPS');
-      if (direct) {
-        const minInterval = 1200;
-        const timeSinceLast = now - direct.lastUsedAt;
-        const waitMs = Math.max(0, minInterval - timeSinceLast);
-        return { node: direct, waitMs };
-      }
+    // Only consider idle nodes in READY status
+    const readyIdleNodes = this.nodes.filter(n => n.status === 'READY' && !n.isBusy);
+    if (readyIdleNodes.length === 0) {
       return null;
     }
 
-    // Sort by readiness (time needed until minInterval satisfied) and then by least recently used
+    // Among ready idle nodes, find those that have satisfied their minInterval
     let bestNode: NodeStatus | null = null;
-    let minWaitMs = Infinity;
+    let longestIdleTime = -1;
 
-    for (const node of eligible) {
-      const minInterval = node.url ? 1050 : 1200;
-      const timeSinceLast = now - node.lastUsedAt;
-      const waitMs = Math.max(0, minInterval - timeSinceLast);
+    for (const node of readyIdleNodes) {
+      const minInterval = node.url ? 1050 : 1250;
+      const elapsedSinceLast = now - node.lastUsedAt;
 
-      if (waitMs === 0) {
-        // Can be used immediately! Pick node with oldest lastUsedAt
-        if (!bestNode || node.lastUsedAt < bestNode.lastUsedAt) {
+      if (elapsedSinceLast >= minInterval) {
+        // Ready right now!
+        if (elapsedSinceLast > longestIdleTime) {
+          longestIdleTime = elapsedSinceLast;
           bestNode = node;
-          minWaitMs = 0;
         }
-      } else if (waitMs < minWaitMs && bestNode === null) {
-        minWaitMs = waitMs;
-        bestNode = node;
       }
     }
 
-    if (bestNode) {
-      return { node: bestNode, waitMs: minWaitMs };
-    }
-
-    return null;
+    return bestNode;
   }
 
   /**
@@ -214,10 +185,8 @@ export class ProxyPoolManager {
       };
 
       if (priority === 'HIGH') {
-        // Insert at beginning of queue
         this.queue.unshift(item);
       } else if (priority === 'NORMAL') {
-        // Insert after existing HIGH requests
         const firstLowIndex = this.queue.findIndex(q => q.priority === 'LOW');
         if (firstLowIndex === -1) {
           this.queue.push(item);
@@ -225,7 +194,6 @@ export class ProxyPoolManager {
           this.queue.splice(firstLowIndex, 0, item);
         }
       } else {
-        // Priority LOW
         this.queue.push(item);
       }
 
@@ -233,38 +201,52 @@ export class ProxyPoolManager {
     });
   }
 
-  private async processQueue(): Promise<void> {
+  /**
+   * Queue processor: dispatches requests to available idle nodes
+   */
+  private processQueue(): void {
     if (this.isProcessingQueue) return;
     this.isProcessingQueue = true;
 
-    while (this.queue.length > 0) {
-      const nextChoice = this.getReadyNode();
-      if (!nextChoice) {
-        // Wait 100ms and try again
-        await new Promise(r => setTimeout(r, 100));
-        continue;
+    const dispatchNext = () => {
+      if (this.queue.length === 0) {
+        this.isProcessingQueue = false;
+        return;
       }
 
-      const { node, waitMs } = nextChoice;
-      if (waitMs > 0) {
-        await new Promise(r => setTimeout(r, waitMs));
+      const node = this.getAvailableNode();
+      if (!node) {
+        // Wait 100ms and check again
+        setTimeout(dispatchNext, 100);
+        return;
       }
 
       const req = this.queue.shift();
-      if (!req) break;
+      if (!req) {
+        this.isProcessingQueue = false;
+        return;
+      }
 
-      // Execute request concurrently without blocking queue loop
-      this.executeRequest(node, req);
-    }
+      // Mark node busy and execute
+      node.isBusy = true;
+      node.lastUsedAt = Date.now();
+      node.requestsToday++;
 
-    this.isProcessingQueue = false;
+      this.executeRequest(node, req).finally(() => {
+        node.isBusy = false;
+        node.lastUsedAt = Date.now();
+        // Continue dispatching
+        setImmediate(dispatchNext);
+      });
+
+      // Try dispatching other requests to any remaining idle nodes
+      setImmediate(dispatchNext);
+    };
+
+    dispatchNext();
   }
 
   private async executeRequest(node: NodeStatus, req: QueuedRequest): Promise<void> {
-    const now = Date.now();
-    node.lastUsedAt = now;
-    node.requestsToday++;
-
     let fetchUrl: string;
     const fetchHeaders: Record<string, string> = {
       'Accept': 'application/json, text/plain, */*',
@@ -284,7 +266,7 @@ export class ProxyPoolManager {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000);
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       const res = await fetch(fetchUrl, {
         method: 'GET',
@@ -297,35 +279,43 @@ export class ProxyPoolManager {
       const wfmStatusHeader = res.headers.get('x-wfm-status');
       const effectiveStatus = wfmStatusHeader ? parseInt(wfmStatusHeader, 10) : res.status;
 
+      // Handle 429 Too Many Requests
       if (effectiveStatus === 429) {
-        console.warn(`[ProxyPool] Node ${node.id} received HTTP 429. Setting 5-minute cooldown.`);
+        const retryAfterHeader = res.headers.get('retry-after');
+        const retryAfterSec = retryAfterHeader ? parseInt(retryAfterHeader, 10) : 60;
+        const cooldownMs = Math.max(30000, (isNaN(retryAfterSec) ? 60 : retryAfterSec) * 1000);
+
+        console.warn(`[ProxyPool] Node ${node.id} received HTTP 429. Setting cooldown for ${cooldownMs / 1000}s.`);
         node.status = 'COOLDOWN';
-        node.cooldownUntil = Date.now() + 300_000; // 5 minutes
+        node.cooldownUntil = Date.now() + cooldownMs;
 
         this.retryOrReject(req, new Error(`Rate limit 429 on node ${node.id}`));
         return;
       }
 
+      // Handle Cloudflare Bot Challenge (403) on Worker nodes
+      if (res.status === 403 && node.url) {
+        console.warn(`[ProxyPool] CF Node ${node.id} received 403 Bot Challenge. Setting 15m cooldown.`);
+        node.status = 'COOLDOWN';
+        node.cooldownUntil = Date.now() + 15 * 60 * 1000;
+
+        this.retryOrReject(req, new Error(`CF Node ${node.id} 403 challenge`));
+        return;
+      }
+
+      // Handle Upstream 5xx errors
       if (effectiveStatus >= 500) {
         node.consecutiveErrors++;
         if (node.consecutiveErrors >= 3) {
-          console.warn(`[ProxyPool] Node ${node.id} hit 3 consecutive errors (${effectiveStatus}). Cooldown 60s.`);
+          console.warn(`[ProxyPool] Node ${node.id} hit 3 consecutive errors (${effectiveStatus}). Cooldown 45s.`);
           node.status = 'COOLDOWN';
-          node.cooldownUntil = Date.now() + 60_000;
+          node.cooldownUntil = Date.now() + 45000;
         }
-        this.retryOrReject(req, new Error(`Upstream server error HTTP ${effectiveStatus} on node ${node.id}`));
+        this.retryOrReject(req, new Error(`Upstream HTTP ${effectiveStatus} on ${node.id}`));
         return;
       }
 
       if (!res.ok) {
-        // If 403 (Cloudflare challenge) on CF node, mark node in cooldown and fallback
-        if (res.status === 403 && node.url) {
-          console.warn(`[ProxyPool] CF Node ${node.id} got 403 challenge. Putting into 10-minute cooldown.`);
-          node.status = 'COOLDOWN';
-          node.cooldownUntil = Date.now() + 600_000;
-          this.retryOrReject(req, new Error(`CF Node ${node.id} 403 challenge`));
-          return;
-        }
         const text = await res.text().catch(() => '');
         this.retryOrReject(req, new Error(`HTTP ${res.status}: ${text.slice(0, 100)}`));
         return;
@@ -338,9 +328,9 @@ export class ProxyPoolManager {
     } catch (err: any) {
       node.consecutiveErrors++;
       if (node.consecutiveErrors >= 3) {
-        console.warn(`[ProxyPool] Node ${node.id} hit 3 consecutive errors. Cooldown 60s.`);
+        console.warn(`[ProxyPool] Node ${node.id} network errors. Cooldown 45s.`);
         node.status = 'COOLDOWN';
-        node.cooldownUntil = Date.now() + 60_000;
+        node.cooldownUntil = Date.now() + 45000;
       }
       this.retryOrReject(req, err);
     }
@@ -349,7 +339,6 @@ export class ProxyPoolManager {
   private retryOrReject(req: QueuedRequest, error: Error): void {
     if (req.retriesLeft > 0) {
       req.retriesLeft--;
-      // Put back at beginning of its priority class to re-try with another node
       if (req.priority === 'HIGH') {
         this.queue.unshift(req);
       } else {
@@ -361,9 +350,6 @@ export class ProxyPoolManager {
     }
   }
 
-  /**
-   * Diagnostic telemetry for /api/status endpoint
-   */
   public getTelemetry(): {
     totalNodes: number;
     healthyNodes: number;
@@ -392,5 +378,4 @@ export class ProxyPoolManager {
   }
 }
 
-// Global singleton instance
 export const proxyPool = new ProxyPoolManager();
