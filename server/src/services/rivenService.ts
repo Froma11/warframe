@@ -321,9 +321,9 @@ class RivenMarketService {
           console.warn('[RivenService] Scheduler loop warning:', err.message);
         }
 
-        // With 5 Outbound IPs (1000ms minInterval per IP), pool handles requests smoothly.
-        // Pacing the scheduler loop at 650ms ensures constant, balanced throughput without WAF limits.
-        await new Promise((r) => setTimeout(r, 650));
+        // With 5 Outbound IPs (alternating IPv4/IPv6), pool handles requests smoothly.
+        // Pacing the scheduler loop at 900ms ensures constant, balanced throughput without WAF limits.
+        await new Promise((r) => setTimeout(r, 900));
       }
     };
 

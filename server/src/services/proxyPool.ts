@@ -68,6 +68,7 @@ export class ProxyPoolManager {
   private lastGlobalDispatchAt = 0;
   private lastIpv4DispatchAt = 0;
   private lastIpv6DispatchAt = 0;
+  private lastFamilyDispatched: 4 | 6 = 6;
   private currentUtcDay: string = '';
   private proxySecret: string = '';
   private nextWorkerIndex = 0;
@@ -203,8 +204,8 @@ export class ProxyPoolManager {
   }
 
   /**
-   * Finds the best currently available IP node that is not busy and satisfies minInterval (1200ms)
-   * with family/subnet pacing (1100ms). Alternates between IPv4 and IPv6 nodes smoothly.
+   * Finds the best currently available IP node that is not busy and satisfies minInterval (1800ms)
+   * with family/subnet pacing. Alternates between IPv4 and IPv6 nodes smoothly.
    */
   private getAvailableIpNode(): IpNodeStatus | null {
     this.checkUtcMidnightReset();
@@ -220,27 +221,50 @@ export class ProxyPoolManager {
     const readyIdleNodes = this.ipNodes.filter((n) => n.status === 'READY' && !n.isBusy);
     if (readyIdleNodes.length === 0) return null;
 
+    // Prefer alternating family: if last was 4, prefer 6; if last was 6, prefer 4
+    const preferredFamily = this.lastFamilyDispatched === 4 ? 6 : 4;
+    let candidates = readyIdleNodes.filter((n) => n.family === preferredFamily);
+    if (candidates.length === 0) {
+      candidates = readyIdleNodes;
+    }
+
     let bestNode: IpNodeStatus | null = null;
     let longestIdleTime = -1;
 
-    for (const node of readyIdleNodes) {
-      const minInterval = 1200; // 1200ms per individual IP node
+    for (const node of candidates) {
+      const minInterval = 1800; // at least 1800ms per individual IP
       const elapsed = now - node.lastUsedAt;
 
-      // IPv4 pacing: ensure at least 1100ms between IPv4 requests
-      if (node.family === 4 && now - this.lastIpv4DispatchAt < 1100) {
+      // IPv4 pacing: ensure at least 1800ms between IPv4 requests
+      if (node.family === 4 && now - this.lastIpv4DispatchAt < 1800) {
         continue;
       }
 
-      // IPv6 prefix spacing: protect the shared /64 prefix (at least 1100ms between any IPv6 requests)
-      if (node.family === 6 && now - this.lastIpv6DispatchAt < 1100) {
+      // IPv6 prefix spacing: protect the shared /64 prefix (at least 1800ms between any IPv6 requests)
+      if (node.family === 6 && now - this.lastIpv6DispatchAt < 1800) {
         continue;
       }
 
-      if (elapsed >= minInterval) {
+      if (elapsed >= minInterval || node.lastUsedAt === 0) {
         if (elapsed > longestIdleTime) {
           longestIdleTime = elapsed;
           bestNode = node;
+        }
+      }
+    }
+
+    // Fallback to other family if preferred did not meet interval
+    if (!bestNode && candidates !== readyIdleNodes) {
+      for (const node of readyIdleNodes) {
+        const elapsed = now - node.lastUsedAt;
+        if (node.family === 4 && now - this.lastIpv4DispatchAt < 1800) continue;
+        if (node.family === 6 && now - this.lastIpv6DispatchAt < 1800) continue;
+
+        if (elapsed >= 1800 || node.lastUsedAt === 0) {
+          if (elapsed > longestIdleTime) {
+            longestIdleTime = elapsed;
+            bestNode = node;
+          }
         }
       }
     }
@@ -306,10 +330,10 @@ export class ProxyPoolManager {
       }
 
       const now = Date.now();
-      // Ensure minimum 500ms between any requests dispatched across the entire pool (~2 req/s)
+      const minGlobalGap = 1050; // 1050ms between any requests dispatched across the entire pool
       const globalElapsed = now - this.lastGlobalDispatchAt;
-      if (globalElapsed < 500) {
-        setTimeout(dispatchNext, Math.max(10, 500 - globalElapsed));
+      if (globalElapsed < minGlobalGap) {
+        setTimeout(dispatchNext, Math.max(10, minGlobalGap - globalElapsed));
         return;
       }
 
@@ -329,6 +353,7 @@ export class ProxyPoolManager {
       node.lastUsedAt = Date.now();
       node.requestsToday++;
       this.lastGlobalDispatchAt = Date.now();
+      this.lastFamilyDispatched = node.family;
       if (node.family === 4) {
         this.lastIpv4DispatchAt = Date.now();
       } else {
@@ -341,7 +366,7 @@ export class ProxyPoolManager {
       });
 
       // Pace subsequent dispatches smoothly
-      setTimeout(dispatchNext, 500);
+      setTimeout(dispatchNext, minGlobalGap);
     };
 
     dispatchNext();
