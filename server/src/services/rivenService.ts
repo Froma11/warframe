@@ -210,83 +210,15 @@ class RivenMarketService {
         return 0;
       }
 
-      const rawAuctions = data.payload.auctions;
-      const validLots: any[] = [];
-      let maxEfficiencyFound = 0;
-      let hasFreshLot = false;
-      const fifteenMinAgo = Date.now() - 15 * 60 * 1000;
+      // Offload CPU parsing, Endo dissolution formulas & sorting to Cloudflare Edge Compute cluster
+      const computeResult = await proxyPool.computeOnWorker({
+        weaponUrlName: weaponSlug,
+        rawAuctions: data.payload.auctions,
+      });
 
-      for (const a of rawAuctions) {
-        if (!a || !a.item || a.item.type !== 'riven' || a.closed === true || a.visible === false) {
-          continue;
-        }
-
-        // Platform filter: strictly PC or crossplay
-        if (a.platform && a.platform !== 'pc' && !a.crossplay) continue;
-        if (a.owner?.platform && a.owner?.platform !== 'pc' && !a.owner?.crossplay) continue;
-
-        const isDirect = Boolean(
-          a.is_direct_sell === true ||
-          (a.buyout_price !== null && a.starting_price !== null && a.buyout_price === a.starting_price)
-        );
-
-        const buyoutPrice = a.buyout_price !== undefined && a.buyout_price !== null ? Number(a.buyout_price) : null;
-        const startingPrice = a.starting_price !== undefined && a.starting_price !== null ? Number(a.starting_price) : 0;
-        const topBid = a.top_bid !== undefined && a.top_bid !== null ? Number(a.top_bid) : null;
-
-        // Effective price for Endo efficiency formula
-        let effectivePrice = 0;
-        if (buyoutPrice !== null && buyoutPrice > 0) {
-          effectivePrice = buyoutPrice;
-        } else {
-          effectivePrice = (topBid !== null && topBid > 0) ? topBid : startingPrice;
-        }
-
-        const modName = a.item.name || '';
-        const modRank = Number(a.item.mod_rank) || 0;
-        const reRolls = Number(a.item.re_rolls) || 0;
-        const masteryLevel = Number(a.item.mastery_level) || 8;
-        const polarity = a.item.polarity || '';
-        const attributesJson = JSON.stringify(a.item.attributes || []);
-
-        const sellerName = a.owner?.ingame_name || a.owner?.slug || 'Tenno';
-        const sellerStatus = a.owner?.status || 'offline';
-        const sellerReputation = Number(a.owner?.reputation) || 0;
-
-        const endoValue = calculateRivenEndo(masteryLevel, modRank, reRolls);
-        const efficiency = effectivePrice > 0 ? Number((endoValue / effectivePrice).toFixed(2)) : 0;
-
-        if (efficiency > maxEfficiencyFound) {
-          maxEfficiencyFound = efficiency;
-        }
-
-        const lotCreatedTime = a.created ? new Date(a.created).getTime() : 0;
-        if (lotCreatedTime >= fifteenMinAgo) {
-          hasFreshLot = true;
-        }
-
-        validLots.push({
-          id: a.id,
-          weapon_slug: weaponSlug,
-          seller_name: sellerName,
-          seller_status: sellerStatus,
-          seller_reputation: sellerReputation,
-          is_direct_sell: isDirect ? 1 : 0,
-          buyout_price: buyoutPrice,
-          starting_price: startingPrice,
-          top_bid: topBid,
-          mod_name: modName,
-          mod_rank: modRank,
-          re_rolls: reRolls,
-          mastery_level: masteryLevel,
-          polarity,
-          attributes: attributesJson,
-          endo_value: endoValue,
-          efficiency,
-          lot_created_at: a.created || new Date().toISOString(),
-          lot_updated_at: a.updated || new Date().toISOString()
-        });
-      }
+      const validLots = computeResult.lots || [];
+      const maxEfficiencyFound = computeResult.maxEfficiency || 0;
+      const hasFreshLot = computeResult.hasFreshLot || false;
 
       // Zero-lock batch update in SQLite
       await db.run('BEGIN TRANSACTION');
@@ -378,7 +310,7 @@ class RivenMarketService {
     if (this.isSchedulerRunning) return;
     this.isSchedulerRunning = true;
 
-    console.log('[RivenService] Starting 3-Tier Priority Scheduler (HOT: 48s, WARM: 100s, COLD: 220s)...');
+    console.log('[RivenService] Starting 3-Tier Priority Scheduler (HOT: 36s, WARM: 95s, COLD: 210s)...');
 
     // Run background loop
     const schedulerLoop = async () => {
@@ -389,16 +321,9 @@ class RivenMarketService {
           console.warn('[RivenService] Scheduler loop warning:', err.message);
         }
 
-        // Adaptive pacing: If CF nodes are active, cycle faster (~1.5s); if relying on DIRECT-VPS, pace gently (~15s)
-        const telemetry = proxyPool.getTelemetry();
-        const cfHealthy = telemetry.nodes.filter(n => n.id.startsWith('CF-') && n.status === 'READY').length;
-        const vpsNode = telemetry.nodes.find(n => n.id === 'DIRECT-VPS');
-        if (cfHealthy === 0 && vpsNode && vpsNode.status === 'COOLDOWN') {
-          await new Promise(r => setTimeout(r, 15000));
-          continue;
-        }
-        const delayMs = cfHealthy > 0 ? 1500 : 15000;
-        await new Promise(r => setTimeout(r, delayMs));
+        // With 5 Outbound IPs (900ms minInterval per IP), pool handles ~5.5 req/s.
+        // Pacing the scheduler loop at 350ms ensures constant, balanced throughput.
+        await new Promise((r) => setTimeout(r, 350));
       }
     };
 
@@ -426,9 +351,9 @@ class RivenMarketService {
       const isOffPeak = currentUtcHour >= 1 && currentUtcHour < 7;
       const offPeakMultiplier = isOffPeak ? 1.35 : 1.0;
 
-      const hotTargetInterval = Math.round(48 * offPeakMultiplier);
-      const warmTargetInterval = Math.round(100 * offPeakMultiplier);
-      const coldTargetInterval = Math.round(220 * offPeakMultiplier);
+      const hotTargetInterval = Math.round(36 * offPeakMultiplier);
+      const warmTargetInterval = Math.round(95 * offPeakMultiplier);
+      const coldTargetInterval = Math.round(210 * offPeakMultiplier);
 
       // Query the single weapon that is most overdue relative to its tier's target interval
       const query = `
