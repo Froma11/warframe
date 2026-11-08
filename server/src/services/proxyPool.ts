@@ -173,7 +173,7 @@ export class ProxyPoolManager {
       this.computeNodes.map(async (node) => {
         try {
           const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 6000);
+          const timeout = setTimeout(() => controller.abort(), 12000);
           const res = await undiciFetch(`${node.url}/health`, {
             headers: { 'x-proxy-secret': this.proxySecret },
             signal: controller.signal,
@@ -477,9 +477,9 @@ export class ProxyPoolManager {
 
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 3500);
+        const timeout = setTimeout(() => controller.abort(), 5000);
 
-        const res = await fetch(`${worker.url}/compute/rivens`, {
+        const res = await undiciFetch(`${worker.url}/compute/rivens`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
