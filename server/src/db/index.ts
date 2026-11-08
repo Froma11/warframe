@@ -174,7 +174,6 @@ export async function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_riven_lots_endo ON riven_lots(endo_value);
     CREATE INDEX IF NOT EXISTS idx_riven_lots_price ON riven_lots(buyout_price);
     CREATE INDEX IF NOT EXISTS idx_riven_lots_weapon_eff ON riven_lots(weapon_slug, efficiency DESC);
-    CREATE INDEX IF NOT EXISTS idx_riven_weapons_tier ON riven_weapons(priority_tier, last_synced_at);
   `);
 
   // Safe incremental schema migrations
@@ -195,6 +194,11 @@ export async function initDatabase() {
   } catch {}
   try {
     await db.exec("ALTER TABLE riven_weapons ADD COLUMN active_lots_count INTEGER DEFAULT 0");
+  } catch {}
+
+  // Post-migration indexes
+  try {
+    await db.exec("CREATE INDEX IF NOT EXISTS idx_riven_weapons_tier ON riven_weapons(priority_tier, last_synced_at);");
   } catch {}
 
   console.log('[DB] SQLite Database initialized with WAL mode at:', dbPath);

@@ -1,10 +1,12 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
 import { db, initDatabase } from './db';
 import { initAuth, generateToken, setAuthCookie, clearAuthCookie, requireAuth } from './auth';
 import { scraper } from './services/scraper';
@@ -13,8 +15,6 @@ import { wsMarketClient } from './services/wsMarketClient';
 import { proxyPool } from './services/proxyPool';
 import { extractAuctionId, evaluateRiven, resolveWeaponClass } from './services/rivenEvaluation';
 import weaponVariantsData from './data/weaponVariants.json';
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -645,6 +645,7 @@ app.use((_req, res) => {
 
 // Start Server
 async function start() {
+  proxyPool.initNodes();
   await initDatabase();
   await initAuth();
 
