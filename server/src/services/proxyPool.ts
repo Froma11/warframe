@@ -65,6 +65,8 @@ export class ProxyPoolManager {
   private computeNodes: ComputeWorkerNode[] = [];
   private queue: QueuedRequest[] = [];
   private isProcessingQueue = false;
+  private lastGlobalDispatchAt = 0;
+  private lastIpv6DispatchAt = 0;
   private currentUtcDay: string = '';
   private proxySecret: string = '';
   private nextWorkerIndex = 0;
@@ -200,7 +202,8 @@ export class ProxyPoolManager {
   }
 
   /**
-   * Finds the best currently available IP node that is not busy and satisfies minInterval (900ms)
+   * Finds the best currently available IP node that is not busy and satisfies minInterval (1000ms)
+   * and prefix pacing for IPv6 (350ms).
    */
   private getAvailableIpNode(): IpNodeStatus | null {
     this.checkUtcMidnightReset();
@@ -220,8 +223,13 @@ export class ProxyPoolManager {
     let longestIdleTime = -1;
 
     for (const node of readyIdleNodes) {
-      const minInterval = 900; // 900ms per IP = ~1.1 req/s per IP, total pool ~5.5 req/s
+      const minInterval = 1000; // 1000ms per IP node
       const elapsed = now - node.lastUsedAt;
+
+      // IPv6 prefix spacing: protect the shared /64 prefix from concurrent bursts
+      if (node.family === 6 && now - this.lastIpv6DispatchAt < 350) {
+        continue;
+      }
 
       if (elapsed >= minInterval) {
         if (elapsed > longestIdleTime) {
@@ -291,6 +299,14 @@ export class ProxyPoolManager {
         return;
       }
 
+      const now = Date.now();
+      // Ensure minimum 200ms between any requests dispatched across the entire pool
+      const globalElapsed = now - this.lastGlobalDispatchAt;
+      if (globalElapsed < 200) {
+        setTimeout(dispatchNext, Math.max(10, 200 - globalElapsed));
+        return;
+      }
+
       const node = this.getAvailableIpNode();
       if (!node) {
         setTimeout(dispatchNext, 50);
@@ -306,14 +322,18 @@ export class ProxyPoolManager {
       node.isBusy = true;
       node.lastUsedAt = Date.now();
       node.requestsToday++;
+      this.lastGlobalDispatchAt = Date.now();
+      if (node.family === 6) {
+        this.lastIpv6DispatchAt = Date.now();
+      }
 
       this.executeRequest(node, req).finally(() => {
         node.isBusy = false;
         node.lastUsedAt = Date.now();
-        setImmediate(dispatchNext);
       });
 
-      setImmediate(dispatchNext);
+      // Pace subsequent dispatches smoothly
+      setTimeout(dispatchNext, 200);
     };
 
     dispatchNext();
@@ -321,7 +341,7 @@ export class ProxyPoolManager {
 
   private async executeRequest(node: IpNodeStatus, req: QueuedRequest): Promise<void> {
     const fetchHeaders: Record<string, string> = {
-      Accept: 'application/json, text/plain, */*',
+      Accept: 'application/json',
       'User-Agent':
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
       Language: req.options?.lang || 'ru',
@@ -340,7 +360,7 @@ export class ProxyPoolManager {
       if (res.status === 429) {
         const retryAfterHeader = res.headers.get('retry-after');
         const retryAfterSec = retryAfterHeader ? parseInt(retryAfterHeader, 10) : 60;
-        const cooldownMs = Math.max(45000, (isNaN(retryAfterSec) ? 60 : retryAfterSec) * 1000);
+        const cooldownMs = Math.max(30000, (isNaN(retryAfterSec) ? 60 : retryAfterSec) * 1000);
 
         console.warn(`[ProxyPool] Node ${node.id} received HTTP 429. Setting cooldown for ${cooldownMs / 1000}s.`);
         node.status = 'COOLDOWN';
@@ -348,7 +368,7 @@ export class ProxyPoolManager {
 
         // Clear out low-priority background requests to relieve pressure
         this.queue = this.queue.filter((q) => q.priority !== 'LOW');
-        this.retryOrReject(req, new Error(`Rate limit 429 on node ${node.id}`));
+        this.retryOrReject(req, new Error(`Rate limit 429 on node ${node.id}`), 4000);
         return;
       }
 
@@ -382,15 +402,23 @@ export class ProxyPoolManager {
     }
   }
 
-  private retryOrReject(req: QueuedRequest, error: Error): void {
+  private retryOrReject(req: QueuedRequest, error: Error, delayMs = 0): void {
     if (req.retriesLeft > 0) {
       req.retriesLeft--;
-      if (req.priority === 'HIGH') {
-        this.queue.unshift(req);
+      const retryAction = () => {
+        if (req.priority === 'HIGH') {
+          this.queue.unshift(req);
+        } else {
+          this.queue.push(req);
+        }
+        this.processQueue();
+      };
+
+      if (delayMs > 0) {
+        setTimeout(retryAction, delayMs);
       } else {
-        this.queue.push(req);
+        retryAction();
       }
-      this.processQueue();
     } else {
       req.reject(error);
     }
