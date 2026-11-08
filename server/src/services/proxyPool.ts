@@ -169,25 +169,27 @@ export class ProxyPoolManager {
   }
 
   private async probeComputeNodes(): Promise<void> {
-    for (const node of this.computeNodes) {
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 4000);
-        const res = await fetch(`${node.url}/health`, {
-          headers: { 'x-proxy-secret': this.proxySecret },
-          signal: controller.signal,
-        });
-        clearTimeout(timeout);
-        if (res.ok) {
-          node.status = 'READY';
-          node.lastCheckAt = Date.now();
-        } else {
+    await Promise.allSettled(
+      this.computeNodes.map(async (node) => {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 6000);
+          const res = await undiciFetch(`${node.url}/health`, {
+            headers: { 'x-proxy-secret': this.proxySecret },
+            signal: controller.signal,
+          });
+          clearTimeout(timeout);
+          if (res.ok) {
+            node.status = 'READY';
+            node.lastCheckAt = Date.now();
+          } else {
+            node.status = 'UNHEALTHY';
+          }
+        } catch {
           node.status = 'UNHEALTHY';
         }
-      } catch {
-        node.status = 'UNHEALTHY';
-      }
-    }
+      })
+    );
   }
 
   private checkUtcMidnightReset(): void {
