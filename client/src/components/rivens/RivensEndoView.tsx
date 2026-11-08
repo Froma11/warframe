@@ -18,6 +18,7 @@ import {
 import { PlatinumIcon } from '../PlatinumIcon';
 import { EndoIcon } from '../EndoIcon';
 import { formatRivenStatName, getDispositionDots } from './rivenUtils';
+import { resolveAssetUrl } from '../../utils/assets';
 
 interface RivenWeapon {
   id: string;
@@ -64,13 +65,31 @@ interface RivensEndoViewProps {
   lang: 'ru' | 'en';
 }
 
-const CDN_BASE = 'https://warframe.market/static/assets/';
-
 export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
-  // State: Weapons list
-  const [weapons, setWeapons] = useState<RivenWeapon[]>([]);
-  const [isLoadingWeapons, setIsLoadingWeapons] = useState(false);
-  const [selectedWeapon, setSelectedWeapon] = useState<RivenWeapon | null>(null);
+  // State: Weapons list with instant cache initialization (0ms load time!)
+  const [weapons, setWeapons] = useState<RivenWeapon[]>(() => {
+    try {
+      const cached = localStorage.getItem('tenno_cached_riven_weapons');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [];
+  });
+  const [isLoadingWeapons, setIsLoadingWeapons] = useState(() => weapons.length === 0);
+  const [selectedWeapon, setSelectedWeapon] = useState<RivenWeapon | null>(() => {
+    try {
+      const cached = localStorage.getItem('tenno_cached_riven_weapons');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.find((w: RivenWeapon) => w.slug === 'torid') || parsed[0];
+        }
+      }
+    } catch {}
+    return null;
+  });
 
   // Search & Categories
   const [searchQuery, setSearchQuery] = useState('');
@@ -129,6 +148,11 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
           const json = await res.json();
           if (json.success && Array.isArray(json.data)) {
             setWeapons(json.data);
+            if (activeGroup === 'all') {
+              try {
+                localStorage.setItem('tenno_cached_riven_weapons', JSON.stringify(json.data));
+              } catch {}
+            }
             if (!selectedWeapon && json.data.length > 0) {
               const defaultWeapon = json.data.find((w: RivenWeapon) => w.slug === 'torid') || json.data[0];
               setSelectedWeapon(defaultWeapon);
@@ -495,7 +519,7 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
                     <div className="flex items-center gap-2.5 min-w-0">
                       {w.thumb_url ? (
                         <img
-                          src={`${CDN_BASE}${w.thumb_url}`}
+                          src={resolveAssetUrl(w.thumb_url)}
                           alt={w.name_ru}
                           className="w-7 h-7 object-contain shrink-0 drop-shadow-sm"
                           onError={(e) => {
@@ -560,7 +584,7 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
                 <div className="flex items-center gap-4">
                   {selectedWeapon.thumb_url ? (
                     <img
-                      src={`${CDN_BASE}${selectedWeapon.thumb_url}`}
+                      src={resolveAssetUrl(selectedWeapon.thumb_url)}
                       alt={selectedWeapon.name_ru}
                       className="w-14 h-14 object-contain drop-shadow-[0_0_16px_rgba(0,229,255,0.3)]"
                     />

@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { ArcaneItem } from '../types/arcane';
 import { ArcaneCard } from './ArcaneCard';
 import { PlatinumIcon } from './PlatinumIcon';
+import { resolveAssetUrl } from '../utils/assets';
 import {
   Search,
   ArrowUpDown,
@@ -333,10 +334,17 @@ export const SednaView: React.FC<SednaViewProps> = ({
                     <td className="py-3.5 px-6">
                       <div className="flex items-center gap-3.5">
                         <img
-                          src={arcane.icon}
+                          src={resolveAssetUrl(arcane.icon)}
                           alt={displayName}
                           className="w-11 h-11 object-contain shrink-0 group-hover:scale-105 transition-transform"
                           loading="lazy"
+                          onError={(e) => {
+                            if (arcane.icon && !e.currentTarget.dataset.retried) {
+                              e.currentTarget.dataset.retried = 'true';
+                              const raw = arcane.icon.replace(/^\/api\/assets\//, '');
+                              e.currentTarget.src = raw.startsWith('http') ? raw : `https://warframe.market/static/assets/${raw}`;
+                            }
+                          }}
                         />
                         <div className="min-w-0">
                           <span className="font-comfortaa text-base font-bold text-slate-900 dark:text-white group-hover:text-[#0284c7] dark:group-hover:text-[#00e5ff] transition-colors block truncate">

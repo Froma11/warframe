@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import { PlatinumIcon } from '../PlatinumIcon';
+import { resolveAssetUrl } from '../../utils/assets';
 import {
   evaluateRiven,
   extractAuctionId,
@@ -414,7 +415,7 @@ export const ModAppraisalView: React.FC<ModAppraisalViewProps> = ({ lang }) => {
             <div className="flex items-start gap-4 z-10">
               {evaluation.icon_url ? (
                 <img
-                  src={`https://warframe.market/static/assets/${evaluation.icon_url}`}
+                  src={resolveAssetUrl(evaluation.icon_url)}
                   alt={evaluation.weapon_name_en}
                   className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-2xl p-1.5 bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] shrink-0"
                 />

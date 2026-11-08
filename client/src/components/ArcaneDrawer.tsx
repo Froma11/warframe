@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { ArcaneItem } from '../types/arcane';
 import { PlatinumIcon } from './PlatinumIcon';
 import { X, TrendingUp, ExternalLink, Calendar, Flame, Zap, Clock, ShieldCheck, Activity } from 'lucide-react';
+import { resolveAssetUrl } from '../utils/assets';
 
 interface ArcaneDrawerProps {
   arcane: ArcaneItem | null;
@@ -382,9 +383,16 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
             <div className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_center,rgba(0,229,255,0.3)_0%,rgba(16,185,129,0.15)_50%,transparent_75%)] opacity-90 pointer-events-none" />
             <div className="absolute inset-0 rounded-2xl bg-[#070b10] border border-[#00e5ff]/40 shadow-inner" />
             <img
-              src={arcane.icon}
+              src={resolveAssetUrl(arcane.icon)}
               alt={displayName}
               className="relative z-10 w-13 h-13 sm:w-14 sm:h-14 object-contain drop-shadow-[0_4px_14px_rgba(0,229,255,0.5)]"
+              onError={(e) => {
+                if (arcane.icon && !e.currentTarget.dataset.retried) {
+                  e.currentTarget.dataset.retried = 'true';
+                  const raw = arcane.icon.replace(/^\/api\/assets\//, '');
+                  e.currentTarget.src = raw.startsWith('http') ? raw : `https://warframe.market/static/assets/${raw}`;
+                }
+              }}
             />
           </div>
 

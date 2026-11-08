@@ -5,6 +5,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import path from 'path';
+import fs from 'fs';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { db, initDatabase } from './db';
@@ -237,8 +238,76 @@ app.delete('/api/notes/:id', requireAuth, async (req: any, res) => {
   }
 });
 
-// --- ARCANES MARKET DATA ROUTES (PROTECTED BY GATEKEEPER) ---
-app.get('/api/arcanes', requireAuth, async (_req, res) => {
+// --- ASSET PROXY & LOCAL DISK CACHE (Zero Broken Images / CORP Bypass) ---
+const assetsCacheDir = fs.existsSync(path.resolve(__dirname, '../data'))
+  ? path.resolve(__dirname, '../data/cached_assets')
+  : path.resolve(process.cwd(), 'data/cached_assets');
+
+if (!fs.existsSync(assetsCacheDir)) {
+  fs.mkdirSync(assetsCacheDir, { recursive: true });
+}
+
+export const toProxyAsset = (url: string | null | undefined): string => {
+  if (!url) return '';
+  if (url.startsWith('/api/assets/')) return url;
+  if (url.startsWith('https://warframe.market/static/assets/')) {
+    return url.replace('https://warframe.market/static/assets/', '/api/assets/');
+  }
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  const cleanPath = url.startsWith('/') ? url.slice(1) : url;
+  return `/api/assets/${cleanPath}`;
+};
+
+app.use('/api/assets', async (req, res) => {
+  try {
+    const rawPath = req.url.replace(/^\/+/, '').split('?')[0];
+    if (!rawPath || rawPath.includes('..')) {
+      return res.status(400).send('Invalid asset path');
+    }
+
+    const localFilePath = path.join(assetsCacheDir, rawPath);
+    if (fs.existsSync(localFilePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      const ext = path.extname(localFilePath).toLowerCase();
+      if (ext === '.png') res.setHeader('Content-Type', 'image/png');
+      else if (ext === '.webp') res.setHeader('Content-Type', 'image/webp');
+      else if (ext === '.jpg' || ext === '.jpeg') res.setHeader('Content-Type', 'image/jpeg');
+      return fs.createReadStream(localFilePath).pipe(res);
+    }
+
+    const upstreamUrl = `https://warframe.market/static/assets/${rawPath}`;
+    const upstreamRes = await fetch(upstreamUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+
+    if (!upstreamRes.ok) {
+      return res.status(upstreamRes.status).send('Asset not found');
+    }
+
+    const buffer = Buffer.from(await upstreamRes.arrayBuffer());
+    try {
+      fs.mkdirSync(path.dirname(localFilePath), { recursive: true });
+      fs.writeFileSync(localFilePath, buffer);
+    } catch {}
+
+    res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', upstreamRes.headers.get('content-type') || 'image/png');
+    return res.send(buffer);
+  } catch (err: any) {
+    return res.status(502).send('Error fetching asset');
+  }
+});
+
+// --- ARCANES MARKET DATA ROUTES (Publicly accessible for terminal users) ---
+app.get('/api/arcanes', async (_req, res) => {
   const query = `
     SELECT 
       i.id,
@@ -289,13 +358,13 @@ app.get('/api/arcanes', requireAuth, async (_req, res) => {
   try {
     const items = await db.all(query);
     
-    // Format into clean client DTO
+    // Format into clean client DTO with proxied image paths
     const formatted = items.map((item: any) => ({
       id: item.id || item.urlName,
       name: item.name,
       nameRu: item.nameRu || item.name,
       urlName: item.urlName,
-      icon: item.thumb || item.icon,
+      icon: toProxyAsset(item.thumb || item.icon),
       rarity: item.rarity,
       maxRank: item.maxRank || 5,
       source: item.source || 'Warframe Market',
@@ -324,8 +393,8 @@ app.get('/api/arcanes', requireAuth, async (_req, res) => {
   }
 });
 
-// Item detail with price history (Protected)
-app.get('/api/arcanes/:slug', requireAuth, async (req, res) => {
+// Item detail with full 90-day price history (Publicly accessible for terminal users)
+app.get('/api/arcanes/:slug', async (req, res) => {
   const slug = req.params.slug as string;
 
   try {
@@ -333,6 +402,9 @@ app.get('/api/arcanes/:slug', requireAuth, async (req, res) => {
     if (!item) {
       return res.status(404).json({ error: 'Item not found' });
     }
+
+    item.icon_url = toProxyAsset(item.icon_url);
+    item.thumb_url = toProxyAsset(item.thumb_url);
 
     // Return full real historical data for all ranks in one quick call
     const history = await db.all(`
@@ -370,6 +442,10 @@ app.get('/api/rivens/weapons', async (req, res) => {
     const search = String(req.query.search || '');
     const group = String(req.query.group || 'all');
     const weapons = await rivenService.getWeapons(search, group);
+    weapons.forEach((w) => {
+      w.icon_url = toProxyAsset(w.icon_url);
+      w.thumb_url = toProxyAsset(w.thumb_url);
+    });
     res.json({
       success: true,
       count: weapons.length,
@@ -393,6 +469,11 @@ app.get('/api/rivens/lots/:slug', async (req, res) => {
       onlineOnly: onlineOnly === 'true',
       sortBy: sortBy as any,
     });
+
+    if (result.weapon) {
+      result.weapon.icon_url = toProxyAsset(result.weapon.icon_url);
+      result.weapon.thumb_url = toProxyAsset(result.weapon.thumb_url);
+    }
 
     res.json({
       success: true,

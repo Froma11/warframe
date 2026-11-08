@@ -2,6 +2,7 @@ import React from 'react';
 import { ArcaneItem } from '../types/arcane';
 import { PlatinumIcon } from './PlatinumIcon';
 import { ExternalLink } from 'lucide-react';
+import { resolveAssetUrl } from '../utils/assets';
 
 interface ArcaneCardProps {
   arcane: ArcaneItem;
@@ -94,10 +95,18 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = ({ arcane, onOpenDetails, l
             
             {/* Floating Artifact with spring levitation on hover */}
             <img
-              src={arcane.icon}
+              src={resolveAssetUrl(arcane.icon)}
               alt={displayName}
               className="relative z-10 w-13 h-13 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.15)] dark:drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)] group-hover:drop-shadow-[0_8px_18px_rgba(0,229,255,0.5)] group-hover:-translate-y-1 group-hover:scale-105 transition-all duration-300 ease-out select-none"
               loading="lazy"
+              onError={(e) => {
+                // If local proxy fails, fallback to direct WFM CDN URL
+                if (arcane.icon && !e.currentTarget.dataset.retried) {
+                  e.currentTarget.dataset.retried = 'true';
+                  const raw = arcane.icon.replace(/^\/api\/assets\//, '');
+                  e.currentTarget.src = raw.startsWith('http') ? raw : `https://warframe.market/static/assets/${raw}`;
+                }
+              }}
             />
           </div>
 

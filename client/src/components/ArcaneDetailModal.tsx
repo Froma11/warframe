@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArcaneItem } from '../types/arcane';
 import { MOCK_ORDERS, MOCK_HISTORY_POINTS, HistoryPoint, Order } from '../data/mockArcanes';
 import { X, Copy, Check, TrendingUp, ShoppingBag, ShieldCheck } from 'lucide-react';
+import { resolveAssetUrl } from '../utils/assets';
 
 interface ArcaneDetailModalProps {
   arcane: ArcaneItem | null;
@@ -80,7 +81,18 @@ export const ArcaneDetailModal: React.FC<ArcaneDetailModalProps> = ({ arcane, on
         {/* Header: Item Identity */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 pb-6 border-b border-white/10">
           <div className="w-20 h-20 rounded-2xl bg-[#0b0f17] border border-white/10 p-2.5 flex items-center justify-center shrink-0">
-            <img src={arcane.icon} alt={arcane.name} className="w-16 h-16 object-contain" />
+            <img
+              src={resolveAssetUrl(arcane.icon)}
+              alt={arcane.name}
+              className="w-16 h-16 object-contain"
+              onError={(e) => {
+                if (arcane.icon && !e.currentTarget.dataset.retried) {
+                  e.currentTarget.dataset.retried = 'true';
+                  const raw = arcane.icon.replace(/^\/api\/assets\//, '');
+                  e.currentTarget.src = raw.startsWith('http') ? raw : `https://warframe.market/static/assets/${raw}`;
+                }
+              }}
+            />
           </div>
 
           <div className="flex-1">

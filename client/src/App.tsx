@@ -80,6 +80,18 @@ export const App: React.FC = () => {
     } else {
       fetchArcanes();
     }
+
+    // Preload riven weapons catalog into cache during idle time
+    if (!localStorage.getItem('tenno_cached_riven_weapons')) {
+      fetch('/api/rivens/weapons?group=all')
+        .then((r) => r.json())
+        .then((j) => {
+          if (j.success && Array.isArray(j.data)) {
+            localStorage.setItem('tenno_cached_riven_weapons', JSON.stringify(j.data));
+          }
+        })
+        .catch(() => {});
+    }
   }, [isAuthenticated, activeTab === 'sedna']);
 
   // Ensure Star Chart ALWAYS remains deep dark space, regardless of light theme

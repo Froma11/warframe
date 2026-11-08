@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { PlatinumIcon } from '../PlatinumIcon';
 import { formatRivenStatName } from './rivenUtils';
+import { resolveAssetUrl } from '../../utils/assets';
 
 interface RivenAttribute {
   value: number;
@@ -52,8 +53,6 @@ interface RivenDetailModalProps {
   onClose: () => void;
   lang: 'ru' | 'en';
 }
-
-const CDN_BASE = 'https://warframe.market/static/assets/';
 
 export const RivenDetailModal: React.FC<RivenDetailModalProps> = ({
   lot,
@@ -137,7 +136,7 @@ export const RivenDetailModal: React.FC<RivenDetailModalProps> = ({
             <div className="flex items-center gap-4">
               {weapon?.thumb_url ? (
                 <img
-                  src={`${CDN_BASE}${weapon.thumb_url}`}
+                  src={resolveAssetUrl(weapon.thumb_url)}
                   alt={weaponName}
                   className="w-14 h-14 object-contain drop-shadow-[0_0_12px_rgba(0,229,255,0.4)]"
                 />
