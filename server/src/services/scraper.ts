@@ -317,9 +317,15 @@ class WarframeMarketScraper {
         const items = await db.all<{ slug: string; max_rank: number }>('SELECT slug, max_rank FROM items');
         for (const item of items) {
           if (!this.isRunning) break;
+          const telemetry = proxyPool.getTelemetry();
+          const vpsNode = telemetry.nodes.find(n => n.id === 'DIRECT-VPS');
+          if (vpsNode && vpsNode.status === 'COOLDOWN') {
+            await new Promise(r => setTimeout(r, 15000));
+            continue;
+          }
           await this.syncItemOrders(item.slug, item.max_rank || 5);
-          // Polite 8-second interval per item: leaves 98% of proxy throughput for Rivens!
-          await new Promise(r => setTimeout(r, 8000));
+          // Polite 10-second interval per item: leaves plenty of throughput for user queries
+          await new Promise(r => setTimeout(r, 10000));
         }
       } catch (e: any) {
         console.warn('[Scraper Worker] Cycle warning:', e.message);

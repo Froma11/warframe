@@ -84,7 +84,11 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.find((w: RivenWeapon) => w.slug === 'torid') || parsed[0];
+          return (
+            parsed.find((w: RivenWeapon) => ((w as any).active_lots_count ?? 0) > 0) ||
+            parsed.find((w: RivenWeapon) => w.slug === 'akarius') ||
+            parsed[0]
+          );
         }
       }
     } catch {}
@@ -154,7 +158,10 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
               } catch {}
             }
             if (!selectedWeapon && json.data.length > 0) {
-              const defaultWeapon = json.data.find((w: RivenWeapon) => w.slug === 'torid') || json.data[0];
+              const defaultWeapon =
+                json.data.find((w: RivenWeapon) => ((w as any).active_lots_count ?? 0) > 0) ||
+                json.data.find((w: RivenWeapon) => w.slug === 'akarius') ||
+                json.data[0];
               setSelectedWeapon(defaultWeapon);
             }
           }

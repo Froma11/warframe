@@ -139,7 +139,7 @@ export class ProxyPoolManager {
     let longestIdleTime = -1;
 
     for (const node of readyIdleNodes) {
-      const minInterval = node.url ? 1050 : 1250;
+      const minInterval = node.url ? 1200 : 2500;
       const elapsedSinceLast = now - node.lastUsedAt;
 
       if (elapsedSinceLast >= minInterval) {
@@ -282,12 +282,15 @@ export class ProxyPoolManager {
       // Handle 429 Too Many Requests
       if (effectiveStatus === 429) {
         const retryAfterHeader = res.headers.get('retry-after');
-        const retryAfterSec = retryAfterHeader ? parseInt(retryAfterHeader, 10) : 60;
-        const cooldownMs = Math.max(30000, (isNaN(retryAfterSec) ? 60 : retryAfterSec) * 1000);
+        const retryAfterSec = retryAfterHeader ? parseInt(retryAfterHeader, 10) : 90;
+        const cooldownMs = Math.max(90000, (isNaN(retryAfterSec) ? 90 : retryAfterSec) * 1000);
 
         console.warn(`[ProxyPool] Node ${node.id} received HTTP 429. Setting cooldown for ${cooldownMs / 1000}s.`);
         node.status = 'COOLDOWN';
         node.cooldownUntil = Date.now() + cooldownMs;
+
+        // Clear out low-priority background requests to relieve pressure
+        this.queue = this.queue.filter((q) => q.priority !== 'LOW');
 
         this.retryOrReject(req, new Error(`Rate limit 429 on node ${node.id}`));
         return;

@@ -389,10 +389,15 @@ class RivenMarketService {
           console.warn('[RivenService] Scheduler loop warning:', err.message);
         }
 
-        // Adaptive pacing: If CF nodes are active, cycle faster (~300ms); if relying on DIRECT-VPS, pace safely (~1350ms)
+        // Adaptive pacing: If CF nodes are active, cycle faster (~1.5s); if relying on DIRECT-VPS, pace gently (~15s)
         const telemetry = proxyPool.getTelemetry();
         const cfHealthy = telemetry.nodes.filter(n => n.id.startsWith('CF-') && n.status === 'READY').length;
-        const delayMs = cfHealthy > 0 ? 300 : 1350;
+        const vpsNode = telemetry.nodes.find(n => n.id === 'DIRECT-VPS');
+        if (cfHealthy === 0 && vpsNode && vpsNode.status === 'COOLDOWN') {
+          await new Promise(r => setTimeout(r, 15000));
+          continue;
+        }
+        const delayMs = cfHealthy > 0 ? 1500 : 15000;
         await new Promise(r => setTimeout(r, delayMs));
       }
     };
