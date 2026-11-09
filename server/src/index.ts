@@ -285,27 +285,24 @@ app.use('/api/assets', async (req, res) => {
     }
 
     const upstreamUrl = `https://warframe.market/static/assets/${rawPath}`;
-    const upstreamRes = await fetch(upstreamUrl, {
-      headers: {
-        'User-Agent': 'Warframe-Market-Integration/2.0'
-      }
-    });
-
-    if (!upstreamRes.ok) {
-      return res.status(upstreamRes.status).send('Asset not found');
-    }
-
-    const buffer = Buffer.from(await upstreamRes.arrayBuffer());
     try {
-      fs.mkdirSync(path.dirname(localFilePath), { recursive: true });
-      fs.writeFileSync(localFilePath, buffer);
-    } catch {}
+      const buffer = await proxyPool.fetchBuffer(upstreamUrl);
+      try {
+        fs.mkdirSync(path.dirname(localFilePath), { recursive: true });
+        fs.writeFileSync(localFilePath, buffer);
+      } catch {}
 
-    res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Content-Type', upstreamRes.headers.get('content-type') || 'image/png');
-    return res.send(buffer);
+      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      const ext = path.extname(localFilePath).toLowerCase();
+      if (ext === '.png') res.setHeader('Content-Type', 'image/png');
+      else if (ext === '.webp') res.setHeader('Content-Type', 'image/webp');
+      else if (ext === '.jpg' || ext === '.jpeg') res.setHeader('Content-Type', 'image/jpeg');
+      return res.send(buffer);
+    } catch {
+      return res.status(404).send('Asset not found');
+    }
   } catch (err: any) {
     return res.status(502).send('Error fetching asset');
   }
@@ -398,24 +395,43 @@ app.get('/api/arcanes/:slug', async (req, res) => {
   const slug = req.params.slug as string;
 
   try {
-    // Trigger on-demand orderbook refresh in background if overdue
-    scraper.syncLiveOrderbookOnDemand(slug).catch(() => {});
-
     const item = await db.get('SELECT * FROM items WHERE slug = ?', [slug]);
     if (!item) {
       return res.status(404).json({ error: 'Item not found' });
     }
 
+    // Trigger on-demand live orderbook refresh in background if overdue
+    scraper.syncLiveOrderbookOnDemand(slug).catch(() => {});
+
     item.icon_url = toProxyAsset(item.icon_url);
     item.thumb_url = toProxyAsset(item.thumb_url);
 
     // Return full real historical data for all ranks in one quick call
-    const history = await db.all(`
+    let history = await db.all(`
       SELECT rank, date, median_price as medianPrice, volume, min_price as minPrice, max_price as maxPrice
       FROM price_history
       WHERE item_slug = ?
       ORDER BY date ASC
     `, [slug]);
+
+    // If history is missing or very sparse (< 5 days), hydrate it immediately on-demand
+    if (!history || history.length < 5) {
+      try {
+        await Promise.race([
+          scraper.syncArchiveDelta(slug, item.max_rank || 5),
+          new Promise((resolve) => setTimeout(resolve, 1500)),
+        ]);
+        history = await db.all(`
+          SELECT rank, date, median_price as medianPrice, volume, min_price as minPrice, max_price as maxPrice
+          FROM price_history
+          WHERE item_slug = ?
+          ORDER BY date ASC
+        `, [slug]);
+      } catch {}
+    } else {
+      // Trigger background archive delta refresh if overdue (> 1h cooldown)
+      scraper.syncArchiveDelta(slug, item.max_rank || 5).catch(() => {});
+    }
 
     const hourly = await db.all(`
       SELECT rank, datetime, median_price as medianPrice, volume, min_price as minPrice, max_price as maxPrice

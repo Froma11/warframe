@@ -37,6 +37,8 @@ class WarframeMarketScraper {
   private lastCleanupTime: number = 0;
   private arcaneSyncTimestamps: Map<string, number> = new Map();
   private inFlightArcaneSyncs: Map<string, Promise<number>> = new Map();
+  private archiveSyncTimestamps: Map<string, number> = new Map();
+  private inFlightArchiveSyncs: Map<string, Promise<void>> = new Map();
 
   // Clean up aged records (> 72 hours for hourly, > 95 days for daily) once per day
   public async performDailyArchiveCleanup(): Promise<void> {
@@ -182,99 +184,144 @@ class WarframeMarketScraper {
   }
 
   /**
-   * Stream B: Archive Delta Sync for closed trade statistics
-   * Preserves all 24,000+ historical rows; only updates latest hours & today
+   * Stream B: Archive Delta & 90-Day Full Statistics Sync
+   * Fetches real closed trade statistics from /v1/items/:slug/statistics via ProxyPool
+   * Populates both price_history (daily 90 days) and price_history_hourly (48 hours)
    */
   public async syncArchiveDelta(slug: string, maxRank: number = 5): Promise<void> {
-    try {
-      const statsJson = await this.fetchItemStatistics(slug);
-      const closedStats = statsJson?.payload?.statistics_closed || {};
-      const h48: any[] = closedStats['48hours'] || [];
-
-      if (!h48 || h48.length === 0) return;
-
-      const ranksToProcess = [0, maxRank];
-
-      // Upsert only recent hourly statistics (last 6 hours) into price_history_hourly
-      const cutoffRecentHourly = new Date(Date.now() - 6 * 3600 * 1000);
-      const recentH48 = h48.filter((s) => new Date(s.datetime) >= cutoffRecentHourly);
-
-      const upsertHourly = `
-        INSERT INTO price_history_hourly (item_slug, rank, datetime, median_price, volume, min_price, max_price)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(item_slug, rank, datetime) DO UPDATE SET
-          median_price = excluded.median_price,
-          volume = excluded.volume,
-          min_price = excluded.min_price,
-          max_price = excluded.max_price
-      `;
-
-      for (const record of recentH48) {
-        if (ranksToProcess.includes(record.mod_rank)) {
-          await db.run(upsertHourly, [
-            slug,
-            record.mod_rank,
-            record.datetime,
-            record.median || record.wa_price || record.avg_price || 0,
-            record.volume || 0,
-            record.min_price || 0,
-            record.max_price || 0,
-          ]);
-        }
-      }
-
-      // Aggregate today's hourly records into price_history for current date
-      const todayDateStr = new Date().toISOString().split('T')[0];
-      const upsertHistory = `
-        INSERT INTO price_history (item_slug, rank, date, median_price, volume, min_price, max_price)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(item_slug, rank, date) DO UPDATE SET
-          median_price = excluded.median_price,
-          volume = excluded.volume,
-          min_price = excluded.min_price,
-          max_price = excluded.max_price
-      `;
-
-      for (const rank of ranksToProcess) {
-        const todayRows = await db.all<{
-          median_price: number;
-          volume: number;
-          min_price: number;
-          max_price: number;
-        }>(
-          'SELECT median_price, volume, min_price, max_price FROM price_history_hourly WHERE item_slug = ? AND rank = ? AND datetime LIKE ?',
-          [slug, rank, `${todayDateStr}%`]
-        );
-
-        if (todayRows.length > 0) {
-          const totalVol = todayRows.reduce((acc, r) => acc + (r.volume || 0), 0);
-          const minP = Math.min(...todayRows.map((r) => r.min_price || 999999));
-          const maxP = Math.max(...todayRows.map((r) => r.max_price || 0));
-          const weightedSum = todayRows.reduce(
-            (acc, r) => acc + (r.median_price || 0) * (r.volume || 1),
-            0
-          );
-          const medianP =
-            totalVol > 0
-              ? Math.round(weightedSum / totalVol)
-              : Math.round(weightedSum / todayRows.length);
-
-          if (medianP > 0) {
-            await db.run(upsertHistory, [
-              slug,
-              rank,
-              todayDateStr,
-              medianP,
-              totalVol,
-              minP === 999999 ? medianP : minP,
-              maxP === 0 ? medianP : maxP,
-            ]);
-          }
-        }
-      }
-    } catch {
-      // Non-fatal
+    const now = Date.now();
+    const lastSync = this.archiveSyncTimestamps.get(slug) || 0;
+    if (now - lastSync < 3600 * 1000) {
+      return; // 1-hour cooldown per item
     }
+
+    if (this.inFlightArchiveSyncs.has(slug)) {
+      return this.inFlightArchiveSyncs.get(slug)!;
+    }
+
+    const promise = (async () => {
+      try {
+        const statsJson = await this.fetchItemStatistics(slug);
+        const closedStats = statsJson?.payload?.statistics_closed || {};
+        const d90: any[] = closedStats['90days'] || [];
+        const h48: any[] = closedStats['48hours'] || [];
+
+        if ((!d90 || d90.length === 0) && (!h48 || h48.length === 0)) return;
+
+        const ranksToProcess = [0, maxRank];
+
+        await db.transaction(async () => {
+          const upsertHistory = `
+            INSERT INTO price_history (item_slug, rank, date, median_price, volume, min_price, max_price)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(item_slug, rank, date) DO UPDATE SET
+              median_price = excluded.median_price,
+              volume = excluded.volume,
+              min_price = excluded.min_price,
+              max_price = excluded.max_price
+          `;
+
+          const coveredDates = new Set<string>();
+
+          // 1. Upsert full 90-day daily records
+          for (const record of d90) {
+            if (ranksToProcess.includes(record.mod_rank)) {
+              const dateStr = record.datetime.split('T')[0];
+              coveredDates.add(`${record.mod_rank}_${dateStr}`);
+              const medianPrice = Math.round(record.median || record.wa_price || record.avg_price || 0);
+              if (medianPrice > 0) {
+                await db.run(upsertHistory, [
+                  slug,
+                  record.mod_rank,
+                  dateStr,
+                  medianPrice,
+                  record.volume || 0,
+                  record.min_price || 0,
+                  record.max_price || 0,
+                ]);
+              }
+            }
+          }
+
+          // 2. Upsert hourly records into price_history_hourly (last 48h)
+          const upsertHourly = `
+            INSERT INTO price_history_hourly (item_slug, rank, datetime, median_price, volume, min_price, max_price)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(item_slug, rank, datetime) DO UPDATE SET
+              median_price = excluded.median_price,
+              volume = excluded.volume,
+              min_price = excluded.min_price,
+              max_price = excluded.max_price
+          `;
+
+          const hourlyByRankAndDate: Record<string, { rank: number; date: string; volume: number; minPrice: number; maxPrice: number; weightedSum: number; count: number }> = {};
+
+          for (const record of h48) {
+            if (ranksToProcess.includes(record.mod_rank)) {
+              const medianPrice = Math.round(record.median || record.wa_price || record.avg_price || 0);
+              await db.run(upsertHourly, [
+                slug,
+                record.mod_rank,
+                record.datetime,
+                medianPrice,
+                record.volume || 0,
+                record.min_price || 0,
+                record.max_price || 0,
+              ]);
+
+              const dateStr = record.datetime.split('T')[0];
+              const key = `${record.mod_rank}_${dateStr}`;
+              if (!hourlyByRankAndDate[key]) {
+                hourlyByRankAndDate[key] = {
+                  rank: record.mod_rank,
+                  date: dateStr,
+                  volume: 0,
+                  minPrice: record.min_price || 999999,
+                  maxPrice: record.max_price || 0,
+                  weightedSum: 0,
+                  count: 0,
+                };
+              }
+              const agg = hourlyByRankAndDate[key];
+              const vol = record.volume || 0;
+              agg.volume += vol;
+              if (record.min_price && record.min_price < agg.minPrice) agg.minPrice = record.min_price;
+              if (record.max_price && record.max_price > agg.maxPrice) agg.maxPrice = record.max_price;
+              agg.weightedSum += medianPrice * (vol > 0 ? vol : 1);
+              agg.count += (vol > 0 ? vol : 1);
+            }
+          }
+
+          // 3. For any recent dates (e.g. today) not yet in d90, upsert aggregated hourly stats
+          for (const key of Object.keys(hourlyByRankAndDate)) {
+            if (!coveredDates.has(key)) {
+              const agg = hourlyByRankAndDate[key];
+              const medianPrice = agg.count > 0 ? Math.round(agg.weightedSum / agg.count) : 0;
+              if (medianPrice > 0) {
+                await db.run(upsertHistory, [
+                  slug,
+                  agg.rank,
+                  agg.date,
+                  medianPrice,
+                  agg.volume,
+                  agg.minPrice === 999999 ? medianPrice : agg.minPrice,
+                  agg.maxPrice === 0 ? medianPrice : agg.maxPrice,
+                ]);
+              }
+            }
+          }
+        });
+
+        this.archiveSyncTimestamps.set(slug, Date.now());
+      } catch (err: any) {
+        console.warn(`[Scraper] Archive sync error for ${slug}:`, err.message);
+      } finally {
+        this.inFlightArchiveSyncs.delete(slug);
+      }
+    })();
+
+    this.inFlightArchiveSyncs.set(slug, promise);
+    return promise;
   }
 
   /**

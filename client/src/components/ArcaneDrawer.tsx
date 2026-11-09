@@ -87,8 +87,10 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
   // Fetch full real historical data once when arcane modal opens (with credentials for session cookies!)
   useEffect(() => {
     if (!arcane) return;
+    const itemSlug = arcane.urlName || (arcane as any).slug || (arcane as any).id;
+    if (!itemSlug) return;
 
-    fetch(`/api/arcanes/${arcane.urlName}`, {
+    fetch(`/api/arcanes/${itemSlug}`, {
       credentials: 'include',
     })
       .then((r) => r.json())
@@ -96,7 +98,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
         if (res.success && Array.isArray(res.data?.history)) {
           const grouped: { [rank: number]: any[] } = {};
           for (const item of res.data.history) {
-            const r = item.rank ?? 5;
+            const r = item.rank ?? maxRank;
             if (!grouped[r]) grouped[r] = [];
             grouped[r].push(item);
           }
@@ -105,7 +107,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
         if (res.success && Array.isArray(res.data?.hourly)) {
           const groupedHourly: { [rank: number]: any[] } = {};
           for (const item of res.data.hourly) {
-            const r = item.rank ?? 5;
+            const r = item.rank ?? maxRank;
             if (!groupedHourly[r]) groupedHourly[r] = [];
             groupedHourly[r].push(item);
           }
@@ -115,7 +117,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
       .catch((err) => {
         console.warn('History fetch error:', err);
       });
-  }, [arcane]);
+  }, [arcane, maxRank]);
 
   // Base price for current selected rank
   const basePrice = useMemo(() => {
@@ -199,10 +201,12 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
           const d = new Date(h.date);
           const m = lang === 'ru' ? monthRu[d.getMonth()] : monthEn[d.getMonth()];
           const day = d.getDate();
-          const label = lang === 'ru' ? `${day} ${m}` : `${m} ${day}`;
+          const year = d.getFullYear();
+          const axisLabel = lang === 'ru' ? `${day} ${m}` : `${m} ${day}`;
+          const timeLabel = lang === 'ru' ? `${day} ${m} ${year}` : `${m} ${day}, ${year}`;
           return {
-            timeLabel: label,
-            axisLabel: label,
+            timeLabel,
+            axisLabel,
             price: Math.max(1, Math.round(h.medianPrice || basePrice)),
             volume: h.volume || 0,
           };
@@ -782,17 +786,23 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
               )}
 
               {/* Coordinates Points (Dots) */}
-              {coords.map((c, i) => (
-                <circle
-                  key={i}
-                  cx={c.x}
-                  cy={c.y}
-                  r="3.5"
-                  fill="#0c1017"
-                  stroke="#00e5ff"
-                  strokeWidth="2"
-                />
-              ))}
+              {coords.map((c, i) => {
+                const isDense = coords.length > 35;
+                if (isDense && i % Math.ceil(coords.length / 22) !== 0 && i !== coords.length - 1) {
+                  return null;
+                }
+                return (
+                  <circle
+                    key={i}
+                    cx={c.x}
+                    cy={c.y}
+                    r="3.5"
+                    fill="#0c1017"
+                    stroke="#00e5ff"
+                    strokeWidth="2"
+                  />
+                );
+              })}
 
               {/* X-Axis Dates Labels */}
               {coords.map((c, i) => {

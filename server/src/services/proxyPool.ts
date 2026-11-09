@@ -251,6 +251,42 @@ export class ProxyPoolManager {
     });
   }
 
+  /**
+   * Directly fetch binary buffer (images/assets) through rotating proxies
+   */
+  public async fetchBuffer(targetUrl: string): Promise<Buffer> {
+    const node = this.getAvailableNode() || this.nodes[Math.floor(Math.random() * (this.nodes.length || 1))];
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 7000);
+
+    try {
+      const res = await undiciFetch(targetUrl, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Warframe-Market-Integration/2.0',
+        },
+        dispatcher: node?.agent,
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      const arrayBuf = await res.arrayBuffer();
+      const buf = Buffer.from(arrayBuf);
+      if (node) {
+        node.bytesToday += buf.length;
+        this.totalBytesDownloaded += buf.length;
+      }
+      return buf;
+    } catch (err) {
+      clearTimeout(timer);
+      throw err;
+    }
+  }
+
   private processQueue(): void {
     if (this.isProcessingQueue) return;
     this.isProcessingQueue = true;
