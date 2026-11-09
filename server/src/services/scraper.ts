@@ -358,14 +358,15 @@ class WarframeMarketScraper {
 
           // 1. Upsert full 90-day daily records
           for (const record of d90) {
-            if (ranksToProcess.includes(record.mod_rank)) {
+            const modRank = record.mod_rank ?? 0;
+            if (ranksToProcess.includes(modRank)) {
               const dateStr = record.datetime.split('T')[0];
-              coveredDates.add(`${record.mod_rank}_${dateStr}`);
+              coveredDates.add(`${modRank}_${dateStr}`);
               const medianPrice = Math.round(record.median || record.wa_price || record.avg_price || 0);
               if (medianPrice > 0) {
                 await db.run(upsertHistory, [
                   slug,
-                  record.mod_rank,
+                  modRank,
                   dateStr,
                   medianPrice,
                   record.volume || 0,
@@ -390,11 +391,12 @@ class WarframeMarketScraper {
           const hourlyByRankAndDate: Record<string, { rank: number; date: string; volume: number; minPrice: number; maxPrice: number; weightedSum: number; count: number }> = {};
 
           for (const record of h48) {
-            if (ranksToProcess.includes(record.mod_rank)) {
+            const modRank = record.mod_rank ?? 0;
+            if (ranksToProcess.includes(modRank)) {
               const medianPrice = Math.round(record.median || record.wa_price || record.avg_price || 0);
               await db.run(upsertHourly, [
                 slug,
-                record.mod_rank,
+                modRank,
                 record.datetime,
                 medianPrice,
                 record.volume || 0,
@@ -403,10 +405,10 @@ class WarframeMarketScraper {
               ]);
 
               const dateStr = record.datetime.split('T')[0];
-              const key = `${record.mod_rank}_${dateStr}`;
+              const key = `${modRank}_${dateStr}`;
               if (!hourlyByRankAndDate[key]) {
                 hourlyByRankAndDate[key] = {
-                  rank: record.mod_rank,
+                  rank: modRank,
                   date: dateStr,
                   volume: 0,
                   minPrice: record.min_price || 999999,

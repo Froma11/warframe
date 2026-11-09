@@ -91,12 +91,12 @@ class WsMarketClient {
   }
 
   /**
-   * Loads the 170 arcanes and builds bidirectional mappings from SQLite
+   * Loads arcanes, prime sets, and parts, and builds bidirectional mappings from SQLite
    */
   private async loadTrackedArcanes(): Promise<void> {
     try {
       const rows = await db.all<{ id: string; slug: string; max_rank: number }>(
-        "SELECT id, slug, max_rank FROM items WHERE tags LIKE '%arcane%'"
+        "SELECT id, slug, max_rank FROM items WHERE category = 'arcane' OR is_set = 1 OR set_root_slug IS NOT NULL OR tags LIKE '%arcane%'"
       );
       this.trackedArcanes.clear();
       this.idToSlugMap.clear();
@@ -112,7 +112,7 @@ class WsMarketClient {
           this.orderBooks.set(row.slug, new Map());
         }
       }
-      console.log(`[WsMarketClient] Tracking ${this.trackedArcanes.size} Arcanes (${this.idToSlugMap.size} ID mappings)`);
+      console.log(`[WsMarketClient] Tracking ${this.trackedArcanes.size} items (${this.idToSlugMap.size} ID mappings)`);
     } catch (err: any) {
       console.warn('[WsMarketClient] Error loading arcanes from DB:', err.message);
     }
@@ -411,7 +411,9 @@ class WsMarketClient {
    * Completely refreshes the in-memory orderbook for the item and flags dirty snapshot
    */
   public hydrateItemOrders(urlName: string, rawOrders: any[]): void {
-    if (!this.trackedArcanes.has(urlName)) return;
+    if (!this.trackedArcanes.has(urlName)) {
+      this.trackedArcanes.set(urlName, 0);
+    }
 
     let book = this.orderBooks.get(urlName);
     if (!book) {
@@ -455,7 +457,9 @@ class WsMarketClient {
    * Injects an order into memory (used by seeder / tests)
    */
   public injectOrder(order: ActiveOrder): void {
-    if (!this.trackedArcanes.has(order.itemSlug)) return;
+    if (!this.trackedArcanes.has(order.itemSlug)) {
+      this.trackedArcanes.set(order.itemSlug, 0);
+    }
     let book = this.orderBooks.get(order.itemSlug);
     if (!book) {
       book = new Map();
