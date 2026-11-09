@@ -332,25 +332,65 @@ app.get('/api/arcanes', async (_req, res) => {
       i.thumb_url as thumb,
       i.effect,
       i.source,
-      -- Rank 0 data
+      -- Rank 0 data (Live orderbook min + 24h closed sales average and volume)
       COALESCE(s0.min_sell, 0) as r0_minPrice,
-      COALESCE(s0.median_price, 0) as r0_avgPrice,
+      ROUND(COALESCE(h0.avg_sold, d0.r0_last_daily_price, s0.median_price, s0.min_sell, 1)) as r0_avgPrice,
       COALESCE(s0.sellers_count, 0) as r0_sellers,
-      -- Rank Max data (dynamically matching max_rank: R3, R5, etc.)
+      COALESCE(h0.sold_count, 0) as r0_sold,
+      -- Rank Max data (Live orderbook min + 24h closed sales average and volume)
       COALESCE(sMax.min_sell, 0) as rMax_minPrice,
-      COALESCE(sMax.median_price, 0) as rMax_avgPrice,
+      ROUND(COALESCE(hMax.avg_sold, dMax.rMax_last_daily_price, sMax.median_price, sMax.min_sell, 10)) as rMax_avgPrice,
       COALESCE(sMax.sellers_count, 0) as rMax_sellers,
-      -- 24h Real Completed Trades (Aggregated from hourly & daily closed transactions)
-      COALESCE(h24.real_trades_24h, d24.daily_trades_24h, 0) as trades24h
+      COALESCE(hMax.sold_count, 0) as rMax_sold,
+      -- 24h Real Completed Trades (Aggregated across R0 and R_Max closed sales)
+      CASE 
+        WHEN (COALESCE(h0.sold_count, 0) + COALESCE(hMax.sold_count, 0)) > 0 
+        THEN (COALESCE(h0.sold_count, 0) + COALESCE(hMax.sold_count, 0)) 
+        ELSE COALESCE(d24.daily_trades_24h, 0) 
+      END as trades24h
     FROM items i
     LEFT JOIN latest_market_snapshots s0 ON i.slug = s0.item_slug AND s0.rank = 0
     LEFT JOIN latest_market_snapshots sMax ON i.slug = sMax.item_slug AND sMax.rank = i.max_rank
     LEFT JOIN (
-      SELECT item_slug, SUM(volume) as real_trades_24h
+      SELECT 
+        item_slug,
+        SUM(volume) as sold_count,
+        ROUND(SUM(median_price * volume) * 1.0 / NULLIF(SUM(volume), 0)) as avg_sold
       FROM price_history_hourly
-      WHERE datetime >= strftime('%Y-%m-%dT%H:%M:%S', 'now', '-24 hours')
+      WHERE rank = 0 
+        AND datetime >= strftime('%Y-%m-%dT%H:%M:%S', 'now', '-24 hours')
       GROUP BY item_slug
-    ) h24 ON i.slug = h24.item_slug
+    ) h0 ON i.slug = h0.item_slug
+    LEFT JOIN (
+      SELECT 
+        h.item_slug,
+        SUM(h.volume) as sold_count,
+        ROUND(SUM(h.median_price * h.volume) * 1.0 / NULLIF(SUM(h.volume), 0)) as avg_sold
+      FROM price_history_hourly h
+      INNER JOIN items it ON h.item_slug = it.slug AND h.rank = it.max_rank
+      WHERE h.datetime >= strftime('%Y-%m-%dT%H:%M:%S', 'now', '-24 hours')
+      GROUP BY h.item_slug
+    ) hMax ON i.slug = hMax.item_slug
+    LEFT JOIN (
+      SELECT p.item_slug, p.median_price as r0_last_daily_price
+      FROM price_history p
+      INNER JOIN (
+        SELECT item_slug, MAX(date) as max_date
+        FROM price_history
+        WHERE rank = 0
+        GROUP BY item_slug
+      ) latest ON p.item_slug = latest.item_slug AND p.date = latest.max_date AND p.rank = 0
+    ) d0 ON i.slug = d0.item_slug
+    LEFT JOIN (
+      SELECT p.item_slug, p.median_price as rMax_last_daily_price
+      FROM price_history p
+      INNER JOIN items it ON p.item_slug = it.slug AND p.rank = it.max_rank
+      INNER JOIN (
+        SELECT item_slug, rank, MAX(date) as max_date
+        FROM price_history
+        GROUP BY item_slug, rank
+      ) latest ON p.item_slug = latest.item_slug AND p.date = latest.max_date AND p.rank = latest.rank
+    ) dMax ON i.slug = dMax.item_slug
     LEFT JOIN (
       SELECT item_slug, SUM(volume) as daily_trades_24h
       FROM price_history
@@ -376,14 +416,16 @@ app.get('/api/arcanes', async (_req, res) => {
       source: item.source || 'Warframe Market',
       effect: item.effect || '',
       rank0: {
-        avgPrice: item.r0_avgPrice || item.r0_minPrice || 1,
-        minPrice: item.r0_minPrice || item.r0_avgPrice || 1,
+        avgPrice: Math.round(Number(item.r0_avgPrice)) || 1,
+        minPrice: item.r0_minPrice || Math.round(Number(item.r0_avgPrice)) || 1,
         activeSellers: item.r0_sellers || 0,
+        sold24h: item.r0_sold || 0,
       },
       rank5: {
-        avgPrice: item.rMax_avgPrice || item.rMax_minPrice || 10,
-        minPrice: item.rMax_minPrice || item.rMax_avgPrice || 10,
+        avgPrice: Math.round(Number(item.rMax_avgPrice)) || 10,
+        minPrice: item.rMax_minPrice || Math.round(Number(item.rMax_avgPrice)) || 10,
         activeSellers: item.rMax_sellers || 0,
+        sold24h: item.rMax_sold || 0,
       },
       trades24h: item.trades24h || 0,
       volume24h: item.trades24h || 0,

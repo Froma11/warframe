@@ -135,8 +135,8 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
   const active24hSales = useMemo(() => {
     if (!arcane) return 0;
     return selectedRank === 0
-      ? (arcane.rank0.sold24h ?? arcane.rank0.activeSellers ?? 0)
-      : (arcane.rank5.sold24h ?? arcane.rank5.activeSellers ?? 0);
+      ? (arcane.rank0.sold24h ?? 0)
+      : (arcane.rank5.sold24h ?? 0);
   }, [arcane, selectedRank]);
 
   // Velocity calculation (deals / hour)
@@ -460,13 +460,13 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
               </span>
               <span className="text-[11px] text-[#34d399] bg-[#10b981]/15 px-2 py-0.5 rounded border border-[#10b981]/30 font-mono font-medium flex items-center gap-1">
                 <Flame className="w-3 h-3 text-[#34d399]" />
-                {arcane.rank0.sold24h ?? arcane.rank0.activeSellers ?? 0} {lang === 'ru' ? 'сделок' : 'deals'}
+                {arcane.rank0.sold24h ?? 0} {lang === 'ru' ? 'сделок' : 'deals'}
               </span>
             </div>
 
             {/* Price Display */}
             <div className="flex items-center gap-2 mt-2">
-              <span className="text-2xl sm:text-3xl font-bold font-mono text-white tracking-tight">
+              <span className="text-2xl sm:text-3xl font-bold font-mono text-white tracking-tight" title={lang === 'ru' ? 'Средняя цена проданных за 24ч' : '24h average sold price'}>
                 {arcane.rank0.avgPrice}
               </span>
               <PlatinumIcon size={20} />
@@ -477,8 +477,13 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
               <span className="flex items-center gap-1 text-[11px]">
                 {lang === 'ru' ? 'Мин. в стакане:' : 'Min order:'}
               </span>
-              <span className="text-white font-medium flex items-center gap-1 font-mono text-xs">
+              <span className="text-white font-medium flex items-center gap-1.5 font-mono text-xs">
                 {arcane.rank0.minPrice} <PlatinumIcon size={12} />
+                {arcane.rank0.activeSellers > 0 && (
+                  <span className="text-[10px] text-slate-400 font-sans font-normal">
+                    ({arcane.rank0.activeSellers} {lang === 'ru' ? 'онлайн' : 'online'})
+                  </span>
+                )}
               </span>
             </div>
           </button>
@@ -507,13 +512,13 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
               </span>
               <span className="text-[11px] text-[#00e5ff] bg-[#00e5ff]/15 px-2 py-0.5 rounded border border-[#00e5ff]/35 font-mono font-semibold flex items-center gap-1">
                 <Flame className="w-3 h-3 text-[#00e5ff]" />
-                {arcane.rank5.sold24h ?? arcane.rank5.activeSellers ?? 0} {lang === 'ru' ? 'сделок' : 'deals'}
+                {arcane.rank5.sold24h ?? 0} {lang === 'ru' ? 'сделок' : 'deals'}
               </span>
             </div>
 
             {/* Price Display */}
             <div className="flex items-center gap-2 mt-2">
-              <span className="text-2xl sm:text-3xl font-bold font-mono text-[#00e5ff] tracking-tight">
+              <span className="text-2xl sm:text-3xl font-bold font-mono text-[#00e5ff] tracking-tight" title={lang === 'ru' ? 'Средняя цена проданных за 24ч' : '24h average sold price'}>
                 {arcane.rank5.avgPrice}
               </span>
               <PlatinumIcon size={20} />
@@ -524,8 +529,13 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
               <span className="flex items-center gap-1 text-[11px]">
                 {lang === 'ru' ? 'Мин. в стакане:' : 'Min order:'}
               </span>
-              <span className="text-[#00e5ff] font-medium flex items-center gap-1 font-mono text-xs">
+              <span className="text-[#00e5ff] font-medium flex items-center gap-1.5 font-mono text-xs">
                 {arcane.rank5.minPrice} <PlatinumIcon size={12} />
+                {arcane.rank5.activeSellers > 0 && (
+                  <span className="text-[10px] text-[#00e5ff]/70 font-sans font-normal">
+                    ({arcane.rank5.activeSellers} {lang === 'ru' ? 'онлайн' : 'online'})
+                  </span>
+                )}
               </span>
             </div>
           </button>

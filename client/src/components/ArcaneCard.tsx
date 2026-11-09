@@ -189,14 +189,14 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = ({ arcane, onOpenDetails, l
               <span className="text-[10px] text-slate-400 dark:text-[#52525b] uppercase font-comfortaa">{lang === 'ru' ? 'база' : 'base'}</span>
             </div>
 
-            <div className="my-1.5 flex items-center gap-1.5">
+            <div className="my-1.5 flex items-center gap-1.5" title={lang === 'ru' ? 'Средняя цена продаж за 24ч' : '24h average sold price'}>
               <span className="text-2xl font-sans font-bold tabular-nums text-slate-900 dark:text-[#e4e4e7] tracking-tight">
                 {arcane.rank0.avgPrice}
               </span>
               <PlatinumIcon size={18} />
             </div>
 
-            <div className="text-xs text-slate-500 dark:text-[#a1a1aa] flex items-center justify-between pt-1.5 border-t border-slate-200 dark:border-white/[0.05]">
+            <div className="text-xs text-slate-500 dark:text-[#a1a1aa] flex items-center justify-between pt-1.5 border-t border-slate-200 dark:border-white/[0.05]" title={lang === 'ru' ? 'Лучшая активная цена на продажу' : 'Best active sell order'}>
               <span className="text-[11px] text-slate-400 dark:text-[#71717a]">{lang === 'ru' ? 'лучшая:' : 'min:'}</span>
               <span className="text-slate-800 dark:text-[#f4f4f5] font-semibold tabular-nums flex items-center gap-1">
                 {arcane.rank0.minPrice} <PlatinumIcon size={12} />
@@ -216,14 +216,14 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = ({ arcane, onOpenDetails, l
             </div>
 
             {/* High-Contrast Luminous Cyan Price */}
-            <div className="my-1.5 flex items-center gap-1.5">
+            <div className="my-1.5 flex items-center gap-1.5" title={lang === 'ru' ? 'Средняя цена продаж за 24ч' : '24h average sold price'}>
               <span className="text-2xl font-sans font-extrabold tabular-nums text-[#0284c7] dark:text-[#00e5ff] tracking-tight drop-shadow-[0_0_10px_rgba(0,229,255,0.35)]">
                 {arcane.rank5.avgPrice}
               </span>
               <PlatinumIcon size={18} />
             </div>
 
-            <div className="text-xs text-slate-500 dark:text-[#94a3b8] flex items-center justify-between pt-1.5 border-t border-sky-200 dark:border-[#00e5ff]/15">
+            <div className="text-xs text-slate-500 dark:text-[#94a3b8] flex items-center justify-between pt-1.5 border-t border-sky-200 dark:border-[#00e5ff]/15" title={lang === 'ru' ? 'Лучшая активная цена на продажу' : 'Best active sell order'}>
               <span className="text-[11px] text-slate-400 dark:text-[#64748b]">{lang === 'ru' ? 'лучшая:' : 'min:'}</span>
               <span className="text-[#0284c7] dark:text-[#38bdf8] font-bold tabular-nums flex items-center gap-1">
                 {arcane.rank5.minPrice} <PlatinumIcon size={12} />
