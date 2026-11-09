@@ -223,11 +223,17 @@ export class ProxyPoolManager {
     const readyIdleNodes = this.ipNodes.filter((n) => n.status === 'READY' && !n.isBusy);
     if (readyIdleNodes.length === 0) return null;
 
-    // Prefer alternating family: if last was 4, prefer 6; if last was 6, prefer 4
+    // Strict alternating: if last was 4, prefer 6; if last was 6, prefer 4
     const preferredFamily = this.lastFamilyDispatched === 4 ? 6 : 4;
     let candidates = readyIdleNodes.filter((n) => n.family === preferredFamily);
     if (candidates.length === 0) {
-      candidates = readyIdleNodes;
+      // If preferred family is temporarily in cooldown, enforce 1100ms single-stack spacing
+      const lastSameFamilyDispatch = preferredFamily === 6 ? this.lastIpv4DispatchAt : this.lastIpv6DispatchAt;
+      if (now - lastSameFamilyDispatch >= 1100) {
+        candidates = readyIdleNodes;
+      } else {
+        return null;
+      }
     }
 
     let bestNode: IpNodeStatus | null = null;
@@ -397,8 +403,18 @@ export class ProxyPoolManager {
         const cooldownMs = Math.max(30000, (isNaN(retryAfterSec) ? 60 : retryAfterSec) * 1000);
 
         console.warn(`[ProxyPool] Node ${node.id} received HTTP 429. Setting cooldown for ${cooldownMs / 1000}s.`);
-        node.status = 'COOLDOWN';
-        node.cooldownUntil = Date.now() + cooldownMs;
+        if (node.family === 6) {
+          // Cloudflare rate-limits the entire /64 prefix as one entity; cool down all IPv6 nodes together
+          for (const n of this.ipNodes) {
+            if (n.family === 6) {
+              n.status = 'COOLDOWN';
+              n.cooldownUntil = Date.now() + cooldownMs;
+            }
+          }
+        } else {
+          node.status = 'COOLDOWN';
+          node.cooldownUntil = Date.now() + cooldownMs;
+        }
 
         // Clear out low-priority background requests to relieve pressure
         this.queue = this.queue.filter((q) => q.priority !== 'LOW');
