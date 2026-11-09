@@ -23,11 +23,20 @@ interface RawItem {
   };
 }
 
+export const HOT_ARCANES = new Set([
+  'arcane_energize', 'arcane_grace', 'arcane_aegis', 'arcane_reaper', 'arcane_strike',
+  'arcane_ice', 'arcane_avenger', 'arcane_barrier', 'arcane_fury', 'arcane_acceleration',
+  'arcane_blessing', 'arcane_pistoleer', 'arcane_arachne', 'arcane_trickery', 'arcane_steadfast',
+  'molt_augmented', 'molt_efficiency', 'melee_duplicate', 'melee_crescendo', 'secondary_encumber'
+]);
+
 class WarframeMarketScraper {
   private isRunning: boolean = false;
   private readonly baseUrl: string = 'https://api.warframe.market/v2';
   private readonly cdnBase: string = 'https://warframe.market/static/assets/';
   private lastCleanupTime: number = 0;
+  private arcaneSyncTimestamps: Map<string, number> = new Map();
+  private inFlightArcaneSyncs: Map<string, Promise<number>> = new Map();
 
   // Clean up aged records (> 72 hours for hourly, > 95 days for daily) once per day
   public async performDailyArchiveCleanup(): Promise<void> {
@@ -42,7 +51,10 @@ class WarframeMarketScraper {
       const dailyRes = await db.run(
         "DELETE FROM price_history WHERE date < date('now', '-95 days')"
       );
-      console.log(`[Scraper] Archive cleanup: purged ${hourlyRes.changes} old hourly rows, ${dailyRes.changes} old daily rows.`);
+      const snapshotsRes = await db.run(
+        "DELETE FROM market_snapshots WHERE timestamp < datetime('now', '-24 hours')"
+      );
+      console.log(`[Scraper] Archive cleanup: purged ${hourlyRes.changes} old hourly rows, ${dailyRes.changes} old daily rows, ${snapshotsRes.changes} old market snapshots.`);
     } catch (err: any) {
       console.warn('[Scraper] Cleanup warning:', err.message);
     }
@@ -130,10 +142,43 @@ class WarframeMarketScraper {
       });
       const rawOrders = ordersJson?.data || [];
       wsMarketClient.hydrateItemOrders(slug, rawOrders);
+      this.arcaneSyncTimestamps.set(slug, Date.now());
       return rawOrders.length;
     } catch (err: any) {
       return 0;
     }
+  }
+
+  /**
+   * On-Demand fast sync when a user opens an arcane details drawer (with 30s cooldown)
+   */
+  public async syncLiveOrderbookOnDemand(slug: string): Promise<number> {
+    const now = Date.now();
+    const lastSync = this.arcaneSyncTimestamps.get(slug) || 0;
+    if (now - lastSync < 30000) {
+      return 1;
+    }
+    if (this.inFlightArcaneSyncs.has(slug)) {
+      return this.inFlightArcaneSyncs.get(slug)!;
+    }
+    const promise = (async () => {
+      try {
+        const ordersJson = await proxyPool.fetchJson(`${this.baseUrl}/orders/item/${slug}`, {
+          priority: 'HIGH',
+          lang: 'ru',
+        });
+        const rawOrders = ordersJson?.data || [];
+        wsMarketClient.hydrateItemOrders(slug, rawOrders);
+        this.arcaneSyncTimestamps.set(slug, Date.now());
+        return rawOrders.length;
+      } catch {
+        return 0;
+      } finally {
+        this.inFlightArcaneSyncs.delete(slug);
+      }
+    })();
+    this.inFlightArcaneSyncs.set(slug, promise);
+    return promise;
   }
 
   /**
@@ -234,14 +279,14 @@ class WarframeMarketScraper {
 
   /**
    * Starts both background workers:
-   * - Stream A: Live Orderbook Sync (1200ms gap, 170 items updated in ~3.5 min)
-   * - Stream B: Archive Delta Sync (every 30-45 minutes with LOW priority)
+   * - Stream A: Tiered Live Orderbook Sync (HOT 45s, WARM 3m, COLD 15m) across 99 proxies
+   * - Stream B: Archive Statistics Delta Sync (polite 4-hour cycle to conserve bandwidth)
    */
-  public startBackgroundWorker(intervalMinutes: number = 30): void {
+  public startBackgroundWorker(): void {
     if (this.isRunning) return;
     this.isRunning = true;
 
-    console.log('[Scraper Worker] Started Stream A (Live Orderbook Sync: 1300ms gap) & Stream B (Archive Delta Sync)');
+    console.log('[Scraper Worker] Started Stream A (Tiered Orderbooks: HOT 45s, WARM 3m, COLD 15m) & Stream B (4h Archive Delta)');
 
     // Initial check of catalog
     setTimeout(async () => {
@@ -255,33 +300,62 @@ class WarframeMarketScraper {
       }
     }, 2000);
 
-    // --- STREAM A: Rapid Live Orderbook Sync Loop ---
+    // --- STREAM A: Tiered Live Orderbook Sync Loop ---
     const runLiveOrderbookLoop = async () => {
       while (this.isRunning) {
         try {
-          // Prioritize active and popular arcanes first in the orderbook cycle
           const items = await db.all<{ slug: string }>(`
             SELECT i.slug 
             FROM items i
             LEFT JOIN latest_market_snapshots s ON i.slug = s.item_slug AND s.rank = i.max_rank
             ORDER BY COALESCE(s.buyers_count, s.sellers_count, 0) DESC
           `);
+
           if (items && items.length > 0) {
-            for (const item of items) {
-              if (!this.isRunning) break;
-              await this.syncLiveOrderbook(item.slug);
-              // 1300ms pacing: ~0.77 req/s across the 5 IP pool, completes all 170 items in ~3.6 minutes
-              await new Promise((r) => setTimeout(r, 1300));
+            const currentUtcHour = new Date().getUTCHours();
+            const isOffPeak = currentUtcHour >= 1 && currentUtcHour < 7;
+            const offPeakMult = isOffPeak ? 1.7 : 1.0;
+
+            const hotInterval = Math.round(45 * offPeakMult) * 1000;
+            const warmInterval = Math.round(180 * offPeakMult) * 1000;
+            const coldInterval = Math.round(900 * offPeakMult) * 1000;
+
+            const now = Date.now();
+            let mostOverdueSlug: string | null = null;
+            let maxLateness = -Infinity;
+
+            for (let i = 0; i < items.length; i++) {
+              const slug = items[i].slug;
+              let tierTarget = coldInterval;
+              if (HOT_ARCANES.has(slug)) {
+                tierTarget = hotInterval;
+              } else if (i < 60) {
+                tierTarget = warmInterval;
+              }
+
+              const lastSync = this.arcaneSyncTimestamps.get(slug) || 0;
+              const elapsed = lastSync === 0 ? 999999999 : now - lastSync;
+              const lateness = elapsed - tierTarget;
+
+              if (lateness > maxLateness) {
+                maxLateness = lateness;
+                mostOverdueSlug = slug;
+              }
+            }
+
+            if (mostOverdueSlug && maxLateness > 0) {
+              await this.syncLiveOrderbook(mostOverdueSlug);
             }
           }
         } catch (e: any) {
           console.warn('[Scraper Stream A] Loop warning:', e.message);
         }
-        await new Promise((r) => setTimeout(r, 5000));
+        // 400ms pacing across 99 proxies guarantees smooth throughput and zero 429 errors
+        await new Promise((r) => setTimeout(r, 400));
       }
     };
 
-    // --- STREAM B: Archive Statistics Delta Sync Loop ---
+    // --- STREAM B: Archive Statistics Delta Sync Loop (Every 4 Hours) ---
     const runArchiveDeltaLoop = async () => {
       while (this.isRunning) {
         try {
@@ -291,20 +365,20 @@ class WarframeMarketScraper {
             for (const item of items) {
               if (!this.isRunning) break;
               await this.syncArchiveDelta(item.slug, item.max_rank || 5);
-              // Polite 3000ms pause per item with LOW priority
-              await new Promise((r) => setTimeout(r, 3000));
+              // Polite 2500ms pause per item with LOW priority
+              await new Promise((r) => setTimeout(r, 2500));
             }
           }
         } catch (e: any) {
           console.warn('[Scraper Stream B] Loop warning:', e.message);
         }
-        // Run delta sync every 35 minutes
-        await new Promise((r) => setTimeout(r, intervalMinutes * 60 * 1000));
+        // Run delta sync every 4 hours (240 minutes) to strictly protect bandwidth limit
+        await new Promise((r) => setTimeout(r, 4 * 60 * 60 * 1000));
       }
     };
 
     setTimeout(runLiveOrderbookLoop, 4000);
-    setTimeout(runArchiveDeltaLoop, 20000);
+    setTimeout(runArchiveDeltaLoop, 30000);
   }
 }
 

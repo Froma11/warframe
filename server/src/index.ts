@@ -398,6 +398,9 @@ app.get('/api/arcanes/:slug', async (req, res) => {
   const slug = req.params.slug as string;
 
   try {
+    // Trigger on-demand orderbook refresh in background if overdue
+    scraper.syncLiveOrderbookOnDemand(slug).catch(() => {});
+
     const item = await db.get('SELECT * FROM items WHERE slug = ?', [slug]);
     if (!item) {
       return res.status(404).json({ error: 'Item not found' });
@@ -436,6 +439,9 @@ app.get('/api/arcanes/:slug', async (req, res) => {
 
 // --- RIVENS & ENDO (VENUS) ROUTES ---
 
+// In-memory cache for riven lots (15-second TTL per weapon + filter hash)
+const rivenLotsCache = new Map<string, { data: any; time: number }>();
+
 // 1. Get riven weapons directory (RU/EN, categories, search autocomplete)
 app.get('/api/rivens/weapons', async (req, res) => {
   try {
@@ -456,11 +462,19 @@ app.get('/api/rivens/weapons', async (req, res) => {
   }
 });
 
-// 2. Get riven lots for a weapon from SQLite DB (with filters & sorting)
+// 2. Get riven lots for a weapon from SQLite DB (with filters & 15s in-memory cache)
 app.get('/api/rivens/lots/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
     const { type, rerolls, rank, onlineOnly, sortBy } = req.query;
+
+    const cacheKey = `${slug}:${type || ''}:${rerolls || ''}:${rank || ''}:${onlineOnly || ''}:${sortBy || ''}`;
+    const cached = rivenLotsCache.get(cacheKey);
+    const now = Date.now();
+
+    if (cached && now - cached.time < 15000) {
+      return res.json(cached.data);
+    }
 
     const result = await rivenService.getLotsForWeapon(slug, {
       type: type as any,
@@ -475,12 +489,23 @@ app.get('/api/rivens/lots/:slug', async (req, res) => {
       result.weapon.thumb_url = toProxyAsset(result.weapon.thumb_url);
     }
 
-    res.json({
+    const payload = {
       success: true,
       weapon: result.weapon,
       total: result.total,
       data: result.lots,
-    });
+    };
+
+    rivenLotsCache.set(cacheKey, { data: payload, time: now });
+
+    // Evict old cache entries if map exceeds 200 items
+    if (rivenLotsCache.size > 200) {
+      for (const [k, v] of rivenLotsCache.entries()) {
+        if (now - v.time > 30000) rivenLotsCache.delete(k);
+      }
+    }
+
+    res.json(payload);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -740,7 +765,7 @@ async function start() {
     rivenService.startPriorityScheduler();
 
     // Start gentle incremental background scraper
-    scraper.startBackgroundWorker(30);
+    scraper.startBackgroundWorker();
   });
 }
 

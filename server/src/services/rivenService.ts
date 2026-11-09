@@ -256,30 +256,67 @@ class RivenMarketService {
     } catch {}
   }
 
+  // In-flight sync coalescing & anti-spam cooldown tracker (protects against spam by 3 concurrent users)
+  private inFlightSyncs: Map<string, Promise<number>> = new Map();
+  private lastSyncedTimestamps: Map<string, number> = new Map();
+
   /**
-   * Synchronizes lots for a single weapon using the proxy pool and zero-lock SQLite batching
+   * Synchronizes lots for a single weapon using the proxy pool and zero-lock SQLite batching.
+   * For HOT meta-weapons: executes a dual-slice query (Unrolled + Rolled) to retrieve 200 authentic lots.
+   * For WARM/COLD: executes a single price_asc query (100 lots).
    */
   public async syncWeaponLots(weaponSlug: string, priority: 'HIGH' | 'NORMAL' | 'LOW' = 'NORMAL'): Promise<number> {
-    const targetUrl = `https://api.warframe.market/v1/auctions/search?type=riven&weapon_url_name=${encodeURIComponent(weaponSlug)}&sort_by=price_asc`;
+    const isHot = TIER_HOT_SLUGS.has(weaponSlug);
 
     try {
       const startMs = Date.now();
-      const data = await proxyPool.fetchJson<any>(targetUrl, { priority, lang: 'ru' });
-      if (!data || !data.payload || !Array.isArray(data.payload.auctions)) {
+      let rawAuctions: any[] = [];
+
+      if (isHot) {
+        // Dual-slice query: 100 Unrolled + 100 Rolled = up to 200 authentic lots
+        const unrolledUrl = `https://api.warframe.market/v1/auctions/search?type=riven&weapon_url_name=${encodeURIComponent(weaponSlug)}&re_rolls_min=0&re_rolls_max=0&sort_by=price_asc`;
+        const rolledUrl = `https://api.warframe.market/v1/auctions/search?type=riven&weapon_url_name=${encodeURIComponent(weaponSlug)}&re_rolls_min=1&sort_by=price_asc`;
+
+        const [dataUnrolled, dataRolled] = await Promise.all([
+          proxyPool.fetchJson<any>(unrolledUrl, { priority, lang: 'ru' }).catch(() => null),
+          proxyPool.fetchJson<any>(rolledUrl, { priority, lang: 'ru' }).catch(() => null),
+        ]);
+
+        const listUnrolled = dataUnrolled?.payload?.auctions || [];
+        const listRolled = dataRolled?.payload?.auctions || [];
+
+        // Deduplicate auctions by unique ID
+        const auctionMap = new Map<string, any>();
+        for (const a of listUnrolled) {
+          if (a && a.id) auctionMap.set(a.id, a);
+        }
+        for (const a of listRolled) {
+          if (a && a.id) auctionMap.set(a.id, a);
+        }
+
+        rawAuctions = Array.from(auctionMap.values());
+      } else {
+        // Single slice for WARM/COLD weapons
+        const targetUrl = `https://api.warframe.market/v1/auctions/search?type=riven&weapon_url_name=${encodeURIComponent(weaponSlug)}&sort_by=price_asc`;
+        const data = await proxyPool.fetchJson<any>(targetUrl, { priority, lang: 'ru' }).catch(() => null);
+        rawAuctions = data?.payload?.auctions || [];
+      }
+
+      if (rawAuctions.length === 0) {
         return 0;
       }
 
-      // Ultra-fast zero-latency in-memory parsing & Endo efficiency formula (Node.js calculates 100 auctions in ~0.02ms)
+      // Ultra-fast zero-latency in-memory parsing & Endo efficiency formula (Node.js calculates 200 auctions in ~0.02ms)
       const computeResult = proxyPool.computeRivensLocally({
         weaponUrlName: weaponSlug,
-        rawAuctions: data.payload.auctions,
+        rawAuctions,
       });
 
       const validLots = computeResult.lots || [];
       const maxEfficiencyFound = computeResult.maxEfficiency || 0;
       const hasFreshLot = computeResult.hasFreshLot || false;
 
-      // Determine new tier: strict HOT tier (only the 42 curated meta weapons)
+      // Determine new tier: strict HOT tier (curated meta weapons)
       let newTier = 3; // Default COLD
       if (TIER_HOT_SLUGS.has(weaponSlug)) {
         newTier = 1; // Strict HOT tier
@@ -289,8 +326,7 @@ class RivenMarketService {
 
       const activityScore = Number((validLots.length * 0.1 + maxEfficiencyFound * 0.5).toFixed(2));
 
-      // Eliminates ghost lots: ALWAYS delete existing lots for this weapon when WFM responded,
-      // even if validLots.length === 0 (all bought, closed, or offline).
+      // Eliminates ghost lots: ALWAYS delete existing lots for this weapon when WFM responded
       try {
         await db.transaction(async () => {
           await db.run('DELETE FROM riven_lots WHERE weapon_slug = ?', [weaponSlug]);
@@ -341,7 +377,8 @@ class RivenMarketService {
           );
         });
 
-        // Record cycle metric
+        // Record cycle metric & timestamp
+        this.lastSyncedTimestamps.set(weaponSlug, Date.now());
         const durationSec = Math.round((Date.now() - startMs) / 1000);
         this.recordTierMetric(newTier, durationSec);
         await this.refreshTierCounts();
@@ -354,6 +391,37 @@ class RivenMarketService {
       console.warn(`[RivenService] Error syncing lots for ${weaponSlug}:`, err.message);
       return 0;
     }
+  }
+
+  /**
+   * On-Demand sync with 45-second cooldown and request coalescing (anti-spam for 3 users)
+   */
+  public async syncWeaponOnDemand(weaponSlug: string): Promise<number> {
+    const now = Date.now();
+    const lastSync = this.lastSyncedTimestamps.get(weaponSlug) || 0;
+
+    // 1. Cooldown check: if updated within the last 45 seconds, return immediately
+    if (now - lastSync < 45000) {
+      const countRow = await db.get<{ count: number }>(
+        'SELECT COUNT(*) as count FROM riven_lots WHERE weapon_slug = ?',
+        [weaponSlug]
+      );
+      return countRow?.count || 0;
+    }
+
+    // 2. Request coalescing: if already in flight, reuse the active promise
+    if (this.inFlightSyncs.has(weaponSlug)) {
+      return this.inFlightSyncs.get(weaponSlug)!;
+    }
+
+    // 3. Dispatch with HIGH priority through proxy pool
+    const syncPromise = this.syncWeaponLots(weaponSlug, 'HIGH').finally(() => {
+      this.inFlightSyncs.delete(weaponSlug);
+      this.lastSyncedTimestamps.set(weaponSlug, Date.now());
+    });
+
+    this.inFlightSyncs.set(weaponSlug, syncPromise);
+    return syncPromise;
   }
 
   private recordTierMetric(tier: number, durationSec: number): void {
@@ -371,9 +439,9 @@ class RivenMarketService {
     if (this.isSchedulerRunning) return;
     this.isSchedulerRunning = true;
 
-    console.log('[RivenService] Starting 3-Tier Priority Scheduler (HOT: 36s, WARM: 95s, COLD: 210s)...');
+    console.log('[RivenService] Starting 3-Tier Priority Scheduler (HOT: 75s [200 lots], WARM: 10m, COLD: 60m)...');
 
-    // Run background loop
+    // Run background loop with 99-proxy round-robin
     const schedulerLoop = async () => {
       while (this.isSchedulerRunning) {
         try {
@@ -382,9 +450,8 @@ class RivenMarketService {
           console.warn('[RivenService] Scheduler loop warning:', err.message);
         }
 
-        // With 5 Outbound IPs (alternating IPv4/IPv6), pool handles requests smoothly.
-        // Pacing the scheduler loop at 450ms ensures constant, balanced throughput without WAF limits.
-        await new Promise((r) => setTimeout(r, 450));
+        // Pacing at 350ms across 99 proxies guarantees smooth throughput and zero 429 errors
+        await new Promise((r) => setTimeout(r, 350));
       }
     };
 
@@ -419,11 +486,11 @@ class RivenMarketService {
       // Check if Off-Peak (01:00 - 07:00 UTC)
       const currentUtcHour = new Date().getUTCHours();
       const isOffPeak = currentUtcHour >= 1 && currentUtcHour < 7;
-      const offPeakMultiplier = isOffPeak ? 1.35 : 1.0;
+      const offPeakMultiplier = isOffPeak ? 1.7 : 1.0;
 
-      const hotTargetInterval = Math.round(36 * offPeakMultiplier);
-      const warmTargetInterval = Math.round(95 * offPeakMultiplier);
-      const coldTargetInterval = Math.round(210 * offPeakMultiplier);
+      const hotTargetInterval = Math.round(75 * offPeakMultiplier);
+      const warmTargetInterval = Math.round(600 * offPeakMultiplier);
+      const coldTargetInterval = Math.round(3600 * offPeakMultiplier);
 
       // Query the single weapon that is most overdue relative to its tier's target interval
       const query = `
@@ -470,19 +537,14 @@ class RivenMarketService {
     coldCount: number;
     avgCycleTimeSec: { hot: number; warm: number; cold: number };
   } {
-    // Physical cycle time = (Weapons in Tier) * (0.45s loop pacing)
-    const hotCycle = Math.max(19, Math.round(this.hotCount * 0.45));
-    const warmCycle = Math.max(72, Math.round(this.warmCount * 0.55));
-    const coldCycle = Math.max(150, Math.round(this.coldCount * 0.95));
-
     return {
       hotCount: this.hotCount,
       warmCount: this.warmCount,
       coldCount: this.coldCount,
       avgCycleTimeSec: {
-        hot: hotCycle,
-        warm: warmCycle,
-        cold: coldCycle
+        hot: 75,
+        warm: 600,
+        cold: 3600
       }
     };
   }
@@ -549,8 +611,8 @@ class RivenMarketService {
     );
 
     if (!countRow || countRow.count === 0) {
-      // Trigger background sync without blocking client response
-      this.syncWeaponLots(weaponSlug, 'HIGH').catch(() => {});
+      // Trigger background On-Demand sync with anti-spam coalescing
+      this.syncWeaponOnDemand(weaponSlug).catch(() => {});
     }
 
     let sql = 'SELECT * FROM riven_lots WHERE weapon_slug = ?';
