@@ -306,6 +306,7 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
       await fetch('/api/rivens/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ weapon: selectedWeapon?.slug }),
       });
       // Re-fetch lots for the selected weapon immediately
       if (selectedWeapon) {

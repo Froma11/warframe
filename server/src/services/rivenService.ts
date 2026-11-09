@@ -261,46 +261,36 @@ class RivenMarketService {
   private lastSyncedTimestamps: Map<string, number> = new Map();
 
   /**
-   * Synchronizes lots for a single weapon using the proxy pool and zero-lock SQLite batching.
-   * For HOT meta-weapons: executes a dual-slice query (Unrolled + Rolled) to retrieve 200 authentic lots.
-   * For WARM/COLD: executes a single price_asc query (100 lots).
+   * Synchronizes lots for a single weapon using parallel dual-slice queries (Unrolled + Rolled)
+   * to retrieve up to 200 authentic lots across the proxy pool.
    */
   public async syncWeaponLots(weaponSlug: string, priority: 'HIGH' | 'NORMAL' | 'LOW' = 'NORMAL'): Promise<number> {
-    const isHot = TIER_HOT_SLUGS.has(weaponSlug);
-
     try {
       const startMs = Date.now();
       let rawAuctions: any[] = [];
 
-      if (isHot) {
-        // Dual-slice query: 100 Unrolled + 100 Rolled = up to 200 authentic lots
-        const unrolledUrl = `https://api.warframe.market/v1/auctions/search?type=riven&weapon_url_name=${encodeURIComponent(weaponSlug)}&re_rolls_min=0&re_rolls_max=0&sort_by=price_asc`;
-        const rolledUrl = `https://api.warframe.market/v1/auctions/search?type=riven&weapon_url_name=${encodeURIComponent(weaponSlug)}&re_rolls_min=1&sort_by=price_asc`;
+      // Dual-slice query: 100 Unrolled + 100 Rolled = up to 200 authentic lots
+      const unrolledUrl = `https://api.warframe.market/v1/auctions/search?type=riven&weapon_url_name=${encodeURIComponent(weaponSlug)}&re_rolls_min=0&re_rolls_max=0&sort_by=price_asc`;
+      const rolledUrl = `https://api.warframe.market/v1/auctions/search?type=riven&weapon_url_name=${encodeURIComponent(weaponSlug)}&re_rolls_min=1&sort_by=price_asc`;
 
-        const [dataUnrolled, dataRolled] = await Promise.all([
-          proxyPool.fetchJson<any>(unrolledUrl, { priority, lang: 'ru' }).catch(() => null),
-          proxyPool.fetchJson<any>(rolledUrl, { priority, lang: 'ru' }).catch(() => null),
-        ]);
+      const [dataUnrolled, dataRolled] = await Promise.all([
+        proxyPool.fetchJson<any>(unrolledUrl, { priority, lang: 'ru' }).catch(() => null),
+        proxyPool.fetchJson<any>(rolledUrl, { priority, lang: 'ru' }).catch(() => null),
+      ]);
 
-        const listUnrolled = dataUnrolled?.payload?.auctions || [];
-        const listRolled = dataRolled?.payload?.auctions || [];
+      const listUnrolled = dataUnrolled?.payload?.auctions || [];
+      const listRolled = dataRolled?.payload?.auctions || [];
 
-        // Deduplicate auctions by unique ID
-        const auctionMap = new Map<string, any>();
-        for (const a of listUnrolled) {
-          if (a && a.id) auctionMap.set(a.id, a);
-        }
-        for (const a of listRolled) {
-          if (a && a.id) auctionMap.set(a.id, a);
-        }
-
-        rawAuctions = Array.from(auctionMap.values());
-      } else {
-        // Single slice for WARM/COLD weapons
-        const targetUrl = `https://api.warframe.market/v1/auctions/search?type=riven&weapon_url_name=${encodeURIComponent(weaponSlug)}&sort_by=price_asc`;
-        const data = await proxyPool.fetchJson<any>(targetUrl, { priority, lang: 'ru' }).catch(() => null);
-        rawAuctions = data?.payload?.auctions || [];
+      // Deduplicate auctions by unique ID
+      const auctionMap = new Map<string, any>();
+      for (const a of listUnrolled) {
+        if (a && a.id) auctionMap.set(a.id, a);
       }
+      for (const a of listRolled) {
+        if (a && a.id) auctionMap.set(a.id, a);
+      }
+
+      rawAuctions = Array.from(auctionMap.values());
 
       if (rawAuctions.length === 0) {
         return 0;
@@ -604,14 +594,25 @@ class RivenMarketService {
   ): Promise<{ lots: RivenLot[]; total: number; weapon?: RivenWeapon }> {
     const weapon = await db.get<RivenWeapon>('SELECT * FROM riven_weapons WHERE slug = ?', [weaponSlug]);
 
-    // Check if weapon has any lots. If not or if overdue (> 120s), trigger background sync
+    // Check if weapon has any lots. If not or if capped at 100 or overdue (> 180s), trigger on-demand sync
     const countRow = await db.get<{ count: number }>(
       'SELECT COUNT(*) as count FROM riven_lots WHERE weapon_slug = ?',
       [weaponSlug]
     );
 
+    const now = Date.now();
+    const lastSync = this.lastSyncedTimestamps.get(weaponSlug) || 0;
+
     if (!countRow || countRow.count === 0) {
-      // Trigger background On-Demand sync with anti-spam coalescing
+      // If 0 lots in DB, wait up to 1.5s for initial dual-slice sync so user immediately sees lots
+      try {
+        await Promise.race([
+          this.syncWeaponOnDemand(weaponSlug),
+          new Promise((resolve) => setTimeout(resolve, 1500)),
+        ]);
+      } catch {}
+    } else if (countRow.count === 100 || now - lastSync > 180000) {
+      // If capped at legacy 100 lots or older than 3 minutes, trigger background dual-slice sync
       this.syncWeaponOnDemand(weaponSlug).catch(() => {});
     }
 

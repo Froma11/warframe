@@ -531,6 +531,18 @@ app.get('/api/rivens/lots/:slug', async (req, res) => {
 app.post('/api/rivens/sync', async (req, res) => {
   try {
     const weaponSlug = req.body?.weapon || (typeof req.query.weapon === 'string' ? req.query.weapon : undefined);
+    
+    // Invalidate in-memory lots cache for this weapon so the client gets freshly synced lots immediately
+    if (weaponSlug) {
+      for (const key of rivenLotsCache.keys()) {
+        if (key.startsWith(`${weaponSlug}:`)) {
+          rivenLotsCache.delete(key);
+        }
+      }
+    } else {
+      rivenLotsCache.clear();
+    }
+
     const count = await rivenService.syncLiveAuctions(weaponSlug);
     res.json({
       success: true,
