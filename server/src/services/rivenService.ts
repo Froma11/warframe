@@ -171,7 +171,6 @@ class RivenMarketService {
         { url_name: 'ammo_maximum', min: -25, max: -50 },
       ];
 
-      await db.run('BEGIN TRANSACTION');
       let totalInserted = 0;
 
       const insertStmt = `
@@ -185,102 +184,106 @@ class RivenMarketService {
 
       for (const w of weapons) {
         const needed = getTargetLotCountForWeapon(w.slug, w.disposition);
-        for (let i = 0; i < needed; i++) {
-          const seller = sellers[Math.floor(Math.random() * sellers.length)];
-          const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-          const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
-          const modName = `${prefix}-${suffix}`;
-          const polarity = polarities[Math.floor(Math.random() * polarities.length)];
-          const mr = [8, 9, 10, 11, 12, 13, 14, 15, 16][Math.floor(Math.random() * 9)];
-          const isMaxed = Math.random() < 0.35;
-          const modRank = isMaxed ? 8 : 0;
+        await db.run('BEGIN TRANSACTION');
+        try {
+          for (let i = 0; i < needed; i++) {
+            const seller = sellers[Math.floor(Math.random() * sellers.length)];
+            const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+            const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+            const modName = `${prefix}-${suffix}`;
+            const polarity = polarities[Math.floor(Math.random() * polarities.length)];
+            const mr = [8, 9, 10, 11, 12, 13, 14, 15, 16][Math.floor(Math.random() * 9)];
+            const isMaxed = Math.random() < 0.35;
+            const modRank = isMaxed ? 8 : 0;
 
-          const rollType = Math.random();
-          const reRolls =
-            rollType < 0.35
-              ? 0
-              : rollType < 0.7
-              ? Math.floor(Math.random() * 9) + 1
-              : Math.floor(Math.random() * 55) + 10;
+            const rollType = Math.random();
+            const reRolls =
+              rollType < 0.35
+                ? 0
+                : rollType < 0.7
+                ? Math.floor(Math.random() * 9) + 1
+                : Math.floor(Math.random() * 55) + 10;
 
-          const isDirect = Math.random() < 0.85;
-          const isTierS = TIER_S_WEAPONS.has(w.slug);
-          const isTierA = TIER_A_WEAPONS.has(w.slug);
+            const isDirect = Math.random() < 0.85;
+            const isTierS = TIER_S_WEAPONS.has(w.slug);
+            const isTierA = TIER_A_WEAPONS.has(w.slug);
 
-          let basePrice = 45;
-          if (isTierS) {
-            basePrice = 340 + Math.floor(Math.random() * 140);
-            if (reRolls > 0) basePrice += Math.min(2200, reRolls * (16 + Math.floor(Math.random() * 12)));
-          } else if (isTierA) {
-            basePrice = 125 + Math.floor(Math.random() * 70);
-            if (reRolls > 0) basePrice += Math.min(800, reRolls * 8);
-          } else {
-            basePrice = 35 + Math.floor(Math.random() * 35);
-            if (reRolls > 0) basePrice += Math.min(280, reRolls * 4);
+            let basePrice = 45;
+            if (isTierS) {
+              basePrice = 340 + Math.floor(Math.random() * 140);
+              if (reRolls > 0) basePrice += Math.min(2200, reRolls * (16 + Math.floor(Math.random() * 12)));
+            } else if (isTierA) {
+              basePrice = 125 + Math.floor(Math.random() * 70);
+              if (reRolls > 0) basePrice += Math.min(800, reRolls * 8);
+            } else {
+              basePrice = 35 + Math.floor(Math.random() * 35);
+              if (reRolls > 0) basePrice += Math.min(280, reRolls * 4);
+            }
+
+            if (modRank === 8) {
+              basePrice += isTierS ? 60 + Math.floor(Math.random() * 60) : 30;
+            }
+
+            const buyoutPrice = isDirect ? basePrice : null;
+            const startingPrice = isDirect ? buyoutPrice : Math.max(35, Math.floor(basePrice * 0.75));
+            const topBid = !isDirect && Math.random() > 0.4 ? Math.floor(startingPrice! * (1 + Math.random() * 0.35)) : null;
+
+            const numPos = Math.random() > 0.4 ? 3 : 2;
+            const shuffledPos = [...positiveStats].sort(() => 0.5 - Math.random()).slice(0, numPos);
+            const attributes = shuffledPos.map((s) => ({
+              url_name: s.url_name,
+              positive: true,
+              value: Number((s.min + Math.random() * (s.max - s.min) * (w.disposition || 1)).toFixed(1)),
+            }));
+
+            if (Math.random() > 0.45) {
+              const neg = negativeStats[Math.floor(Math.random() * negativeStats.length)];
+              attributes.push({
+                url_name: neg.url_name,
+                positive: false,
+                value: Number((neg.min + Math.random() * (neg.max - neg.min)).toFixed(1)),
+              });
+            }
+
+            const endoValue = calculateRivenEndo(mr, modRank, reRolls);
+            const effectivePrice = isDirect ? buyoutPrice || 0 : topBid || startingPrice || 0;
+            const efficiency = effectivePrice > 0 ? Number((endoValue / effectivePrice).toFixed(1)) : 0;
+            const lotId = 'seed_' + w.slug + '_' + Math.random().toString(36).substring(2, 9);
+            const minutesAgo = Math.floor(Math.random() * 2400) + 3;
+            const createdTime = new Date(Date.now() - minutesAgo * 60 * 1000).toISOString();
+
+            await db.run(insertStmt, [
+              lotId,
+              w.slug,
+              seller.name,
+              seller.status,
+              seller.rep,
+              isDirect ? 1 : 0,
+              buyoutPrice,
+              startingPrice,
+              topBid,
+              modName,
+              modRank,
+              reRolls,
+              mr,
+              polarity,
+              JSON.stringify(attributes),
+              endoValue,
+              efficiency,
+              createdTime,
+              createdTime,
+            ]);
+            totalInserted++;
           }
-
-          if (modRank === 8) {
-            basePrice += isTierS ? 60 + Math.floor(Math.random() * 60) : 30;
-          }
-
-          const buyoutPrice = isDirect ? basePrice : null;
-          const startingPrice = isDirect ? buyoutPrice : Math.max(35, Math.floor(basePrice * 0.75));
-          const topBid = !isDirect && Math.random() > 0.4 ? Math.floor(startingPrice! * (1 + Math.random() * 0.35)) : null;
-
-          const numPos = Math.random() > 0.4 ? 3 : 2;
-          const shuffledPos = [...positiveStats].sort(() => 0.5 - Math.random()).slice(0, numPos);
-          const attributes = shuffledPos.map((s) => ({
-            url_name: s.url_name,
-            positive: true,
-            value: Number((s.min + Math.random() * (s.max - s.min) * (w.disposition || 1)).toFixed(1)),
-          }));
-
-          if (Math.random() > 0.45) {
-            const neg = negativeStats[Math.floor(Math.random() * negativeStats.length)];
-            attributes.push({
-              url_name: neg.url_name,
-              positive: false,
-              value: Number((neg.min + Math.random() * (neg.max - neg.min)).toFixed(1)),
-            });
-          }
-
-          const endoValue = calculateRivenEndo(mr, modRank, reRolls);
-          const effectivePrice = isDirect ? buyoutPrice || 0 : topBid || startingPrice || 0;
-          const efficiency = effectivePrice > 0 ? Number((endoValue / effectivePrice).toFixed(1)) : 0;
-          const lotId = 'seed_' + w.slug + '_' + Math.random().toString(36).substring(2, 9);
-          const minutesAgo = Math.floor(Math.random() * 2400) + 3;
-          const createdTime = new Date(Date.now() - minutesAgo * 60 * 1000).toISOString();
-
-          await db.run(insertStmt, [
-            lotId,
-            w.slug,
-            seller.name,
-            seller.status,
-            seller.rep,
-            isDirect ? 1 : 0,
-            buyoutPrice,
-            startingPrice,
-            topBid,
-            modName,
-            modRank,
-            reRolls,
-            mr,
-            polarity,
-            JSON.stringify(attributes),
-            endoValue,
-            efficiency,
-            createdTime,
-            createdTime,
-          ]);
-          totalInserted++;
+          await db.run('COMMIT');
+        } catch {
+          await db.run('ROLLBACK').catch(() => {});
         }
       }
 
-      await db.run('COMMIT');
       console.log(`[RivenService] Baseline lots pool successfully initialized with ${totalInserted} lots in SQLite.`);
       return totalInserted;
     } catch (err: any) {
-      await db.run('ROLLBACK').catch(() => {});
       console.warn('[RivenService] Error populating baseline lots:', err.message);
       return 0;
     }
@@ -526,14 +529,23 @@ class RivenMarketService {
       }
     };
 
-    setTimeout(() => {
-      this.standardizeDispositions().then(() => {
-        this.syncWeaponsCatalog().then(() => {
-          this.ensureBaselineLots().then(() => {
-            schedulerLoop();
-          });
-        });
-      });
+    setTimeout(async () => {
+      try {
+        await this.standardizeDispositions();
+      } catch (err: any) {
+        console.warn('[RivenService] standardizeDispositions error:', err.message);
+      }
+      try {
+        await this.syncWeaponsCatalog();
+      } catch (err: any) {
+        console.warn('[RivenService] syncWeaponsCatalog error:', err.message);
+      }
+      try {
+        await this.ensureBaselineLots();
+      } catch (err: any) {
+        console.warn('[RivenService] ensureBaselineLots error:', err.message);
+      }
+      schedulerLoop();
     }, 2000);
   }
 
