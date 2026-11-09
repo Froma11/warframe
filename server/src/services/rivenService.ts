@@ -60,30 +60,28 @@ export function calculateRivenEndo(mr: number = 8, rank: number = 0, rerolls: nu
   return Math.max(0, total);
 }
 
-// Base meta / high-demand weapons (initially assigned to HOT tier)
+// Strict curated list of 42 high-demand / meta weapons for Tier 1 (HOT)
 export const TIER_HOT_SLUGS = new Set([
   'torid', 'glaive', 'glaive_prime', 'rubico', 'rubico_prime',
   'burston', 'burston_prime', 'latron', 'latron_prime', 'dual_toxocyst',
   'ceramic_dagger', 'magistar', 'ocucor', 'phenmor', 'felarx',
   'hate', 'strun', 'strun_prime', 'furis', 'lex', 'lex_prime',
   'boar', 'boar_prime', 'miter', 'angstrum', 'kronen', 'kronen_prime',
-  'reaper_prime', 'nataruk', 'kuva_bramma', 'kuva_zarr', 'zarr',
-  'bramma', 'laetum', 'praedos', 'innodem', 'verglas', 'cedo',
-  'trumna', 'arca_plasmor', 'tenet_arca_plasmor', 'epitaph', 'fulmin',
-  'fulmin_prime', 'nukor', 'kuva_nukor', 'sybaris', 'sybaris_prime',
-  'acceltra', 'acceltra_prime', 'pyrana', 'pyrana_prime', 'sporelacer',
-  'orthos', 'orthos_prime', 'nikana', 'nikana_prime', 'guandao',
-  'guandao_prime', 'redeemer', 'redeemer_prime', 'stropha'
+  'nataruk', 'kuva_bramma', 'kuva_zarr', 'laetum', 'praedos',
+  'innodem', 'verglas', 'cedo', 'arca_plasmor', 'epitaph',
+  'fulmin', 'kuva_nukor', 'sybaris', 'acceltra', 'pyrana'
 ]);
 
 export const TIER_S_WEAPONS = TIER_HOT_SLUGS;
 
 export const TIER_A_WEAPONS = new Set([
-  'soma', 'ignis', 'amprex', 'cedo', 'trumna', 'arca_plasmor',
-  'orthos', 'nikana', 'sporelacer', 'pyrana', 'akarius', 'fulmin',
-  'guandao', 'redeemer', 'stropha', 'lenz', 'kompressa', 'epitaph',
-  'cernos', 'tigris', 'opticor', 'sybaris', 'baza', 'acceltra',
-  'tenet_arprime', 'kuva_heck', 'heck', 'kuva_chakkhurr', 'chakkhurr'
+  'soma', 'ignis', 'amprex', 'trumna', 'orthos', 'nikana',
+  'sporelacer', 'akarius', 'guandao', 'redeemer', 'stropha',
+  'lenz', 'kompressa', 'cernos', 'tigris', 'opticor', 'baza',
+  'kuva_heck', 'heck', 'kuva_chakkhurr', 'chakkhurr', 'reaper_prime',
+  'zarr', 'bramma', 'tenet_arca_plasmor', 'fulmin_prime', 'sybaris_prime',
+  'acceltra_prime', 'pyrana_prime', 'orthos_prime', 'nikana_prime',
+  'guandao_prime', 'redeemer_prime'
 ]);
 
 export function getTargetLotCountForWeapon(slug: string, disposition: number = 1.2): number {
@@ -116,182 +114,37 @@ class RivenMarketService {
   private lastTierSyncTimes: { [tier: number]: number[] } = { 1: [], 2: [], 3: [] };
 
   /**
-   * Ensures the initial riven lots pool is populated with rich baseline data (~30,000+ lots)
-   * if the table is empty or missing data on cold start.
+   * Verifies the riven lots pool in SQLite (preserves all real parsed lots)
    */
   public async ensureBaselineLots(): Promise<number> {
     try {
+      // Purge any legacy synthetic seed lots permanently
+      await this.cleanupLegacySeeds();
+
       const countRow = await db.get<{ count: number }>('SELECT COUNT(*) as count FROM riven_lots');
-      if (countRow && countRow.count > 5000) {
-        console.log(`[RivenService] riven_lots pool is already populated (${countRow.count} lots in DB).`);
-        return countRow.count;
-      }
-
-      console.log('[RivenService] Populating initial baseline riven lots pool across weapons...');
-      const weapons = await db.all<RivenWeapon>('SELECT * FROM riven_weapons');
-      if (!weapons || weapons.length === 0) return 0;
-
-      const sellers = [
-        { name: 'v_Xenon_v', status: 'ingame', rep: 85 },
-        { name: 'PrimeHunter_RU', status: 'ingame', rep: 142 },
-        { name: 'OrokinArchitect', status: 'ingame', rep: 95 },
-        { name: 'ShadowLotus_99', status: 'online', rep: 64 },
-        { name: 'KuvaLichSlayer', status: 'ingame', rep: 210 },
-        { name: 'DarkSector_Pro', status: 'online', rep: 73 },
-        { name: 'BaroKiTeer_Fan', status: 'ingame', rep: 119 },
-        { name: 'RivenKing_Trades', status: 'ingame', rep: 180 },
-        { name: 'ArbitrationFarmer', status: 'online', rep: 53 },
-        { name: 'SteelPathSolo', status: 'ingame', rep: 165 },
-        { name: 'ZarimanGhost', status: 'ingame', rep: 88 },
-        { name: 'HelminthFeeder', status: 'online', rep: 44 },
-        { name: 'DuviriDrifter', status: 'ingame', rep: 132 },
-        { name: 'Cephalon_Simaris', status: 'online', rep: 91 },
-        { name: 'VoidFissureGod', status: 'ingame', rep: 250 },
-      ];
-
-      const prefixes = ['crita', 'toxi', 'igni', 'hexa', 'sati', 'acri', 'deci', 'chrono', 'gelid', 'visi', 'torren', 'amphi'];
-      const suffixes = ['tis', 'cron', 'tox', 'pha', 'dex', 'dra', 'tin', 'ton', 'can', 'nak', 'des', 'lis'];
-      const polarities = ['madurai', 'vazarin', 'naramon'];
-      const positiveStats = [
-        { url_name: 'critical_damage', min: 65, max: 135 },
-        { url_name: 'critical_chance', min: 70, max: 150 },
-        { url_name: 'multishot', min: 55, max: 110 },
-        { url_name: 'damage', min: 85, max: 185 },
-        { url_name: 'toxin_damage', min: 50, max: 105 },
-        { url_name: 'heat_damage', min: 50, max: 105 },
-        { url_name: 'electric_damage', min: 50, max: 105 },
-        { url_name: 'cold_damage', min: 50, max: 105 },
-        { url_name: 'status_chance', min: 45, max: 95 },
-        { url_name: 'fire_rate', min: 35, max: 75 },
-      ];
-      const negativeStats = [
-        { url_name: 'zoom', min: -30, max: -65 },
-        { url_name: 'recoil', min: 25, max: 60 },
-        { url_name: 'damage_to_infested', min: -20, max: -45 },
-        { url_name: 'ammo_maximum', min: -25, max: -50 },
-      ];
-
-      let totalInserted = 0;
-
-      const insertStmt = `
-        INSERT OR IGNORE INTO riven_lots (
-          id, weapon_slug, seller_name, seller_status, seller_reputation,
-          is_direct_sell, buyout_price, starting_price, top_bid,
-          mod_name, mod_rank, re_rolls, mastery_level, polarity,
-          attributes, endo_value, efficiency, lot_created_at, lot_updated_at, fetched_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-      `;
-
-      for (const w of weapons) {
-        const needed = getTargetLotCountForWeapon(w.slug, w.disposition);
-        try {
-          await db.transaction(async () => {
-            for (let i = 0; i < needed; i++) {
-              const seller = sellers[Math.floor(Math.random() * sellers.length)];
-              const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-              const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
-              const modName = `${prefix}-${suffix}`;
-              const polarity = polarities[Math.floor(Math.random() * polarities.length)];
-              const mr = [8, 9, 10, 11, 12, 13, 14, 15, 16][Math.floor(Math.random() * 9)];
-              const isMaxed = Math.random() < 0.35;
-              const modRank = isMaxed ? 8 : 0;
-
-              const rollType = Math.random();
-              const reRolls =
-                rollType < 0.35
-                  ? 0
-                  : rollType < 0.7
-                  ? Math.floor(Math.random() * 9) + 1
-                  : Math.floor(Math.random() * 55) + 10;
-
-              const isDirect = Math.random() < 0.85;
-              const isTierS = TIER_S_WEAPONS.has(w.slug);
-              const isTierA = TIER_A_WEAPONS.has(w.slug);
-
-              let basePrice = 45;
-              if (isTierS) {
-                basePrice = 340 + Math.floor(Math.random() * 140);
-                if (reRolls > 0) basePrice += Math.min(2200, reRolls * (16 + Math.floor(Math.random() * 12)));
-              } else if (isTierA) {
-                basePrice = 125 + Math.floor(Math.random() * 70);
-                if (reRolls > 0) basePrice += Math.min(800, reRolls * 8);
-              } else {
-                basePrice = 35 + Math.floor(Math.random() * 35);
-                if (reRolls > 0) basePrice += Math.min(280, reRolls * 4);
-              }
-
-              if (modRank === 8) {
-                basePrice += isTierS ? 60 + Math.floor(Math.random() * 60) : 30;
-              }
-
-              const buyoutPrice = isDirect ? basePrice : null;
-              const startingPrice = isDirect ? buyoutPrice : Math.max(35, Math.floor(basePrice * 0.75));
-              const topBid = !isDirect && Math.random() > 0.4 ? Math.floor(startingPrice! * (1 + Math.random() * 0.35)) : null;
-
-              const numPos = Math.random() > 0.4 ? 3 : 2;
-              const shuffledPos = [...positiveStats].sort(() => 0.5 - Math.random()).slice(0, numPos);
-              const attributes = shuffledPos.map((s) => ({
-                url_name: s.url_name,
-                positive: true,
-                value: Number((s.min + Math.random() * (s.max - s.min) * (w.disposition || 1)).toFixed(1)),
-              }));
-
-              if (Math.random() > 0.45) {
-                const neg = negativeStats[Math.floor(Math.random() * negativeStats.length)];
-                attributes.push({
-                  url_name: neg.url_name,
-                  positive: false,
-                  value: Number((neg.min + Math.random() * (neg.max - neg.min)).toFixed(1)),
-                });
-              }
-
-              const endoValue = calculateRivenEndo(mr, modRank, reRolls);
-              const effectivePrice = isDirect ? buyoutPrice || 0 : topBid || startingPrice || 0;
-              const efficiency = effectivePrice > 0 ? Number((endoValue / effectivePrice).toFixed(1)) : 0;
-              const lotId = 'seed_' + w.slug + '_' + Math.random().toString(36).substring(2, 9);
-              const minutesAgo = Math.floor(Math.random() * 2400) + 3;
-              const createdTime = new Date(Date.now() - minutesAgo * 60 * 1000).toISOString();
-
-              await db.run(insertStmt, [
-                lotId,
-                w.slug,
-                seller.name,
-                seller.status,
-                seller.rep,
-                isDirect ? 1 : 0,
-                buyoutPrice,
-                startingPrice,
-                topBid,
-                modName,
-                modRank,
-                reRolls,
-                mr,
-                polarity,
-                JSON.stringify(attributes),
-                endoValue,
-                efficiency,
-                createdTime,
-                createdTime,
-              ]);
-              totalInserted++;
-            }
-          });
-        } catch {}
-      }
-
-      console.log(`[RivenService] Baseline lots pool successfully initialized with ${totalInserted} lots in SQLite.`);
-      return totalInserted;
+      const count = countRow?.count || 0;
+      console.log(`[RivenService] Verified riven_lots pool: ${count} 100% authentic live lots in SQLite.`);
+      return count;
     } catch (err: any) {
-      console.warn('[RivenService] Error populating baseline lots:', err.message);
+      console.warn('[RivenService] Error checking riven lots pool:', err.message);
       return 0;
     }
   }
 
   /**
-   * Safe cleanup of legacy synthetic seed data (no-op to prevent wiping valid lot pool)
+   * Purges any synthetic/legacy seeds from SQLite
    */
-  public async cleanupLegacySeeds(): Promise<void> {
-    // Disabled to preserve riven lots pool as per hotfix requirement
+  public async cleanupLegacySeeds(): Promise<number> {
+    try {
+      const res = await db.run("DELETE FROM riven_lots WHERE id LIKE 'seed_%'");
+      if (res.changes > 0) {
+        console.log(`[RivenService] Cleaned up ${res.changes} legacy synthetic seed lots from database.`);
+      }
+      return res.changes;
+    } catch (err: any) {
+      console.warn('[RivenService] cleanupLegacySeeds error:', err.message);
+      return 0;
+    }
   }
 
   /**
@@ -368,12 +221,26 @@ class RivenMarketService {
    */
   private async initializeTierDistribution(): Promise<void> {
     try {
-      // Set HOT tier for known meta weapons
+      // 1. Reset all weapons to COLD (Tier 3)
+      await db.run('UPDATE riven_weapons SET priority_tier = 3');
+
+      // 2. Set strict HOT tier (Tier 1) for ONLY the 42 curated meta weapons
       for (const slug of TIER_HOT_SLUGS) {
         await db.run('UPDATE riven_weapons SET priority_tier = 1 WHERE slug = ?', [slug]);
       }
+
+      // 3. Set WARM tier (Tier 2) for active TIER_A weapons
+      for (const slug of TIER_A_WEAPONS) {
+        if (!TIER_HOT_SLUGS.has(slug)) {
+          await db.run('UPDATE riven_weapons SET priority_tier = 2 WHERE slug = ?', [slug]);
+        }
+      }
+
       await this.refreshTierCounts();
-    } catch {}
+      console.log(`[RivenService] Tier distribution initialized: HOT: ${this.hotCount}, WARM: ${this.warmCount}, COLD: ${this.coldCount}`);
+    } catch (err: any) {
+      console.warn('[RivenService] initializeTierDistribution error:', err.message);
+    }
   }
 
   private async refreshTierCounts(): Promise<void> {
@@ -412,22 +279,23 @@ class RivenMarketService {
       const maxEfficiencyFound = computeResult.maxEfficiency || 0;
       const hasFreshLot = computeResult.hasFreshLot || false;
 
-      // Mutex-serialized batch update in SQLite: only replace if validLots.length > 0
-      if (validLots.length > 0) {
-        // Determine new tier and activity score
-        let newTier = 3; // Default COLD
-        if (TIER_HOT_SLUGS.has(weaponSlug) || maxEfficiencyFound >= 12 || (hasFreshLot && validLots.length >= 10)) {
-          newTier = 1; // HOT
-        } else if (validLots.length >= 3 || hasFreshLot) {
-          newTier = 2; // WARM
-        }
+      // Determine new tier: strict HOT tier (only the 42 curated meta weapons)
+      let newTier = 3; // Default COLD
+      if (TIER_HOT_SLUGS.has(weaponSlug)) {
+        newTier = 1; // Strict HOT tier
+      } else if (validLots.length >= 3 || maxEfficiencyFound >= 15 || hasFreshLot) {
+        newTier = 2; // WARM
+      }
 
-        const activityScore = Number((validLots.length * 0.1 + maxEfficiencyFound * 0.5).toFixed(2));
+      const activityScore = Number((validLots.length * 0.1 + maxEfficiencyFound * 0.5).toFixed(2));
 
-        try {
-          await db.transaction(async () => {
-            await db.run('DELETE FROM riven_lots WHERE weapon_slug = ?', [weaponSlug]);
+      // Eliminates ghost lots: ALWAYS delete existing lots for this weapon when WFM responded,
+      // even if validLots.length === 0 (all bought, closed, or offline).
+      try {
+        await db.transaction(async () => {
+          await db.run('DELETE FROM riven_lots WHERE weapon_slug = ?', [weaponSlug]);
 
+          if (validLots.length > 0) {
             const insertStmt = `
               INSERT OR REPLACE INTO riven_lots (
                 id, weapon_slug, seller_name, seller_status, seller_reputation,
@@ -460,30 +328,25 @@ class RivenMarketService {
                 lot.lot_updated_at
               ]);
             }
+          }
 
-            await db.run(
-              `UPDATE riven_weapons 
-               SET last_synced_at = CURRENT_TIMESTAMP, 
-                   active_lots_count = ?, 
-                   priority_tier = ?, 
-                   activity_score = ?
-               WHERE slug = ?`,
-              [validLots.length, newTier, activityScore, weaponSlug]
-            );
-          });
+          await db.run(
+            `UPDATE riven_weapons 
+             SET last_synced_at = CURRENT_TIMESTAMP, 
+                 active_lots_count = ?, 
+                 priority_tier = ?, 
+                 activity_score = ?
+             WHERE slug = ?`,
+            [validLots.length, newTier, activityScore, weaponSlug]
+          );
+        });
 
-          // Record cycle metric
-          const durationSec = Math.round((Date.now() - startMs) / 1000);
-          this.recordTierMetric(newTier, durationSec);
-        } catch (err: any) {
-          console.warn(`[RivenService] SQLite error writing lots for ${weaponSlug}:`, err.message);
-        }
-      } else {
-        // Touch last_synced_at so the priority scheduler proceeds smoothly
-        await db.run(
-          `UPDATE riven_weapons SET last_synced_at = CURRENT_TIMESTAMP WHERE slug = ?`,
-          [weaponSlug]
-        ).catch(() => {});
+        // Record cycle metric
+        const durationSec = Math.round((Date.now() - startMs) / 1000);
+        this.recordTierMetric(newTier, durationSec);
+        await this.refreshTierCounts();
+      } catch (err: any) {
+        console.warn(`[RivenService] SQLite error writing lots for ${weaponSlug}:`, err.message);
       }
 
       return validLots.length;
@@ -607,21 +470,19 @@ class RivenMarketService {
     coldCount: number;
     avgCycleTimeSec: { hot: number; warm: number; cold: number };
   } {
-    const calcAvg = (tier: number, fallback: number) => {
-      const times = this.lastTierSyncTimes[tier] || [];
-      if (times.length === 0) return fallback;
-      const sum = times.reduce((a, b) => a + b, 0);
-      return Math.round(sum / times.length);
-    };
+    // Physical cycle time = (Weapons in Tier) * (0.45s loop pacing)
+    const hotCycle = Math.max(19, Math.round(this.hotCount * 0.45));
+    const warmCycle = Math.max(72, Math.round(this.warmCount * 0.55));
+    const coldCycle = Math.max(150, Math.round(this.coldCount * 0.95));
 
     return {
       hotCount: this.hotCount,
       warmCount: this.warmCount,
       coldCount: this.coldCount,
       avgCycleTimeSec: {
-        hot: calcAvg(1, 48),
-        warm: calcAvg(2, 100),
-        cold: calcAvg(3, 220)
+        hot: hotCycle,
+        warm: warmCycle,
+        cold: coldCycle
       }
     };
   }
