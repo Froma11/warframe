@@ -24,8 +24,17 @@ export const App: React.FC = () => {
   // Language state: RU or EN
   const [lang, setLang] = useState<'ru' | 'en'>('ru');
 
-  // Market data state
-  const [arcanes, setArcanes] = useState<ArcaneItem[]>(MOCK_ARCANES);
+  // Market data state: Instant cold-start from local storage (0ms loading on F5)
+  const [arcanes, setArcanes] = useState<ArcaneItem[]>(() => {
+    try {
+      const cached = localStorage.getItem('tenno_cached_arcanes');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return MOCK_ARCANES;
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [selectedArcane, setSelectedArcane] = useState<ArcaneItem | null>(null);
   const [lastUpdatedMinutes, setLastUpdatedMinutes] = useState(3);
@@ -48,7 +57,7 @@ export const App: React.FC = () => {
     checkAuth();
   }, []);
 
-  // Fetch real items from backend /api/arcanes when authenticated (deferred to idle to avoid star chart frame drops)
+  // Fetch real items from backend /api/arcanes immediately on mount in background
   useEffect(() => {
     if (!isAuthenticated) return;
 
@@ -60,6 +69,9 @@ export const App: React.FC = () => {
           const json = await res.json();
           if (json.success && Array.isArray(json.data) && json.data.length > 0) {
             setArcanes(json.data);
+            try {
+              localStorage.setItem('tenno_cached_arcanes', JSON.stringify(json.data));
+            } catch {}
           }
         }
       } catch (err) {
@@ -69,17 +81,7 @@ export const App: React.FC = () => {
       }
     };
 
-    if (activeTab === 'starchart') {
-      if (typeof window.requestIdleCallback === 'function') {
-        const handle = window.requestIdleCallback(() => fetchArcanes(), { timeout: 1500 });
-        return () => window.cancelIdleCallback(handle);
-      } else {
-        const timeoutId = setTimeout(fetchArcanes, 400);
-        return () => clearTimeout(timeoutId);
-      }
-    } else {
-      fetchArcanes();
-    }
+    fetchArcanes();
 
     // Preload riven weapons catalog into cache during idle time
     if (!localStorage.getItem('tenno_cached_riven_weapons')) {
