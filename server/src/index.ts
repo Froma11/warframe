@@ -475,6 +475,27 @@ app.post('/api/market/sync-catalog', async (_req, res) => {
   }
 });
 
+// Trigger bulk image preloading to local disk cache
+app.post('/api/market/preload-images', async (_req, res) => {
+  try {
+    const result = await scraper.preloadAllImages();
+    res.json({ success: true, result });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Trigger fast-track pre-warming of all Prime Sets and crafting components
+app.post('/api/market/prewarm-sets', async (_req, res) => {
+  try {
+    cachedArcanesResponse = null;
+    const result = await scraper.prewarmMarketSets();
+    res.json({ success: true, result });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Item detail with full 90-day price history (Publicly accessible for terminal users)
 app.get('/api/arcanes/:slug', async (req, res) => {
   const slug = req.params.slug as string;
