@@ -354,8 +354,13 @@ class WarframeMarketScraper {
           const items = await db.all<{ slug: string }>(`
             SELECT i.slug 
             FROM items i
-            LEFT JOIN latest_market_snapshots s ON i.slug = s.item_slug AND s.rank = i.max_rank
-            ORDER BY COALESCE(s.buyers_count, s.sellers_count, 0) DESC
+            LEFT JOIN (
+              SELECT item_slug, SUM(volume) as real_trades_24h
+              FROM price_history_hourly
+              WHERE datetime >= strftime('%Y-%m-%dT%H:%M:%S', 'now', '-24 hours')
+              GROUP BY item_slug
+            ) h ON i.slug = h.item_slug
+            ORDER BY COALESCE(h.real_trades_24h, 0) DESC
           `);
 
           if (items && items.length > 0) {

@@ -340,11 +340,23 @@ app.get('/api/arcanes', async (_req, res) => {
       COALESCE(sMax.min_sell, 0) as rMax_minPrice,
       COALESCE(sMax.median_price, 0) as rMax_avgPrice,
       COALESCE(sMax.sellers_count, 0) as rMax_sellers,
-      -- 24h Real Completed Trades
-      COALESCE(sMax.buyers_count, sMax.sellers_count + s0.sellers_count, 0) as trades24h
+      -- 24h Real Completed Trades (Aggregated from hourly & daily closed transactions)
+      COALESCE(h24.real_trades_24h, d24.daily_trades_24h, 0) as trades24h
     FROM items i
     LEFT JOIN latest_market_snapshots s0 ON i.slug = s0.item_slug AND s0.rank = 0
     LEFT JOIN latest_market_snapshots sMax ON i.slug = sMax.item_slug AND sMax.rank = i.max_rank
+    LEFT JOIN (
+      SELECT item_slug, SUM(volume) as real_trades_24h
+      FROM price_history_hourly
+      WHERE datetime >= strftime('%Y-%m-%dT%H:%M:%S', 'now', '-24 hours')
+      GROUP BY item_slug
+    ) h24 ON i.slug = h24.item_slug
+    LEFT JOIN (
+      SELECT item_slug, SUM(volume) as daily_trades_24h
+      FROM price_history
+      WHERE date >= date('now', '-1 day')
+      GROUP BY item_slug
+    ) d24 ON i.slug = d24.item_slug
     WHERE i.tags LIKE '%arcane_enhancement%' OR i.tags LIKE '%arcane%'
     ORDER BY trades24h DESC
   `;

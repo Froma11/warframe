@@ -213,6 +213,7 @@ export async function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_snapshots_slug_time ON market_snapshots(item_slug, timestamp);
     CREATE INDEX IF NOT EXISTS idx_history_slug_date ON price_history(item_slug, date);
     CREATE INDEX IF NOT EXISTS idx_history_hourly_slug_time ON price_history_hourly(item_slug, datetime);
+    CREATE INDEX IF NOT EXISTS idx_history_hourly_time_slug ON price_history_hourly(datetime, item_slug, volume);
     CREATE INDEX IF NOT EXISTS idx_notes_user ON notes(user_id);
     CREATE INDEX IF NOT EXISTS idx_riven_weapons_group ON riven_weapons(group_type);
     CREATE INDEX IF NOT EXISTS idx_riven_lots_weapon ON riven_lots(weapon_slug);
