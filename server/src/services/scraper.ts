@@ -259,7 +259,13 @@ class WarframeMarketScraper {
     const runLiveOrderbookLoop = async () => {
       while (this.isRunning) {
         try {
-          const items = await db.all<{ slug: string }>('SELECT slug FROM items');
+          // Prioritize active and popular arcanes first in the orderbook cycle
+          const items = await db.all<{ slug: string }>(`
+            SELECT i.slug 
+            FROM items i
+            LEFT JOIN latest_market_snapshots s ON i.slug = s.item_slug AND s.rank = i.max_rank
+            ORDER BY COALESCE(s.buyers_count, s.sellers_count, 0) DESC
+          `);
           if (items && items.length > 0) {
             for (const item of items) {
               if (!this.isRunning) break;

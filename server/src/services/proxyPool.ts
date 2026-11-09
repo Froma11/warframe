@@ -162,10 +162,7 @@ export class ProxyPoolManager {
 
   private startHealthCheckLoop(): void {
     if (this.healthIntervalId) clearInterval(this.healthIntervalId);
-    // Initial probe
-    this.probeComputeNodes();
-    // Periodic probe every 30 seconds
-    this.healthIntervalId = setInterval(() => this.probeComputeNodes(), 30000);
+    // Background worker polling disabled: all parsing & arithmetic is executed locally on-node with zero latency
   }
 
   private async probeComputeNodes(): Promise<void> {

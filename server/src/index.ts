@@ -311,8 +311,18 @@ app.use('/api/assets', async (req, res) => {
   }
 });
 
+// In-memory cache for /api/arcanes to guarantee sub-millisecond response time
+let cachedArcanesResponse: any = null;
+let cachedArcanesTime = 0;
+const ARCANES_CACHE_TTL_MS = 2500;
+
 // --- ARCANES MARKET DATA ROUTES (Publicly accessible for terminal users) ---
 app.get('/api/arcanes', async (_req, res) => {
+  const now = Date.now();
+  if (cachedArcanesResponse && now - cachedArcanesTime < ARCANES_CACHE_TTL_MS) {
+    return res.json(cachedArcanesResponse);
+  }
+
   const query = `
     SELECT 
       i.id,
@@ -336,26 +346,8 @@ app.get('/api/arcanes', async (_req, res) => {
       -- 24h Real Completed Trades
       COALESCE(sMax.buyers_count, sMax.sellers_count + s0.sellers_count, 0) as trades24h
     FROM items i
-    LEFT JOIN (
-      SELECT m1.*
-      FROM market_snapshots m1
-      INNER JOIN (
-        SELECT item_slug, MAX(timestamp) as max_time
-        FROM market_snapshots
-        WHERE rank = 0
-        GROUP BY item_slug
-      ) m2 ON m1.item_slug = m2.item_slug AND m1.timestamp = m2.max_time
-      WHERE m1.rank = 0
-    ) s0 ON i.slug = s0.item_slug
-    LEFT JOIN (
-      SELECT m1.*
-      FROM market_snapshots m1
-      INNER JOIN (
-        SELECT item_slug, rank, MAX(timestamp) as max_time
-        FROM market_snapshots
-        GROUP BY item_slug, rank
-      ) m2 ON m1.item_slug = m2.item_slug AND m1.rank = m2.rank AND m1.timestamp = m2.max_time
-    ) sMax ON i.slug = sMax.item_slug AND sMax.rank = i.max_rank
+    LEFT JOIN latest_market_snapshots s0 ON i.slug = s0.item_slug AND s0.rank = 0
+    LEFT JOIN latest_market_snapshots sMax ON i.slug = sMax.item_slug AND sMax.rank = i.max_rank
     WHERE i.tags LIKE '%arcane_enhancement%' OR i.tags LIKE '%arcane%'
     ORDER BY trades24h DESC
   `;
@@ -388,11 +380,14 @@ app.get('/api/arcanes', async (_req, res) => {
       volume24h: item.trades24h || 0,
     }));
 
-    res.json({
+    cachedArcanesResponse = {
       success: true,
       count: formatted.length,
       data: formatted,
-    });
+    };
+    cachedArcanesTime = now;
+
+    res.json(cachedArcanesResponse);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

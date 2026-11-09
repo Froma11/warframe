@@ -123,6 +123,20 @@ export async function initDatabase() {
       FOREIGN KEY (item_slug) REFERENCES items(slug) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS latest_market_snapshots (
+      item_slug TEXT NOT NULL,
+      rank INTEGER NOT NULL,
+      min_sell INTEGER DEFAULT 0,
+      max_buy INTEGER DEFAULT 0,
+      spread INTEGER DEFAULT 0,
+      spread_pct REAL DEFAULT 0,
+      median_price REAL DEFAULT 0,
+      sellers_count INTEGER DEFAULT 0,
+      buyers_count INTEGER DEFAULT 0,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (item_slug, rank)
+    );
+
     CREATE TABLE IF NOT EXISTS price_history (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       item_slug TEXT NOT NULL,
@@ -231,6 +245,27 @@ export async function initDatabase() {
   try {
     await db.exec("CREATE INDEX IF NOT EXISTS idx_riven_weapons_tier ON riven_weapons(priority_tier, last_synced_at);");
   } catch {}
+
+  // Hydrate latest_market_snapshots from historical market_snapshots if empty
+  try {
+    const existingLatest = await db.get<{ cnt: number }>("SELECT COUNT(*) as cnt FROM latest_market_snapshots");
+    if (!existingLatest || existingLatest.cnt === 0) {
+      await db.exec(`
+        INSERT OR IGNORE INTO latest_market_snapshots 
+        (item_slug, rank, min_sell, max_buy, spread, spread_pct, median_price, sellers_count, buyers_count, timestamp)
+        SELECT s.item_slug, s.rank, s.min_sell, s.max_buy, s.spread, s.spread_pct, s.median_price, s.sellers_count, s.buyers_count, s.timestamp
+        FROM market_snapshots s
+        INNER JOIN (
+          SELECT item_slug, rank, MAX(id) as max_id
+          FROM market_snapshots
+          GROUP BY item_slug, rank
+        ) m ON s.id = m.max_id;
+      `);
+      console.log('[DB] Hydrated latest_market_snapshots cache table.');
+    }
+  } catch (err: any) {
+    console.warn('[DB] latest_market_snapshots hydration notice:', err.message);
+  }
 
   console.log('[DB] SQLite Database initialized with WAL mode at:', dbPath);
 }

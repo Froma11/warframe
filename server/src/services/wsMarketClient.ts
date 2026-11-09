@@ -489,6 +489,21 @@ class WsMarketClient {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     `;
 
+    const upsertLatestSql = `
+      INSERT INTO latest_market_snapshots 
+      (item_slug, rank, min_sell, max_buy, spread, spread_pct, median_price, sellers_count, buyers_count, timestamp)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(item_slug, rank) DO UPDATE SET
+        min_sell = excluded.min_sell,
+        max_buy = excluded.max_buy,
+        spread = excluded.spread,
+        spread_pct = excluded.spread_pct,
+        median_price = excluded.median_price,
+        sellers_count = excluded.sellers_count,
+        buyers_count = excluded.buyers_count,
+        timestamp = CURRENT_TIMESTAMP
+    `;
+
     try {
       await db.transaction(async () => {
         for (const slug of slugs) {
@@ -533,7 +548,7 @@ class WsMarketClient {
             }
 
             if (minSell > 0 || maxBuy > 0) {
-              await db.run(insertSnapshotSql, [
+              const params = [
                 slug,
                 rank,
                 minSell,
@@ -543,7 +558,9 @@ class WsMarketClient {
                 medianPrice,
                 sellOrders.length,
                 buyOrders.length,
-              ]);
+              ];
+              await db.run(insertSnapshotSql, params);
+              await db.run(upsertLatestSql, params);
             }
           }
         }
