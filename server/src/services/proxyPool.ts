@@ -234,16 +234,16 @@ export class ProxyPoolManager {
     let longestIdleTime = -1;
 
     for (const node of candidates) {
-      const minInterval = 1800; // at least 1800ms per individual IP
+      const minInterval = 900; // at least 900ms per individual IP
       const elapsed = now - node.lastUsedAt;
 
-      // IPv4 pacing: ensure at least 1800ms between IPv4 requests
-      if (node.family === 4 && now - this.lastIpv4DispatchAt < 1800) {
+      // IPv4 pacing: ensure at least 900ms between IPv4 requests
+      if (node.family === 4 && now - this.lastIpv4DispatchAt < 900) {
         continue;
       }
 
-      // IPv6 prefix spacing: protect the shared /64 prefix (at least 1800ms between any IPv6 requests)
-      if (node.family === 6 && now - this.lastIpv6DispatchAt < 1800) {
+      // IPv6 prefix spacing: protect the shared /64 prefix (at least 900ms between any IPv6 requests)
+      if (node.family === 6 && now - this.lastIpv6DispatchAt < 900) {
         continue;
       }
 
@@ -259,10 +259,10 @@ export class ProxyPoolManager {
     if (!bestNode && candidates !== readyIdleNodes) {
       for (const node of readyIdleNodes) {
         const elapsed = now - node.lastUsedAt;
-        if (node.family === 4 && now - this.lastIpv4DispatchAt < 1800) continue;
-        if (node.family === 6 && now - this.lastIpv6DispatchAt < 1800) continue;
+        if (node.family === 4 && now - this.lastIpv4DispatchAt < 900) continue;
+        if (node.family === 6 && now - this.lastIpv6DispatchAt < 900) continue;
 
-        if (elapsed >= 1800 || node.lastUsedAt === 0) {
+        if (elapsed >= 900 || node.lastUsedAt === 0) {
           if (elapsed > longestIdleTime) {
             longestIdleTime = elapsed;
             bestNode = node;
@@ -332,7 +332,7 @@ export class ProxyPoolManager {
       }
 
       const now = Date.now();
-      const minGlobalGap = 1050; // 1050ms between any requests dispatched across the entire pool
+      const minGlobalGap = 450; // 450ms global alternating step between IPv4 and IPv6 (/64)
       const globalElapsed = now - this.lastGlobalDispatchAt;
       if (globalElapsed < minGlobalGap) {
         setTimeout(dispatchNext, Math.max(10, minGlobalGap - globalElapsed));
@@ -377,8 +377,7 @@ export class ProxyPoolManager {
   private async executeRequest(node: IpNodeStatus, req: QueuedRequest): Promise<void> {
     const fetchHeaders: Record<string, string> = {
       Accept: 'application/json',
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+      'User-Agent': 'Warframe-Market-Integration/2.0',
       Language: req.options?.lang || 'ru',
       Platform: 'pc',
       ...(req.options?.headers || {}),
@@ -523,9 +522,9 @@ export class ProxyPoolManager {
     const fifteenMinAgo = Date.now() - 15 * 60 * 1000;
 
     for (const a of rawAuctions) {
-      if (!a || !a.item || a.item.type !== 'riven' || a.closed === true || a.visible === false) {
-        continue;
-      }
+      if (!a || !a.item) continue;
+      if (a.closed === true || a.visible === false) continue;
+      if (a.item.type && a.item.type.toLowerCase() !== 'riven') continue;
 
       if (a.platform && a.platform !== 'pc' && !a.crossplay) continue;
       if (a.owner?.platform && a.owner?.platform !== 'pc' && !a.owner?.crossplay) continue;
