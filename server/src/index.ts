@@ -260,6 +260,21 @@ export const toProxyAsset = (url: string | null | undefined): string => {
   return `/api/assets/${cleanPath}`;
 };
 
+// 1. High-speed static delivery from local disk (libuv async file streaming, 0ms latency)
+app.use(
+  '/api/assets',
+  express.static(assetsCacheDir, {
+    maxAge: '30d',
+    immutable: true,
+    setHeaders: (res) => {
+      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+    },
+  })
+);
+
+// 2. Fallback fetcher for assets not yet cached on disk
 app.use('/api/assets', async (req, res) => {
   try {
     const rawPath = decodeURIComponent(req.url.replace(/^\/+/, '').split('?')[0]);
@@ -268,22 +283,6 @@ app.use('/api/assets', async (req, res) => {
     }
 
     const localFilePath = path.join(assetsCacheDir, rawPath);
-    if (fs.existsSync(localFilePath)) {
-      try {
-        const stat = fs.statSync(localFilePath);
-        if (stat.size > 0) {
-          res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
-          res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-          res.setHeader('Access-Control-Allow-Origin', '*');
-          const ext = path.extname(localFilePath).toLowerCase();
-          if (ext === '.png') res.setHeader('Content-Type', 'image/png');
-          else if (ext === '.webp') res.setHeader('Content-Type', 'image/webp');
-          else if (ext === '.jpg' || ext === '.jpeg') res.setHeader('Content-Type', 'image/jpeg');
-          return fs.createReadStream(localFilePath).pipe(res);
-        }
-      } catch {}
-    }
-
     const upstreamUrl = `https://warframe.market/static/assets/${rawPath}`;
     try {
       const buffer = await proxyPool.fetchBuffer(upstreamUrl);
@@ -311,7 +310,11 @@ app.use('/api/assets', async (req, res) => {
 // In-memory cache for /api/arcanes to guarantee sub-millisecond response time
 let cachedArcanesResponse: any = null;
 let cachedArcanesTime = 0;
-const ARCANES_CACHE_TTL_MS = 2500;
+const ARCANES_CACHE_TTL_MS = 15000;
+
+// In-memory cache for /api/arcanes/:slug details (45s TTL)
+const arcaneDetailCache = new Map<string, { data: any; time: number }>();
+const ARCANE_DETAIL_TTL_MS = 45000;
 
 // --- ARCANES MARKET DATA ROUTES (Publicly accessible for terminal users) ---
 app.get('/api/arcanes', async (_req, res) => {
@@ -499,6 +502,12 @@ app.post('/api/market/prewarm-sets', async (_req, res) => {
 // Item detail with full 90-day price history (Publicly accessible for terminal users)
 app.get('/api/arcanes/:slug', async (req, res) => {
   const slug = req.params.slug as string;
+  const now = Date.now();
+
+  const cached = arcaneDetailCache.get(slug);
+  if (cached && now - cached.time < ARCANE_DETAIL_TTL_MS) {
+    return res.json(cached.data);
+  }
 
   try {
     const item = await db.get('SELECT * FROM items WHERE slug = ?', [slug]);
@@ -546,7 +555,7 @@ app.get('/api/arcanes/:slug', async (req, res) => {
       ORDER BY datetime ASC
     `, [slug]);
 
-    // Query Crafting Parts for Sets
+    // Query Crafting Parts for Sets (Ultra-fast targeted join with covering indexes)
     let parts: any[] = [];
     if (item.is_set) {
       const partsQuery = `
@@ -567,27 +576,31 @@ app.get('/api/arcanes/:slug', async (req, res) => {
         LEFT JOIN latest_market_snapshots s ON p.slug = s.item_slug AND s.rank = 0
         LEFT JOIN (
           SELECT 
-            item_slug,
-            SUM(volume) as sold_count,
-            ROUND(SUM(median_price * volume) * 1.0 / NULLIF(SUM(volume), 0)) as avg_sold
-          FROM price_history_hourly
-          WHERE rank = 0 AND datetime >= strftime('%Y-%m-%dT%H:%M:%S', 'now', '-24 hours')
-          GROUP BY item_slug
+            ph.item_slug,
+            SUM(ph.volume) as sold_count,
+            ROUND(SUM(ph.median_price * ph.volume) * 1.0 / NULLIF(SUM(ph.volume), 0)) as avg_sold
+          FROM price_history_hourly ph
+          JOIN items pi ON ph.item_slug = pi.slug
+          WHERE ph.rank = 0 
+            AND pi.set_root_slug = ?
+            AND ph.datetime >= strftime('%Y-%m-%dT%H:%M:%S', 'now', '-24 hours')
+          GROUP BY ph.item_slug
         ) h ON p.slug = h.item_slug
         LEFT JOIN (
           SELECT p_hist.item_slug, p_hist.median_price as last_daily_price, p_hist.volume as daily_sold
           FROM price_history p_hist
           INNER JOIN (
-            SELECT item_slug, MAX(date) as max_date
-            FROM price_history
-            WHERE rank = 0
-            GROUP BY item_slug
+            SELECT p_in.item_slug, MAX(p_in.date) as max_date
+            FROM price_history p_in
+            JOIN items pi2 ON p_in.item_slug = pi2.slug
+            WHERE p_in.rank = 0 AND pi2.set_root_slug = ?
+            GROUP BY p_in.item_slug
           ) lat ON p_hist.item_slug = lat.item_slug AND p_hist.date = lat.max_date AND p_hist.rank = 0
         ) d ON p.slug = d.item_slug
         WHERE p.set_root_slug = ?
         ORDER BY p.name_en ASC
       `;
-      const rawParts = await db.all(partsQuery, [slug]);
+      const rawParts = await db.all(partsQuery, [slug, slug, slug]);
       parts = rawParts.map((p: any) => ({
         id: p.id,
         slug: p.slug,
@@ -611,7 +624,7 @@ app.get('/api/arcanes/:slug', async (req, res) => {
       }
     }
 
-    res.json({
+    const payload = {
       success: true,
       data: {
         item,
@@ -619,7 +632,16 @@ app.get('/api/arcanes/:slug', async (req, res) => {
         hourly,
         parts,
       },
-    });
+    };
+
+    arcaneDetailCache.set(slug, { data: payload, time: now });
+    if (arcaneDetailCache.size > 200) {
+      for (const [k, v] of arcaneDetailCache.entries()) {
+        if (now - v.time > ARCANE_DETAIL_TTL_MS) arcaneDetailCache.delete(k);
+      }
+    }
+
+    res.json(payload);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

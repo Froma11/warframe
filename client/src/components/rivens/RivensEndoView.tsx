@@ -65,6 +65,9 @@ interface RivensEndoViewProps {
   lang: 'ru' | 'en';
 }
 
+// In-memory cache for riven lots to eliminate 0-lot flashes and loading spinners on weapon switch
+const rivenLotsClientCache = new Map<string, RivenLot[]>();
+
 export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
   // State: Weapons list with instant cache initialization (0ms load time!)
   const [weapons, setWeapons] = useState<RivenWeapon[]>(() => {
@@ -178,18 +181,28 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
     fetchWeapons();
   }, [activeGroup]);
 
-  // Load lots for the selected weapon (fetches on weapon switch, NOT on every filter click)
+  // Load lots for the selected weapon (fetches on weapon switch with instant cache hydration)
   useEffect(() => {
     if (!selectedWeapon) return;
 
     let isMounted = true;
-    const fetchLots = async () => {
+    const slug = selectedWeapon.slug;
+    const cached = rivenLotsClientCache.get(slug);
+
+    if (cached && cached.length > 0) {
+      setLots(cached);
+      setIsLoadingLots(false);
+    } else {
       setIsLoadingLots(true);
+    }
+
+    const fetchLots = async () => {
       try {
-        const res = await fetch(`/api/rivens/lots/${selectedWeapon.slug}`);
+        const res = await fetch(`/api/rivens/lots/${slug}`);
         if (res.ok) {
           const json = await res.json();
           if (isMounted && json.success && Array.isArray(json.data)) {
+            rivenLotsClientCache.set(slug, json.data);
             setLots(json.data);
           }
         }
@@ -218,6 +231,7 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
         if (res.ok) {
           const json = await res.json();
           if (json.success && Array.isArray(json.data)) {
+            rivenLotsClientCache.set(selectedWeapon.slug, json.data);
             setLots(json.data);
           }
         }

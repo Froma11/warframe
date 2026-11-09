@@ -259,6 +259,8 @@ export async function initDatabase() {
     await db.exec("CREATE INDEX IF NOT EXISTS idx_riven_weapons_tier ON riven_weapons(priority_tier, last_synced_at);");
     await db.exec("CREATE INDEX IF NOT EXISTS idx_items_cat_set ON items(category, is_set);");
     await db.exec("CREATE INDEX IF NOT EXISTS idx_items_set_root ON items(set_root_slug);");
+    await db.exec("CREATE INDEX IF NOT EXISTS idx_price_history_hourly_rank_dt ON price_history_hourly(rank, datetime, item_slug, volume, median_price);");
+    await db.exec("CREATE INDEX IF NOT EXISTS idx_price_history_rank_slug_date ON price_history(rank, item_slug, date DESC, median_price, volume);");
   } catch {}
 
   // Hydrate latest_market_snapshots from historical market_snapshots if empty

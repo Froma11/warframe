@@ -32,6 +32,9 @@ interface ChartPoint {
 
 const timeframes: Timeframe[] = ['24h', '7d', '30d', '90d'];
 
+// Global client-side cache for item details to guarantee instant (0ms) re-opening
+const detailsClientCache = new Map<string, { history: any[]; hourly: any[]; parts: SetPart[] }>();
+
 const getRarityBadge = (rarity: string, lang: 'ru' | 'en') => {
   switch (rarity) {
     case 'Legendary':
@@ -63,6 +66,11 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
   const [selectedRank, setSelectedRank] = useState<number>(maxRank);
   const [timeframe, setTimeframe] = useState<Timeframe>('7d');
   const [hoveredPoint, setHoveredPoint] = useState<{ point: ChartPoint; x: number; y: number } | null>(null);
+
+  const itemSlug = arcane ? (arcane.urlName || (arcane as any).slug || (arcane as any).id) : '';
+  const cachedDetails = itemSlug ? detailsClientCache.get(itemSlug) : null;
+
+  const [isLoadingDetails, setIsLoadingDetails] = useState<boolean>(!cachedDetails);
   const [historyByRank, setHistoryByRank] = useState<{ [rank: number]: any[] }>({});
   const [hourlyByRank, setHourlyByRank] = useState<{ [rank: number]: any[] }>({});
   const [parts, setParts] = useState<SetPart[]>([]);
@@ -89,50 +97,77 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
     };
   }, [arcane, onClose]);
 
-  // Initialize selected rank on arcane change
-  useEffect(() => {
-    if (arcane) {
-      setSelectedRank(arcane.isSet ? 0 : maxRank);
-      setHoveredPoint(null);
-      setParts(arcane.parts || []);
-    }
-  }, [arcane, maxRank]);
-
-  // Fetch full real historical data & parts once when modal opens
+  // Initialize selected rank and cached state on arcane change
   useEffect(() => {
     if (!arcane) return;
-    const itemSlug = arcane.urlName || (arcane as any).slug || (arcane as any).id;
-    if (!itemSlug) return;
+    const currentSlug = arcane.urlName || (arcane as any).slug || (arcane as any).id;
+    setSelectedRank(arcane.isSet ? 0 : maxRank);
+    setHoveredPoint(null);
 
-    fetch(`/api/arcanes/${itemSlug}`, {
+    const cached = currentSlug ? detailsClientCache.get(currentSlug) : null;
+    if (cached) {
+      const grouped: { [rank: number]: any[] } = {};
+      for (const item of cached.history || []) {
+        const r = item.rank ?? (arcane.isSet ? 0 : maxRank);
+        if (!grouped[r]) grouped[r] = [];
+        grouped[r].push(item);
+      }
+      setHistoryByRank(grouped);
+
+      const groupedHourly: { [rank: number]: any[] } = {};
+      for (const item of cached.hourly || []) {
+        const r = item.rank ?? (arcane.isSet ? 0 : maxRank);
+        if (!groupedHourly[r]) groupedHourly[r] = [];
+        groupedHourly[r].push(item);
+      }
+      setHourlyByRank(groupedHourly);
+      setParts(cached.parts || []);
+      setIsLoadingDetails(false);
+      return;
+    }
+
+    setParts(arcane.parts || []);
+    setIsLoadingDetails(true);
+
+    fetch(`/api/arcanes/${currentSlug}`, {
       credentials: 'include',
     })
       .then((r) => r.json())
       .then((res) => {
-        if (res.success && Array.isArray(res.data?.history)) {
+        if (res.success && res.data) {
+          const hist = Array.isArray(res.data.history) ? res.data.history : [];
+          const hrly = Array.isArray(res.data.hourly) ? res.data.hourly : [];
+          const pts = Array.isArray(res.data.parts) ? res.data.parts : [];
+
+          detailsClientCache.set(currentSlug, {
+            history: hist,
+            hourly: hrly,
+            parts: pts,
+          });
+
           const grouped: { [rank: number]: any[] } = {};
-          for (const item of res.data.history) {
+          for (const item of hist) {
             const r = item.rank ?? (arcane.isSet ? 0 : maxRank);
             if (!grouped[r]) grouped[r] = [];
             grouped[r].push(item);
           }
           setHistoryByRank(grouped);
-        }
-        if (res.success && Array.isArray(res.data?.hourly)) {
+
           const groupedHourly: { [rank: number]: any[] } = {};
-          for (const item of res.data.hourly) {
+          for (const item of hrly) {
             const r = item.rank ?? (arcane.isSet ? 0 : maxRank);
             if (!groupedHourly[r]) groupedHourly[r] = [];
             groupedHourly[r].push(item);
           }
           setHourlyByRank(groupedHourly);
-        }
-        if (res.success && Array.isArray(res.data?.parts)) {
-          setParts(res.data.parts);
+          setParts(pts);
         }
       })
       .catch((err) => {
         console.warn('History fetch error:', err);
+      })
+      .finally(() => {
+        setIsLoadingDetails(false);
       });
   }, [arcane, maxRank]);
 
@@ -630,6 +665,16 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
           )}
         </svg>
 
+        {/* Loading overlay when history is being fetched */}
+        {isLoadingDetails && (
+          <div className="absolute inset-0 bg-[#04060a]/70 backdrop-blur-[1px] rounded-xl flex flex-col items-center justify-center gap-2 z-20 pointer-events-none">
+            <div className="w-6 h-6 rounded-full border-2 border-[#00e5ff]/20 border-t-[#00e5ff] animate-spin" />
+            <span className="text-xs font-mono text-[#00e5ff] tracking-wide">
+              {lang === 'ru' ? 'Загрузка истории торгов...' : 'Loading trade history...'}
+            </span>
+          </div>
+        )}
+
         {/* Floating Tooltip */}
         {hoveredPoint && (() => {
           const isNearTop = hoveredPoint.y < 95;
@@ -994,7 +1039,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
                     {lang === 'ru' ? 'КОМПОНЕНТЫ ДЛЯ СБОРКИ' : 'CRAFTING COMPONENTS'}
                   </span>
                   <span className="text-[11px] font-mono text-[#94a3b8]">
-                    {parts.length} {lang === 'ru' ? 'дет.' : 'parts'}
+                    {isLoadingDetails && parts.length === 0 ? '...' : `${parts.length} ${lang === 'ru' ? 'дет.' : 'parts'}`}
                   </span>
                 </div>
 
@@ -1049,8 +1094,15 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
                   })}
 
                   {parts.length === 0 && (
-                    <div className="py-8 text-center text-xs text-[#64748b] font-mono">
-                      {lang === 'ru' ? 'Загрузка компонентов...' : 'Loading components...'}
+                    <div className="py-8 text-center text-xs text-[#64748b] font-mono flex flex-col items-center justify-center gap-2">
+                      {isLoadingDetails ? (
+                        <>
+                          <div className="w-5 h-5 rounded-full border-2 border-[#00e5ff]/20 border-t-[#00e5ff] animate-spin" />
+                          <span>{lang === 'ru' ? 'Синхронизация компонентов...' : 'Syncing components...'}</span>
+                        </>
+                      ) : (
+                        <span>{lang === 'ru' ? 'Нет данных о компонентах' : 'No components data'}</span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1062,7 +1114,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
                   {lang === 'ru' ? 'Итого по частям:' : 'Total parts sum:'}
                 </span>
                 <span className="text-sm font-bold text-[#dfcf99] flex items-center gap-1">
-                  {partsSum > 0 ? partsSum : '...'} <PlatinumIcon size={14} />
+                  {partsSum > 0 ? partsSum : (isLoadingDetails ? '...' : 0)} <PlatinumIcon size={14} />
                 </span>
               </div>
             </div>

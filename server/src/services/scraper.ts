@@ -599,20 +599,30 @@ class WarframeMarketScraper {
     }, 2000);
 
     // --- STREAM A: Tiered Live Orderbook Sync Loop ---
+    let cachedStreamAItems: { slug: string }[] = [];
+    let lastStreamAItemsRefresh = 0;
+    const STREAM_A_ITEMS_TTL_MS = 5 * 60 * 1000;
+
     const runLiveOrderbookLoop = async () => {
       while (this.isRunning) {
         try {
-          const items = await db.all<{ slug: string }>(`
-            SELECT i.slug 
-            FROM items i
-            LEFT JOIN (
-              SELECT item_slug, SUM(volume) as real_trades_24h
-              FROM price_history_hourly
-              WHERE datetime >= strftime('%Y-%m-%dT%H:%M:%S', 'now', '-24 hours')
-              GROUP BY item_slug
-            ) h ON i.slug = h.item_slug
-            ORDER BY COALESCE(h.real_trades_24h, 0) DESC
-          `);
+          const nowTime = Date.now();
+          if (nowTime - lastStreamAItemsRefresh > STREAM_A_ITEMS_TTL_MS || cachedStreamAItems.length === 0) {
+            cachedStreamAItems = await db.all<{ slug: string }>(`
+              SELECT i.slug 
+              FROM items i
+              LEFT JOIN (
+                SELECT item_slug, SUM(volume) as real_trades_24h
+                FROM price_history_hourly
+                WHERE rank = 0 AND datetime >= strftime('%Y-%m-%dT%H:%M:%S', 'now', '-24 hours')
+                GROUP BY item_slug
+              ) h ON i.slug = h.item_slug
+              ORDER BY COALESCE(h.real_trades_24h, 0) DESC
+            `);
+            lastStreamAItemsRefresh = nowTime;
+          }
+
+          const items = cachedStreamAItems;
 
           if (items && items.length > 0) {
             const currentUtcHour = new Date().getUTCHours();
