@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { ArcaneItem } from '../types/arcane';
+import { ArcaneItem, ItemCategory } from '../types/arcane';
 import { ArcaneCard } from './ArcaneCard';
 import { PlatinumIcon } from './PlatinumIcon';
 import { resolveAssetUrl } from '../utils/assets';
@@ -16,6 +16,9 @@ import {
   ChevronsRight,
   ExternalLink,
   Layers,
+  Sparkles,
+  Shield,
+  Swords,
 } from 'lucide-react';
 
 interface SednaViewProps {
@@ -25,6 +28,7 @@ interface SednaViewProps {
   lastUpdatedMinutes?: number;
 }
 
+type MarketCategory = 'all' | 'arcanes' | 'warframes' | 'weapons';
 type SortOption = 'volume24h' | 'priceR5Asc' | 'priceR5Desc' | 'priceR0Asc' | 'snipeDiscount' | 'name';
 
 export const SednaView: React.FC<SednaViewProps> = ({
@@ -33,6 +37,7 @@ export const SednaView: React.FC<SednaViewProps> = ({
   lang,
   lastUpdatedMinutes = 3,
 }) => {
+  const [selectedCategory, setSelectedCategory] = useState<MarketCategory>('arcanes');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('volume24h');
   const [isSortOpen, setIsSortOpen] = useState(false);
@@ -56,17 +61,15 @@ export const SednaView: React.FC<SednaViewProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Reset to page 1 whenever search, sort, or page size changes
+  // Reset to page 1 whenever search, sort, category or page size changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, sortBy, pageSize]);
+  }, [searchQuery, sortBy, pageSize, selectedCategory]);
 
   const sortOptions: { id: SortOption; labelRu: string; labelEn: string }[] = [
     { id: 'volume24h', labelRu: 'Сделки 24ч (наибольший объем)', labelEn: '24h Trades volume' },
-    { id: 'priceR5Desc', labelRu: 'Цена Max (сначала дорогие)', labelEn: 'Price Max (high to low)' },
-    { id: 'priceR5Asc', labelRu: 'Цена Max (сначала дешевые)', labelEn: 'Price Max (low to high)' },
-    { id: 'priceR0Asc', labelRu: 'Цена Ранг 0 (сначала дешевые)', labelEn: 'Price Rank 0 (low to high)' },
-    { id: 'snipeDiscount', labelRu: 'Снайпинг выгода (% от медианы)', labelEn: 'Snipe deviation (%)' },
+    { id: 'priceR5Desc', labelRu: 'Цена (сначала дорогие)', labelEn: 'Price (high to low)' },
+    { id: 'priceR5Asc', labelRu: 'Цена (сначала дешевые)', labelEn: 'Price (low to high)' },
     { id: 'name', labelRu: 'По названию (А-Я)', labelEn: 'Name (A-Z)' },
   ];
 
@@ -76,6 +79,19 @@ export const SednaView: React.FC<SednaViewProps> = ({
   const filteredArcanes = useMemo(() => {
     return arcanes
       .filter((item) => {
+        // Category filtering
+        if (selectedCategory !== 'all') {
+          if (selectedCategory === 'arcanes') {
+            if (item.category && item.category !== 'arcane') return false;
+            if (item.isSet) return false;
+          } else if (selectedCategory === 'warframes') {
+            if (item.category !== 'warframe') return false;
+          } else if (selectedCategory === 'weapons') {
+            if (item.category !== 'weapon') return false;
+          }
+        }
+
+        // Search filter (RU / EN / Slug)
         if (searchQuery.trim()) {
           const query = searchQuery.toLowerCase().trim();
           const matchEn = item.name.toLowerCase().includes(query);
@@ -86,22 +102,20 @@ export const SednaView: React.FC<SednaViewProps> = ({
         return true;
       })
       .sort((a, b) => {
-        const medA = a.rank5.avgPrice || a.rank5.minPrice || 1;
-        const medB = b.rank5.avgPrice || b.rank5.minPrice || 1;
-        const devA = ((a.rank5.minPrice - medA) / medA) * 100;
-        const devB = ((b.rank5.minPrice - medB) / medB) * 100;
+        const priceA = a.isSet ? (a.avgPrice || a.minPrice || 0) : (a.rank5.avgPrice || a.rank5.minPrice || 0);
+        const priceB = b.isSet ? (b.avgPrice || b.minPrice || 0) : (b.rank5.avgPrice || b.rank5.minPrice || 0);
+        const minA = a.isSet ? (a.minPrice || a.avgPrice || 0) : (a.rank5.minPrice || a.rank5.avgPrice || 0);
+        const minB = b.isSet ? (b.minPrice || b.avgPrice || 0) : (b.rank5.minPrice || b.rank5.avgPrice || 0);
 
         switch (sortBy) {
           case 'volume24h':
             return (b.volume24h || b.trades24h || 0) - (a.volume24h || a.trades24h || 0);
           case 'priceR5Asc':
-            return a.rank5.minPrice - b.rank5.minPrice;
+            return minA - minB;
           case 'priceR5Desc':
-            return b.rank5.minPrice - a.rank5.minPrice;
+            return minB - minA;
           case 'priceR0Asc':
-            return a.rank0.minPrice - b.rank0.minPrice;
-          case 'snipeDiscount':
-            return devA - devB;
+            return (a.rank0?.minPrice || minA) - (b.rank0?.minPrice || minB);
           case 'name':
             const nameA = lang === 'ru' && a.nameRu ? a.nameRu : a.name;
             const nameB = lang === 'ru' && b.nameRu ? b.nameRu : b.name;
@@ -110,7 +124,20 @@ export const SednaView: React.FC<SednaViewProps> = ({
             return 0;
         }
       });
-  }, [arcanes, searchQuery, sortBy, lang]);
+  }, [arcanes, searchQuery, sortBy, selectedCategory, lang]);
+
+  // Counts for category badges
+  const categoryCounts = useMemo(() => {
+    let arcanesCnt = 0;
+    let warframesCnt = 0;
+    let weaponsCnt = 0;
+    for (const item of arcanes) {
+      if (item.category === 'warframe') warframesCnt++;
+      else if (item.category === 'weapon') weaponsCnt++;
+      else arcanesCnt++;
+    }
+    return { arcanes: arcanesCnt, warframes: warframesCnt, weapons: weaponsCnt };
+  }, [arcanes]);
 
   // Pagination slicing
   const totalPages = Math.max(1, Math.ceil(filteredArcanes.length / pageSize));
@@ -145,11 +172,50 @@ export const SednaView: React.FC<SednaViewProps> = ({
     return [1, '...', safeCurrentPage - 1, safeCurrentPage, safeCurrentPage + 1, '...', totalPages];
   };
 
+  const searchPlaceholder = useMemo(() => {
+    if (selectedCategory === 'warframes') {
+      return lang === 'ru' ? 'Поиск Прайм варфрейма (RU / EN)...' : 'Search Prime Warframe (RU / EN)...';
+    }
+    if (selectedCategory === 'weapons') {
+      return lang === 'ru' ? 'Поиск Прайм оружия (RU / EN)...' : 'Search Prime Weapon (RU / EN)...';
+    }
+    return lang === 'ru' ? 'Поиск мистификатора (RU / EN)...' : 'Search arcane (RU / EN)...';
+  }, [selectedCategory, lang]);
+
   return (
     <div className="w-full max-w-[1920px] mx-auto px-4 sm:px-8 lg:px-10 py-6 sm:py-8 space-y-6 select-none font-sans">
       
       {/* Scroll anchor for smooth page transitions */}
       <div ref={catalogTopRef} className="scroll-mt-4" />
+
+      {/* Category Pills Navigation */}
+      <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+        {[
+          { id: 'arcanes', labelRu: 'Мистификаторы', labelEn: 'Arcanes', icon: Sparkles, count: categoryCounts.arcanes },
+          { id: 'warframes', labelRu: 'Варфреймы (Прайм)', labelEn: 'Warframes (Prime)', icon: Shield, count: categoryCounts.warframes },
+          { id: 'weapons', labelRu: 'Оружие (Прайм)', labelEn: 'Weapons (Prime)', icon: Swords, count: categoryCounts.weapons },
+        ].map((tab) => {
+          const isActive = selectedCategory === tab.id;
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setSelectedCategory(tab.id as MarketCategory)}
+              className={`px-4 sm:px-5 py-2.5 rounded-2xl font-comfortaa font-bold text-xs sm:text-sm flex items-center gap-2.5 transition-all cursor-pointer ${
+                isActive
+                  ? 'bg-gradient-to-r from-[#00e5ff]/20 to-emerald-500/20 text-[#0284c7] dark:text-[#00e5ff] border border-[#00e5ff]/60 shadow-[0_0_20px_rgba(0,229,255,0.25)]'
+                  : 'bg-white/80 dark:bg-[#070b12]/80 hover:bg-slate-100 dark:hover:bg-[#0e1624] text-slate-600 dark:text-[#a3a29d] border border-slate-200 dark:border-white/[0.08]'
+              }`}
+            >
+              <Icon className={`w-4 h-4 ${isActive ? 'text-[#00e5ff]' : 'text-slate-400 dark:text-[#71717a]'}`} />
+              <span>{lang === 'ru' ? tab.labelRu : tab.labelEn}</span>
+              <span className={`px-2 py-0.5 rounded-full text-[11px] font-mono ${isActive ? 'bg-[#00e5ff]/20 text-[#0284c7] dark:text-[#00e5ff]' : 'bg-slate-200 dark:bg-white/[0.06] text-slate-500 dark:text-[#71717a]'}`}>
+                {tab.count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
       {/* Modern Redesigned Filter & Controls Toolbar */}
       <div className="relative z-30 bg-white/95 dark:bg-[#0b1019]/90 border border-slate-200 dark:border-white/[0.1] p-4 sm:p-5 rounded-3xl flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 shadow-xl backdrop-blur-md transition-colors">
@@ -163,7 +229,7 @@ export const SednaView: React.FC<SednaViewProps> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={lang === 'ru' ? 'Поиск мистификатора (RU / EN)...' : 'Search arcane (RU / EN)...'}
+              placeholder={searchPlaceholder}
               className="w-full pl-11 pr-10 h-11 sm:h-12 bg-slate-50 dark:bg-[#060a12]/90 border border-slate-200 dark:border-white/[0.12] focus:border-[#00e5ff] rounded-2xl text-sm font-sans text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-[#71717a] outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#00e5ff]/30"
             />
             {searchQuery && (
@@ -176,11 +242,16 @@ export const SednaView: React.FC<SednaViewProps> = ({
             )}
           </div>
 
-          {/* Realtime Market Count (NO platinum icon, strictly layers icon) */}
+          {/* Realtime Market Count */}
           <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-[#00e5ff]/10 dark:bg-[#00e5ff]/10 border border-[#00e5ff]/30 text-xs font-comfortaa font-bold text-[#0284c7] dark:text-[#00e5ff]">
             <Layers className="w-4 h-4 text-[#00e5ff]" />
             <span>
-              {arcanes.length} {lang === 'ru' ? 'мистификаторов онлайн' : 'arcanes online'}
+              {filteredArcanes.length}{' '}
+              {selectedCategory === 'warframes'
+                ? (lang === 'ru' ? 'варфреймов онлайн' : 'warframes online')
+                : selectedCategory === 'weapons'
+                ? (lang === 'ru' ? 'оружия онлайн' : 'weapons online')
+                : (lang === 'ru' ? 'мистификаторов онлайн' : 'arcanes online')}
             </span>
           </div>
 

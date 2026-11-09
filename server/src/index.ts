@@ -332,6 +332,9 @@ app.get('/api/arcanes', async (_req, res) => {
       i.thumb_url as thumb,
       i.effect,
       i.source,
+      COALESCE(i.category, 'arcane') as category,
+      COALESCE(i.is_set, 0) as isSet,
+      COALESCE(i.ducats, 0) as ducats,
       -- Rank 0 data (Live orderbook min + 24h closed sales average and volume)
       COALESCE(s0.min_sell, 0) as r0_minPrice,
       ROUND(COALESCE(h0.avg_sold, d0.r0_last_daily_price, s0.median_price, s0.min_sell, 1)) as r0_avgPrice,
@@ -397,7 +400,7 @@ app.get('/api/arcanes', async (_req, res) => {
       WHERE date >= date('now', '-1 day')
       GROUP BY item_slug
     ) d24 ON i.slug = d24.item_slug
-    WHERE i.tags LIKE '%arcane_enhancement%' OR i.tags LIKE '%arcane%'
+    WHERE i.category = 'arcane' OR i.is_set = 1 OR i.tags LIKE '%arcane%'
     ORDER BY trades24h DESC
   `;
 
@@ -405,31 +408,48 @@ app.get('/api/arcanes', async (_req, res) => {
     const items = await db.all(query);
     
     // Format into clean client DTO with proxied image paths
-    const formatted = items.map((item: any) => ({
-      id: item.id || item.urlName,
-      name: item.name,
-      nameRu: item.nameRu || item.name,
-      urlName: item.urlName,
-      icon: toProxyAsset(item.thumb || item.icon),
-      rarity: item.rarity,
-      maxRank: item.maxRank || 5,
-      source: item.source || 'Warframe Market',
-      effect: item.effect || '',
-      rank0: {
-        avgPrice: Math.round(Number(item.r0_avgPrice)) || 1,
-        minPrice: item.r0_minPrice || Math.round(Number(item.r0_avgPrice)) || 1,
-        activeSellers: item.r0_sellers || 0,
-        sold24h: item.r0_sold || 0,
-      },
-      rank5: {
-        avgPrice: Math.round(Number(item.rMax_avgPrice)) || 10,
-        minPrice: item.rMax_minPrice || Math.round(Number(item.rMax_avgPrice)) || 10,
-        activeSellers: item.rMax_sellers || 0,
-        sold24h: item.rMax_sold || 0,
-      },
-      trades24h: item.trades24h || 0,
-      volume24h: item.trades24h || 0,
-    }));
+    const formatted = items.map((item: any) => {
+      const isSet = Boolean(item.isSet);
+      const cat = item.category || (isSet ? 'warframe' : 'arcane');
+      const r0Avg = Math.round(Number(item.r0_avgPrice)) || 1;
+      const r0Min = item.r0_minPrice || r0Avg || 1;
+      const rMaxAvg = Math.round(Number(item.rMax_avgPrice)) || 10;
+      const rMaxMin = item.rMax_minPrice || rMaxAvg || 10;
+
+      return {
+        id: item.id || item.urlName,
+        name: item.name,
+        nameRu: item.nameRu || item.name,
+        urlName: item.urlName,
+        icon: toProxyAsset(item.thumb || item.icon),
+        rarity: item.rarity,
+        maxRank: item.maxRank || (isSet ? 0 : 5),
+        source: item.source || 'Warframe Market',
+        effect: item.effect || '',
+        category: cat,
+        isSet: isSet,
+        ducats: item.ducats || 0,
+        // Unified single prices (for Prime Sets)
+        avgPrice: isSet ? r0Avg : rMaxAvg,
+        minPrice: isSet ? r0Min : rMaxMin,
+        activeSellers: isSet ? (item.r0_sellers || 0) : (item.rMax_sellers || 0),
+        // Two-tier prices (for Arcanes)
+        rank0: {
+          avgPrice: r0Avg,
+          minPrice: r0Min,
+          activeSellers: item.r0_sellers || 0,
+          sold24h: item.r0_sold || 0,
+        },
+        rank5: {
+          avgPrice: rMaxAvg,
+          minPrice: rMaxMin,
+          activeSellers: item.rMax_sellers || 0,
+          sold24h: item.rMax_sold || 0,
+        },
+        trades24h: item.trades24h || 0,
+        volume24h: item.trades24h || 0,
+      };
+    });
 
     cachedArcanesResponse = {
       success: true,
@@ -439,6 +459,17 @@ app.get('/api/arcanes', async (_req, res) => {
     cachedArcanesTime = now;
 
     res.json(cachedArcanesResponse);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Trigger full market catalog sync on-demand (Arcanes, Warframes, Weapons)
+app.post('/api/market/sync-catalog', async (_req, res) => {
+  try {
+    cachedArcanesResponse = null;
+    const count = await scraper.syncMarketCatalog();
+    res.json({ success: true, count });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -494,12 +525,78 @@ app.get('/api/arcanes/:slug', async (req, res) => {
       ORDER BY datetime ASC
     `, [slug]);
 
+    // Query Crafting Parts for Sets
+    let parts: any[] = [];
+    if (item.is_set) {
+      const partsQuery = `
+        SELECT 
+          p.id,
+          p.slug,
+          p.name_en as name,
+          p.name_ru as nameRu,
+          p.icon_url as icon,
+          p.thumb_url as thumb,
+          p.ducats,
+          p.trading_tax as tradingTax,
+          COALESCE(s.min_sell, 0) as minPrice,
+          ROUND(COALESCE(h.avg_sold, d.last_daily_price, s.median_price, s.min_sell, 0)) as avgPrice,
+          COALESCE(s.sellers_count, 0) as activeSellers,
+          COALESCE(h.sold_count, d.daily_sold, 0) as trades24h
+        FROM items p
+        LEFT JOIN latest_market_snapshots s ON p.slug = s.item_slug AND s.rank = 0
+        LEFT JOIN (
+          SELECT 
+            item_slug,
+            SUM(volume) as sold_count,
+            ROUND(SUM(median_price * volume) * 1.0 / NULLIF(SUM(volume), 0)) as avg_sold
+          FROM price_history_hourly
+          WHERE rank = 0 AND datetime >= strftime('%Y-%m-%dT%H:%M:%S', 'now', '-24 hours')
+          GROUP BY item_slug
+        ) h ON p.slug = h.item_slug
+        LEFT JOIN (
+          SELECT p_hist.item_slug, p_hist.median_price as last_daily_price, p_hist.volume as daily_sold
+          FROM price_history p_hist
+          INNER JOIN (
+            SELECT item_slug, MAX(date) as max_date
+            FROM price_history
+            WHERE rank = 0
+            GROUP BY item_slug
+          ) lat ON p_hist.item_slug = lat.item_slug AND p_hist.date = lat.max_date AND p_hist.rank = 0
+        ) d ON p.slug = d.item_slug
+        WHERE p.set_root_slug = ?
+        ORDER BY p.name_en ASC
+      `;
+      const rawParts = await db.all(partsQuery, [slug]);
+      parts = rawParts.map((p: any) => ({
+        id: p.id,
+        slug: p.slug,
+        name: p.name,
+        nameRu: p.nameRu || p.name,
+        icon: toProxyAsset(p.thumb || p.icon),
+        ducats: p.ducats || 0,
+        tradingTax: p.tradingTax || 2000,
+        minPrice: p.minPrice || p.avgPrice || 1,
+        avgPrice: Math.round(Number(p.avgPrice)) || p.minPrice || 1,
+        trades24h: p.trades24h || 0,
+        activeSellers: p.activeSellers || 0,
+      }));
+
+      // Background async on-demand hydration for parts if they lack prices
+      for (const p of parts) {
+        if (!p.minPrice || p.minPrice <= 1) {
+          scraper.syncLiveOrderbook(p.slug).catch(() => {});
+          scraper.syncArchiveDelta(p.slug, 0).catch(() => {});
+        }
+      }
+    }
+
     res.json({
       success: true,
       data: {
         item,
         history,
         hourly,
+        parts,
       },
     });
   } catch (err: any) {

@@ -241,10 +241,24 @@ export async function initDatabase() {
   try {
     await db.exec("ALTER TABLE riven_weapons ADD COLUMN active_lots_count INTEGER DEFAULT 0");
   } catch {}
+  try {
+    await db.exec("ALTER TABLE items ADD COLUMN category TEXT DEFAULT 'arcane'");
+  } catch {}
+  try {
+    await db.exec("ALTER TABLE items ADD COLUMN is_set BOOLEAN DEFAULT 0");
+  } catch {}
+  try {
+    await db.exec("ALTER TABLE items ADD COLUMN set_root_slug TEXT");
+  } catch {}
+  try {
+    await db.exec("ALTER TABLE items ADD COLUMN ducats INTEGER DEFAULT 0");
+  } catch {}
 
   // Post-migration indexes
   try {
     await db.exec("CREATE INDEX IF NOT EXISTS idx_riven_weapons_tier ON riven_weapons(priority_tier, last_synced_at);");
+    await db.exec("CREATE INDEX IF NOT EXISTS idx_items_cat_set ON items(category, is_set);");
+    await db.exec("CREATE INDEX IF NOT EXISTS idx_items_set_root ON items(set_root_slug);");
   } catch {}
 
   // Hydrate latest_market_snapshots from historical market_snapshots if empty

@@ -111,11 +111,17 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = ({ arcane, onOpenDetails, l
           </div>
 
           <div className="flex-1 min-w-0">
-            {/* Rank badge */}
+            {/* Category / Rank badge */}
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-comfortaa font-bold text-emerald-600 dark:text-[#10b981] bg-emerald-500/10 dark:bg-[#10b981]/15 px-2.5 py-0.5 rounded-full border border-emerald-500/30 dark:border-[#10b981]/35">
-                MAX: R{maxRank}
-              </span>
+              {arcane.isSet ? (
+                <span className="text-[11px] font-comfortaa font-bold text-amber-500 dark:text-[#fbbf24] bg-amber-500/10 dark:bg-[#fbbf24]/15 px-2.5 py-0.5 rounded-full border border-amber-500/30 dark:border-[#fbbf24]/35">
+                  PRIME SET
+                </span>
+              ) : (
+                <span className="text-[11px] font-comfortaa font-bold text-emerald-600 dark:text-[#10b981] bg-emerald-500/10 dark:bg-[#10b981]/15 px-2.5 py-0.5 rounded-full border border-emerald-500/30 dark:border-[#10b981]/35">
+                  MAX: R{maxRank}
+                </span>
+              )}
             </div>
 
             <h3 className="font-comfortaa text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-[#0284c7] dark:group-hover:text-[#00e5ff] transition-colors truncate">
@@ -179,59 +185,87 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = ({ arcane, onOpenDetails, l
           </div>
         </div>
 
-        {/* PRICE HIERARCHY: BASE VS MAX */}
-        <div className="grid grid-cols-2 gap-3 my-3">
-          
-          {/* RANK 0 BLOCK (Base) */}
-          <div className="bg-slate-50 dark:bg-[#090b0e] border border-slate-200 dark:border-white/[0.07] p-3.5 rounded-2xl flex flex-col justify-between group-hover:border-slate-300 dark:group-hover:border-white/[0.12] transition-colors">
-            <div className="text-xs text-slate-500 dark:text-[#71717a] flex items-center justify-between">
-              <span className="font-comfortaa font-bold tracking-wider">{lang === 'ru' ? 'РАНГ 0' : 'RANK 0'}</span>
-              <span className="text-[10px] text-slate-400 dark:text-[#52525b] uppercase font-comfortaa">{lang === 'ru' ? 'база' : 'base'}</span>
+        {/* PRICE HIERARCHY: PRIME SET VS ARCANES */}
+        {arcane.isSet ? (
+          <div className="bg-gradient-to-b from-sky-50 to-slate-50 dark:from-[#0f1724] dark:to-[#080d14] border border-sky-300 dark:border-[#00e5ff]/30 p-3.5 sm:p-4 rounded-2xl flex items-center justify-between my-3 shadow-sm dark:shadow-[0_0_20px_rgba(0,229,255,0.08)] group-hover:border-[#00e5ff] dark:group-hover:border-[#00e5ff]/60 transition-all">
+            <div className="flex flex-col">
+              <span className="text-[11px] font-comfortaa font-bold text-slate-500 dark:text-[#a3a29d] uppercase tracking-wider">
+                {lang === 'ru' ? 'Средняя цена продаж' : '24h Average Sold'}
+              </span>
+              <div className="flex items-center gap-2 mt-1" title={lang === 'ru' ? 'Средняя цена продаж за 24ч' : '24h average sold price'}>
+                <span className="text-3xl font-sans font-extrabold text-[#0284c7] dark:text-[#00e5ff] tabular-nums tracking-tight drop-shadow-[0_0_10px_rgba(0,229,255,0.3)]">
+                  {arcane.avgPrice || arcane.minPrice}
+                </span>
+                <PlatinumIcon size={22} />
+              </div>
             </div>
 
-            <div className="my-1.5 flex items-center gap-1.5" title={lang === 'ru' ? 'Средняя цена продаж за 24ч' : '24h average sold price'}>
-              <span className="text-2xl font-sans font-bold tabular-nums text-slate-900 dark:text-[#e4e4e7] tracking-tight">
-                {arcane.rank0.avgPrice}
+            <div className="flex flex-col items-end text-right border-l border-slate-200 dark:border-white/[0.08] pl-4">
+              <span className="text-[11px] text-slate-400 dark:text-[#71717a] font-medium">
+                {lang === 'ru' ? 'лучшая:' : 'min:'}
               </span>
-              <PlatinumIcon size={18} />
-            </div>
-
-            <div className="text-xs text-slate-500 dark:text-[#a1a1aa] flex items-center justify-between pt-1.5 border-t border-slate-200 dark:border-white/[0.05]" title={lang === 'ru' ? 'Лучшая активная цена на продажу' : 'Best active sell order'}>
-              <span className="text-[11px] text-slate-400 dark:text-[#71717a]">{lang === 'ru' ? 'лучшая:' : 'min:'}</span>
-              <span className="text-slate-800 dark:text-[#f4f4f5] font-semibold tabular-nums flex items-center gap-1">
-                {arcane.rank0.minPrice} <PlatinumIcon size={12} />
+              <span className="text-base font-bold text-slate-800 dark:text-white tabular-nums flex items-center gap-1 mt-0.5" title={lang === 'ru' ? 'Лучшая активная цена на продажу' : 'Best active sell order'}>
+                {arcane.minPrice || arcane.avgPrice} <PlatinumIcon size={14} />
               </span>
-            </div>
-          </div>
-
-          {/* RANK MAX BLOCK (Luminous Max Rank) */}
-          <div className="bg-gradient-to-b from-sky-50 to-slate-50 dark:from-[#0f1722] dark:to-[#090e15] border border-sky-300 dark:border-[#00e5ff]/30 p-3.5 rounded-2xl flex flex-col justify-between shadow-sm dark:shadow-[0_0_15px_rgba(0,229,255,0.06)] group-hover:border-[#00e5ff] dark:group-hover:border-[#00e5ff]/60 group-hover:shadow-md dark:group-hover:shadow-[0_0_24px_rgba(0,229,255,0.18)] transition-all">
-            <div className="text-xs flex items-center justify-between">
-              <span className="font-comfortaa font-bold text-[#0284c7] dark:text-[#00e5ff] tracking-wider">
-                {lang === 'ru' ? `МАКС (R${maxRank})` : `MAX (R${maxRank})`}
-              </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#00e5ff]/15 text-[#0284c7] dark:text-[#38bdf8] font-bold border border-[#00e5ff]/30 font-comfortaa">
-                MAX
-              </span>
-            </div>
-
-            {/* High-Contrast Luminous Cyan Price */}
-            <div className="my-1.5 flex items-center gap-1.5" title={lang === 'ru' ? 'Средняя цена продаж за 24ч' : '24h average sold price'}>
-              <span className="text-2xl font-sans font-extrabold tabular-nums text-[#0284c7] dark:text-[#00e5ff] tracking-tight drop-shadow-[0_0_10px_rgba(0,229,255,0.35)]">
-                {arcane.rank5.avgPrice}
-              </span>
-              <PlatinumIcon size={18} />
-            </div>
-
-            <div className="text-xs text-slate-500 dark:text-[#94a3b8] flex items-center justify-between pt-1.5 border-t border-sky-200 dark:border-[#00e5ff]/15" title={lang === 'ru' ? 'Лучшая активная цена на продажу' : 'Best active sell order'}>
-              <span className="text-[11px] text-slate-400 dark:text-[#64748b]">{lang === 'ru' ? 'лучшая:' : 'min:'}</span>
-              <span className="text-[#0284c7] dark:text-[#38bdf8] font-bold tabular-nums flex items-center gap-1">
-                {arcane.rank5.minPrice} <PlatinumIcon size={12} />
-              </span>
+              {(arcane.activeSellers ?? 0) > 0 && (
+                <span className="text-[10px] text-slate-400 dark:text-[#71717a] mt-0.5">
+                  ({arcane.activeSellers} {lang === 'ru' ? 'онлайн' : 'online'})
+                </span>
+              )}
             </div>
           </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 my-3">
+            {/* RANK 0 BLOCK (Base) */}
+            <div className="bg-slate-50 dark:bg-[#090b0e] border border-slate-200 dark:border-white/[0.07] p-3.5 rounded-2xl flex flex-col justify-between group-hover:border-slate-300 dark:group-hover:border-white/[0.12] transition-colors">
+              <div className="text-xs text-slate-500 dark:text-[#71717a] flex items-center justify-between">
+                <span className="font-comfortaa font-bold tracking-wider">{lang === 'ru' ? 'РАНГ 0' : 'RANK 0'}</span>
+                <span className="text-[10px] text-slate-400 dark:text-[#52525b] uppercase font-comfortaa">{lang === 'ru' ? 'база' : 'base'}</span>
+              </div>
 
-        </div>
+              <div className="my-1.5 flex items-center gap-1.5" title={lang === 'ru' ? 'Средняя цена продаж за 24ч' : '24h average sold price'}>
+                <span className="text-2xl font-sans font-bold tabular-nums text-slate-900 dark:text-[#e4e4e7] tracking-tight">
+                  {arcane.rank0.avgPrice}
+                </span>
+                <PlatinumIcon size={18} />
+              </div>
+
+              <div className="text-xs text-slate-500 dark:text-[#a1a1aa] flex items-center justify-between pt-1.5 border-t border-slate-200 dark:border-white/[0.05]" title={lang === 'ru' ? 'Лучшая активная цена на продажу' : 'Best active sell order'}>
+                <span className="text-[11px] text-slate-400 dark:text-[#71717a]">{lang === 'ru' ? 'лучшая:' : 'min:'}</span>
+                <span className="text-slate-800 dark:text-[#f4f4f5] font-semibold tabular-nums flex items-center gap-1">
+                  {arcane.rank0.minPrice} <PlatinumIcon size={12} />
+                </span>
+              </div>
+            </div>
+
+            {/* RANK MAX BLOCK (Luminous Max Rank) */}
+            <div className="bg-gradient-to-b from-sky-50 to-slate-50 dark:from-[#0f1722] dark:to-[#090e15] border border-sky-300 dark:border-[#00e5ff]/30 p-3.5 rounded-2xl flex flex-col justify-between shadow-sm dark:shadow-[0_0_15px_rgba(0,229,255,0.06)] group-hover:border-[#00e5ff] dark:group-hover:border-[#00e5ff]/60 group-hover:shadow-md dark:group-hover:shadow-[0_0_24px_rgba(0,229,255,0.18)] transition-all">
+              <div className="text-xs flex items-center justify-between">
+                <span className="font-comfortaa font-bold text-[#0284c7] dark:text-[#00e5ff] tracking-wider">
+                  {lang === 'ru' ? `МАКС (R${maxRank})` : `MAX (R${maxRank})`}
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#00e5ff]/15 text-[#0284c7] dark:text-[#38bdf8] font-bold border border-[#00e5ff]/30 font-comfortaa">
+                  MAX
+                </span>
+              </div>
+
+              {/* High-Contrast Luminous Cyan Price */}
+              <div className="my-1.5 flex items-center gap-1.5" title={lang === 'ru' ? 'Средняя цена продаж за 24ч' : '24h average sold price'}>
+                <span className="text-2xl font-sans font-extrabold tabular-nums text-[#0284c7] dark:text-[#00e5ff] tracking-tight drop-shadow-[0_0_10px_rgba(0,229,255,0.35)]">
+                  {arcane.rank5.avgPrice}
+                </span>
+                <PlatinumIcon size={18} />
+              </div>
+
+              <div className="text-xs text-slate-500 dark:text-[#94a3b8] flex items-center justify-between pt-1.5 border-t border-sky-200 dark:border-[#00e5ff]/15" title={lang === 'ru' ? 'Лучшая активная цена на продажу' : 'Best active sell order'}>
+                <span className="text-[11px] text-slate-400 dark:text-[#64748b]">{lang === 'ru' ? 'лучшая:' : 'min:'}</span>
+                <span className="text-[#0284c7] dark:text-[#38bdf8] font-bold tabular-nums flex items-center gap-1">
+                  {arcane.rank5.minPrice} <PlatinumIcon size={12} />
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* MINIMALIST FOOTER */}

@@ -9,6 +9,7 @@ interface RawItem {
   rarity?: string;
   maxRank?: number;
   tradingTax?: number;
+  ducats?: number;
   i18n?: {
     en?: {
       name?: string;
@@ -19,6 +20,8 @@ interface RawItem {
     ru?: {
       name?: string;
       description?: string;
+      icon?: string;
+      thumb?: string;
     };
   };
 }
@@ -72,23 +75,47 @@ class WarframeMarketScraper {
     }
   }
 
-  // Sync all Arcanes list from /v2/items
-  public async syncArcanesCatalog(): Promise<number> {
+  // Sync all Arcanes, Prime Warframes, Prime Weapons and their components from /v2/items
+  public async syncMarketCatalog(): Promise<number> {
     console.log('[Scraper] Fetching all items from Warframe Market v2 via ProxyPool...');
     try {
       const json = await proxyPool.fetchJson(`${this.baseUrl}/items`, { priority: 'NORMAL', lang: 'ru' });
       const allItems: RawItem[] = json.data || [];
 
-      // Filter arcanes
+      // 1. Arcanes
       const arcanes = allItems.filter((item) => {
         return item.tags && (item.tags.includes('arcane_enhancement') || item.tags.includes('arcane'));
       });
 
-      console.log(`[Scraper] Found ${arcanes.length} arcanes out of ${allItems.length} total items.`);
+      // 2. Warframe Prime Sets
+      const wfSets = allItems.filter((item) => {
+        return item.tags && item.tags.includes('warframe') && item.tags.includes('prime') && item.tags.includes('set');
+      });
+
+      // 3. Weapon Prime Sets
+      const wpSets = allItems.filter((item) => {
+        return item.tags && item.tags.includes('weapon') && item.tags.includes('prime') && item.tags.includes('set');
+      });
+
+      // Map set base slug to set slug for fast lookup of parts
+      const setBaseMap = new Map<string, { slug: string; category: string }>();
+      for (const s of wfSets) {
+        const base = s.slug.replace(/_set$/, '');
+        setBaseMap.set(base, { slug: s.slug, category: 'warframe' });
+      }
+      for (const s of wpSets) {
+        const base = s.slug.replace(/_set$/, '');
+        setBaseMap.set(base, { slug: s.slug, category: 'weapon' });
+      }
+
+      console.log(`[Scraper] Found ${arcanes.length} arcanes, ${wfSets.length} WF sets, ${wpSets.length} Weapon sets out of ${allItems.length} total items.`);
 
       const upsertSql = `
-        INSERT INTO items (id, slug, name_en, name_ru, rarity, max_rank, icon_url, thumb_url, effect, tags, trading_tax, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        INSERT INTO items (
+          id, slug, name_en, name_ru, rarity, max_rank, icon_url, thumb_url,
+          effect, tags, trading_tax, ducats, category, is_set, set_root_slug, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
         ON CONFLICT(id) DO UPDATE SET
           slug = excluded.slug,
           name_en = excluded.name_en,
@@ -100,36 +127,142 @@ class WarframeMarketScraper {
           effect = excluded.effect,
           tags = excluded.tags,
           trading_tax = excluded.trading_tax,
+          ducats = excluded.ducats,
+          category = excluded.category,
+          is_set = excluded.is_set,
+          set_root_slug = excluded.set_root_slug,
           updated_at = CURRENT_TIMESTAMP
       `;
 
-      for (const item of arcanes) {
-        const en = item.i18n?.en || {};
-        const ru = item.i18n?.ru || {};
-        const iconUrl = en.icon ? `${this.cdnBase}${en.icon}` : '';
-        const thumbUrl = en.thumb ? `${this.cdnBase}${en.thumb}` : '';
+      let totalIndexed = 0;
 
-        await db.run(upsertSql, [
-          item.id,
-          item.slug,
-          en.name || item.slug,
-          ru.name || '',
-          item.rarity || 'Common',
-          item.maxRank ?? 5,
-          iconUrl,
-          thumbUrl,
-          en.description || '',
-          JSON.stringify(item.tags || []),
-          item.tradingTax || 0,
-        ]);
-      }
+      await db.transaction(async () => {
+        // Upsert arcanes
+        for (const item of arcanes) {
+          const en = item.i18n?.en || {};
+          const ru = item.i18n?.ru || {};
+          const iconUrl = en.icon ? `${this.cdnBase}${en.icon}` : '';
+          const thumbUrl = en.thumb ? `${this.cdnBase}${en.thumb}` : '';
 
-      console.log(`[Scraper] Successfully indexed ${arcanes.length} arcanes into SQLite.`);
-      return arcanes.length;
+          await db.run(upsertSql, [
+            item.id,
+            item.slug,
+            en.name || item.slug,
+            ru.name || '',
+            item.rarity || 'Common',
+            item.maxRank ?? 5,
+            iconUrl,
+            thumbUrl,
+            en.description || '',
+            JSON.stringify(item.tags || []),
+            item.tradingTax || 0,
+            item.ducats || 0,
+            'arcane',
+            0,
+            null,
+          ]);
+          totalIndexed++;
+        }
+
+        // Upsert Warframe Prime Sets
+        for (const item of wfSets) {
+          const en = item.i18n?.en || {};
+          const ru = item.i18n?.ru || {};
+          const iconUrl = en.icon ? `${this.cdnBase}${en.icon}` : '';
+          const thumbUrl = en.thumb ? `${this.cdnBase}${en.thumb}` : '';
+
+          await db.run(upsertSql, [
+            item.id,
+            item.slug,
+            en.name || item.slug,
+            ru.name || '',
+            item.rarity || 'Rare',
+            0,
+            iconUrl,
+            thumbUrl,
+            en.description || '',
+            JSON.stringify(item.tags || []),
+            item.tradingTax || 8000,
+            item.ducats || 0,
+            'warframe',
+            1,
+            null,
+          ]);
+          totalIndexed++;
+        }
+
+        // Upsert Weapon Prime Sets
+        for (const item of wpSets) {
+          const en = item.i18n?.en || {};
+          const ru = item.i18n?.ru || {};
+          const iconUrl = en.icon ? `${this.cdnBase}${en.icon}` : '';
+          const thumbUrl = en.thumb ? `${this.cdnBase}${en.thumb}` : '';
+
+          await db.run(upsertSql, [
+            item.id,
+            item.slug,
+            en.name || item.slug,
+            ru.name || '',
+            item.rarity || 'Rare',
+            0,
+            iconUrl,
+            thumbUrl,
+            en.description || '',
+            JSON.stringify(item.tags || []),
+            item.tradingTax || 4000,
+            item.ducats || 0,
+            'weapon',
+            1,
+            null,
+          ]);
+          totalIndexed++;
+        }
+
+        // Upsert all Parts/Components belonging to those sets
+        for (const item of allItems) {
+          if (!item.slug || item.slug.endsWith('_set')) continue;
+          for (const [base, setInfo] of setBaseMap.entries()) {
+            if (item.slug.startsWith(base + '_')) {
+              const en = item.i18n?.en || {};
+              const ru = item.i18n?.ru || {};
+              const iconUrl = en.icon ? `${this.cdnBase}${en.icon}` : '';
+              const thumbUrl = en.thumb ? `${this.cdnBase}${en.thumb}` : '';
+
+              await db.run(upsertSql, [
+                item.id,
+                item.slug,
+                en.name || item.slug,
+                ru.name || '',
+                item.rarity || 'Common',
+                0,
+                iconUrl,
+                thumbUrl,
+                en.description || '',
+                JSON.stringify(item.tags || []),
+                item.tradingTax || 2000,
+                item.ducats || 0,
+                setInfo.category,
+                0,
+                setInfo.slug,
+              ]);
+              totalIndexed++;
+              break;
+            }
+          }
+        }
+      });
+
+      console.log(`[Scraper] Successfully indexed ${totalIndexed} items (Arcanes, Prime Sets, and Crafting Components) into SQLite.`);
+      return totalIndexed;
     } catch (err: any) {
-      console.error('[Scraper] Failed to sync arcanes catalog:', err.message);
+      console.error('[Scraper] Failed to sync market catalog:', err.message);
       throw err;
     }
+  }
+
+  // Backward compatibility alias
+  public async syncArcanesCatalog(): Promise<number> {
+    return this.syncMarketCatalog();
   }
 
   /**
@@ -339,8 +472,8 @@ class WarframeMarketScraper {
     setTimeout(async () => {
       try {
         const count = await db.get<{ cnt: number }>('SELECT COUNT(*) as cnt FROM items');
-        if (!count || count.cnt === 0) {
-          await this.syncArcanesCatalog();
+        if (!count || count.cnt < 200) {
+          await this.syncMarketCatalog();
         }
       } catch (err: any) {
         console.warn('[Scraper Worker] Catalog check warning:', err.message);
