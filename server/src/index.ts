@@ -262,27 +262,32 @@ export const toProxyAsset = (url: string | null | undefined): string => {
 
 app.use('/api/assets', async (req, res) => {
   try {
-    const rawPath = req.url.replace(/^\/+/, '').split('?')[0];
+    const rawPath = decodeURIComponent(req.url.replace(/^\/+/, '').split('?')[0]);
     if (!rawPath || rawPath.includes('..')) {
       return res.status(400).send('Invalid asset path');
     }
 
     const localFilePath = path.join(assetsCacheDir, rawPath);
     if (fs.existsSync(localFilePath)) {
-      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
-      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      const ext = path.extname(localFilePath).toLowerCase();
-      if (ext === '.png') res.setHeader('Content-Type', 'image/png');
-      else if (ext === '.webp') res.setHeader('Content-Type', 'image/webp');
-      else if (ext === '.jpg' || ext === '.jpeg') res.setHeader('Content-Type', 'image/jpeg');
-      return fs.createReadStream(localFilePath).pipe(res);
+      try {
+        const stat = fs.statSync(localFilePath);
+        if (stat.size > 0) {
+          res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+          res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+          res.setHeader('Access-Control-Allow-Origin', '*');
+          const ext = path.extname(localFilePath).toLowerCase();
+          if (ext === '.png') res.setHeader('Content-Type', 'image/png');
+          else if (ext === '.webp') res.setHeader('Content-Type', 'image/webp');
+          else if (ext === '.jpg' || ext === '.jpeg') res.setHeader('Content-Type', 'image/jpeg');
+          return fs.createReadStream(localFilePath).pipe(res);
+        }
+      } catch {}
     }
 
     const upstreamUrl = `https://warframe.market/static/assets/${rawPath}`;
     const upstreamRes = await fetch(upstreamUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        'User-Agent': 'Warframe-Market-Integration/2.0'
       }
     });
 

@@ -181,7 +181,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
       });
     }
 
-    // 2. 7D, 30D, 90D or daily fallback
+    // 2. 7D, 30D, 90D or daily history
     if (rawHistory.length >= 2) {
       let filtered = [...rawHistory];
       if (timeframe === '24h') {
@@ -189,12 +189,9 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
       } else if (timeframe === '7d') {
         filtered = filtered.slice(-7);
       } else if (timeframe === '30d') {
-        const last30 = filtered.slice(-30);
-        const step = Math.max(1, Math.floor(last30.length / 7));
-        filtered = last30.filter((_, i) => i % step === 0 || i === last30.length - 1);
+        filtered = filtered.slice(-30);
       } else if (timeframe === '90d') {
-        const step = Math.max(1, Math.floor(filtered.length / 8));
-        filtered = filtered.filter((_, i) => i % step === 0 || i === filtered.length - 1);
+        filtered = filtered.slice(-90);
       }
 
       if (filtered.length >= 2) {
@@ -215,11 +212,11 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
 
     // Dynamic real-time fallback based on current date
     const now = new Date();
-    const count = timeframe === '24h' ? 6 : 7;
+    const count = timeframe === '24h' ? 24 : timeframe === '7d' ? 7 : timeframe === '30d' ? 30 : 90;
     const fallbackPts: ChartPoint[] = [];
     for (let i = count - 1; i >= 0; i--) {
       if (timeframe === '24h') {
-        const d = new Date(now.getTime() - i * 4 * 3600 * 1000);
+        const d = new Date(now.getTime() - i * 3600 * 1000);
         const hh = String(d.getHours()).padStart(2, '0');
         const mm = '00';
         const day = d.getDate();
@@ -799,7 +796,9 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
 
               {/* X-Axis Dates Labels */}
               {coords.map((c, i) => {
-                if (coords.length > 8 && i % 2 !== 0 && i !== coords.length - 1) return null;
+                const step = Math.max(1, Math.floor((coords.length - 1) / 5));
+                const isSelectedLabel = i === 0 || i === coords.length - 1 || i % step === 0;
+                if (!isSelectedLabel) return null;
                 return (
                   <text
                     key={i}

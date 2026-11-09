@@ -144,7 +144,9 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
   // Load weapons list on mount or when category changes
   useEffect(() => {
     const fetchWeapons = async () => {
-      setIsLoadingWeapons(true);
+      if (weapons.length === 0) {
+        setIsLoadingWeapons(true);
+      }
       try {
         const url = `/api/rivens/weapons?group=${activeGroup}`;
         const res = await fetch(url);
@@ -499,7 +501,7 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
 
           {/* Scrollable Weapons List with 5 In-game Synergy Dots & High Contrast MR */}
           <div className="flex flex-col gap-1.5 max-h-[620px] overflow-y-auto pr-1 scrollbar-thin">
-            {isLoadingWeapons ? (
+            {isLoadingWeapons && filteredWeapons.length === 0 ? (
               <div className="flex items-center justify-center gap-2 py-10 text-xs text-slate-400 font-onest">
                 <RefreshCw className="w-4 h-4 animate-spin text-[#00e5ff]" />
                 <span>{lang === 'ru' ? 'Загрузка списка...' : 'Loading weapons...'}</span>
@@ -1026,7 +1028,7 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
 
                         <div className="hidden sm:flex items-center gap-1 font-comfortaa">
                           <span className="text-slate-400">{lang === 'ru' ? 'По:' : 'Per page:'}</span>
-                          {[12, 24, 48].map((size) => (
+                          {[12, 24, 48, 96, 9999].map((size) => (
                             <button
                               key={size}
                               onClick={() => setPageSize(size)}
@@ -1036,7 +1038,7 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
                                   : 'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                               }`}
                             >
-                              {size}
+                              {size === 9999 ? (lang === 'ru' ? 'Все' : 'All') : size}
                             </button>
                           ))}
                         </div>

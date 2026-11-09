@@ -10,6 +10,8 @@ if (!fs.existsSync(dataDir)) {
 const dbPath = path.join(dataDir, 'warframe_market.db');
 export const rawDb = new sqlite3.Database(dbPath);
 
+let txMutex = Promise.resolve();
+
 export const db = {
   run(sql: string, params: any[] = []): Promise<{ lastID: number; changes: number }> {
     return new Promise((resolve, reject) => {
@@ -45,6 +47,35 @@ export const db = {
         else resolve();
       });
     });
+  },
+
+  /**
+   * Serialized transaction runner: ensures only ONE transaction executes at a time
+   * preventing SQLITE_ERROR: cannot start a transaction within a transaction
+   */
+  async transaction<T>(callback: () => Promise<T>): Promise<T> {
+    let releaseLock: () => void;
+    const currentLock = new Promise<void>((resolve) => {
+      releaseLock = resolve;
+    });
+
+    const previousLock = txMutex;
+    txMutex = txMutex.then(() => currentLock, () => currentLock);
+
+    await previousLock;
+    try {
+      await this.run('BEGIN IMMEDIATE TRANSACTION');
+      try {
+        const result = await callback();
+        await this.run('COMMIT');
+        return result;
+      } catch (innerErr) {
+        await this.run('ROLLBACK').catch(() => {});
+        throw innerErr;
+      }
+    } finally {
+      releaseLock!();
+    }
   },
 };
 

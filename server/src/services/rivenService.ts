@@ -184,101 +184,99 @@ class RivenMarketService {
 
       for (const w of weapons) {
         const needed = getTargetLotCountForWeapon(w.slug, w.disposition);
-        await db.run('BEGIN TRANSACTION');
         try {
-          for (let i = 0; i < needed; i++) {
-            const seller = sellers[Math.floor(Math.random() * sellers.length)];
-            const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-            const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
-            const modName = `${prefix}-${suffix}`;
-            const polarity = polarities[Math.floor(Math.random() * polarities.length)];
-            const mr = [8, 9, 10, 11, 12, 13, 14, 15, 16][Math.floor(Math.random() * 9)];
-            const isMaxed = Math.random() < 0.35;
-            const modRank = isMaxed ? 8 : 0;
+          await db.transaction(async () => {
+            for (let i = 0; i < needed; i++) {
+              const seller = sellers[Math.floor(Math.random() * sellers.length)];
+              const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+              const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+              const modName = `${prefix}-${suffix}`;
+              const polarity = polarities[Math.floor(Math.random() * polarities.length)];
+              const mr = [8, 9, 10, 11, 12, 13, 14, 15, 16][Math.floor(Math.random() * 9)];
+              const isMaxed = Math.random() < 0.35;
+              const modRank = isMaxed ? 8 : 0;
 
-            const rollType = Math.random();
-            const reRolls =
-              rollType < 0.35
-                ? 0
-                : rollType < 0.7
-                ? Math.floor(Math.random() * 9) + 1
-                : Math.floor(Math.random() * 55) + 10;
+              const rollType = Math.random();
+              const reRolls =
+                rollType < 0.35
+                  ? 0
+                  : rollType < 0.7
+                  ? Math.floor(Math.random() * 9) + 1
+                  : Math.floor(Math.random() * 55) + 10;
 
-            const isDirect = Math.random() < 0.85;
-            const isTierS = TIER_S_WEAPONS.has(w.slug);
-            const isTierA = TIER_A_WEAPONS.has(w.slug);
+              const isDirect = Math.random() < 0.85;
+              const isTierS = TIER_S_WEAPONS.has(w.slug);
+              const isTierA = TIER_A_WEAPONS.has(w.slug);
 
-            let basePrice = 45;
-            if (isTierS) {
-              basePrice = 340 + Math.floor(Math.random() * 140);
-              if (reRolls > 0) basePrice += Math.min(2200, reRolls * (16 + Math.floor(Math.random() * 12)));
-            } else if (isTierA) {
-              basePrice = 125 + Math.floor(Math.random() * 70);
-              if (reRolls > 0) basePrice += Math.min(800, reRolls * 8);
-            } else {
-              basePrice = 35 + Math.floor(Math.random() * 35);
-              if (reRolls > 0) basePrice += Math.min(280, reRolls * 4);
+              let basePrice = 45;
+              if (isTierS) {
+                basePrice = 340 + Math.floor(Math.random() * 140);
+                if (reRolls > 0) basePrice += Math.min(2200, reRolls * (16 + Math.floor(Math.random() * 12)));
+              } else if (isTierA) {
+                basePrice = 125 + Math.floor(Math.random() * 70);
+                if (reRolls > 0) basePrice += Math.min(800, reRolls * 8);
+              } else {
+                basePrice = 35 + Math.floor(Math.random() * 35);
+                if (reRolls > 0) basePrice += Math.min(280, reRolls * 4);
+              }
+
+              if (modRank === 8) {
+                basePrice += isTierS ? 60 + Math.floor(Math.random() * 60) : 30;
+              }
+
+              const buyoutPrice = isDirect ? basePrice : null;
+              const startingPrice = isDirect ? buyoutPrice : Math.max(35, Math.floor(basePrice * 0.75));
+              const topBid = !isDirect && Math.random() > 0.4 ? Math.floor(startingPrice! * (1 + Math.random() * 0.35)) : null;
+
+              const numPos = Math.random() > 0.4 ? 3 : 2;
+              const shuffledPos = [...positiveStats].sort(() => 0.5 - Math.random()).slice(0, numPos);
+              const attributes = shuffledPos.map((s) => ({
+                url_name: s.url_name,
+                positive: true,
+                value: Number((s.min + Math.random() * (s.max - s.min) * (w.disposition || 1)).toFixed(1)),
+              }));
+
+              if (Math.random() > 0.45) {
+                const neg = negativeStats[Math.floor(Math.random() * negativeStats.length)];
+                attributes.push({
+                  url_name: neg.url_name,
+                  positive: false,
+                  value: Number((neg.min + Math.random() * (neg.max - neg.min)).toFixed(1)),
+                });
+              }
+
+              const endoValue = calculateRivenEndo(mr, modRank, reRolls);
+              const effectivePrice = isDirect ? buyoutPrice || 0 : topBid || startingPrice || 0;
+              const efficiency = effectivePrice > 0 ? Number((endoValue / effectivePrice).toFixed(1)) : 0;
+              const lotId = 'seed_' + w.slug + '_' + Math.random().toString(36).substring(2, 9);
+              const minutesAgo = Math.floor(Math.random() * 2400) + 3;
+              const createdTime = new Date(Date.now() - minutesAgo * 60 * 1000).toISOString();
+
+              await db.run(insertStmt, [
+                lotId,
+                w.slug,
+                seller.name,
+                seller.status,
+                seller.rep,
+                isDirect ? 1 : 0,
+                buyoutPrice,
+                startingPrice,
+                topBid,
+                modName,
+                modRank,
+                reRolls,
+                mr,
+                polarity,
+                JSON.stringify(attributes),
+                endoValue,
+                efficiency,
+                createdTime,
+                createdTime,
+              ]);
+              totalInserted++;
             }
-
-            if (modRank === 8) {
-              basePrice += isTierS ? 60 + Math.floor(Math.random() * 60) : 30;
-            }
-
-            const buyoutPrice = isDirect ? basePrice : null;
-            const startingPrice = isDirect ? buyoutPrice : Math.max(35, Math.floor(basePrice * 0.75));
-            const topBid = !isDirect && Math.random() > 0.4 ? Math.floor(startingPrice! * (1 + Math.random() * 0.35)) : null;
-
-            const numPos = Math.random() > 0.4 ? 3 : 2;
-            const shuffledPos = [...positiveStats].sort(() => 0.5 - Math.random()).slice(0, numPos);
-            const attributes = shuffledPos.map((s) => ({
-              url_name: s.url_name,
-              positive: true,
-              value: Number((s.min + Math.random() * (s.max - s.min) * (w.disposition || 1)).toFixed(1)),
-            }));
-
-            if (Math.random() > 0.45) {
-              const neg = negativeStats[Math.floor(Math.random() * negativeStats.length)];
-              attributes.push({
-                url_name: neg.url_name,
-                positive: false,
-                value: Number((neg.min + Math.random() * (neg.max - neg.min)).toFixed(1)),
-              });
-            }
-
-            const endoValue = calculateRivenEndo(mr, modRank, reRolls);
-            const effectivePrice = isDirect ? buyoutPrice || 0 : topBid || startingPrice || 0;
-            const efficiency = effectivePrice > 0 ? Number((endoValue / effectivePrice).toFixed(1)) : 0;
-            const lotId = 'seed_' + w.slug + '_' + Math.random().toString(36).substring(2, 9);
-            const minutesAgo = Math.floor(Math.random() * 2400) + 3;
-            const createdTime = new Date(Date.now() - minutesAgo * 60 * 1000).toISOString();
-
-            await db.run(insertStmt, [
-              lotId,
-              w.slug,
-              seller.name,
-              seller.status,
-              seller.rep,
-              isDirect ? 1 : 0,
-              buyoutPrice,
-              startingPrice,
-              topBid,
-              modName,
-              modRank,
-              reRolls,
-              mr,
-              polarity,
-              JSON.stringify(attributes),
-              endoValue,
-              efficiency,
-              createdTime,
-              createdTime,
-            ]);
-            totalInserted++;
-          }
-          await db.run('COMMIT');
-        } catch {
-          await db.run('ROLLBACK').catch(() => {});
-        }
+          });
+        } catch {}
       }
 
       console.log(`[RivenService] Baseline lots pool successfully initialized with ${totalInserted} lots in SQLite.`);
@@ -414,72 +412,70 @@ class RivenMarketService {
       const maxEfficiencyFound = computeResult.maxEfficiency || 0;
       const hasFreshLot = computeResult.hasFreshLot || false;
 
-      // Zero-lock batch update in SQLite: only replace if validLots.length > 0
+      // Mutex-serialized batch update in SQLite: only replace if validLots.length > 0
       if (validLots.length > 0) {
-        await db.run('BEGIN TRANSACTION');
+        // Determine new tier and activity score
+        let newTier = 3; // Default COLD
+        if (TIER_HOT_SLUGS.has(weaponSlug) || maxEfficiencyFound >= 12 || (hasFreshLot && validLots.length >= 10)) {
+          newTier = 1; // HOT
+        } else if (validLots.length >= 3 || hasFreshLot) {
+          newTier = 2; // WARM
+        }
+
+        const activityScore = Number((validLots.length * 0.1 + maxEfficiencyFound * 0.5).toFixed(2));
+
         try {
-          await db.run('DELETE FROM riven_lots WHERE weapon_slug = ?', [weaponSlug]);
+          await db.transaction(async () => {
+            await db.run('DELETE FROM riven_lots WHERE weapon_slug = ?', [weaponSlug]);
 
-          const insertStmt = `
-            INSERT OR REPLACE INTO riven_lots (
-              id, weapon_slug, seller_name, seller_status, seller_reputation,
-              is_direct_sell, buyout_price, starting_price, top_bid,
-              mod_name, mod_rank, re_rolls, mastery_level, polarity,
-              attributes, endo_value, efficiency, lot_created_at, lot_updated_at, fetched_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-          `;
+            const insertStmt = `
+              INSERT OR REPLACE INTO riven_lots (
+                id, weapon_slug, seller_name, seller_status, seller_reputation,
+                is_direct_sell, buyout_price, starting_price, top_bid,
+                mod_name, mod_rank, re_rolls, mastery_level, polarity,
+                attributes, endo_value, efficiency, lot_created_at, lot_updated_at, fetched_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            `;
 
-          for (const lot of validLots) {
-            await db.run(insertStmt, [
-              lot.id,
-              lot.weapon_slug,
-              lot.seller_name,
-              lot.seller_status,
-              lot.seller_reputation,
-              lot.is_direct_sell,
-              lot.buyout_price,
-              lot.starting_price,
-              lot.top_bid,
-              lot.mod_name,
-              lot.mod_rank,
-              lot.re_rolls,
-              lot.mastery_level,
-              lot.polarity,
-              lot.attributes,
-              lot.endo_value,
-              lot.efficiency,
-              lot.lot_created_at,
-              lot.lot_updated_at
-            ]);
-          }
+            for (const lot of validLots) {
+              await db.run(insertStmt, [
+                lot.id,
+                lot.weapon_slug,
+                lot.seller_name,
+                lot.seller_status,
+                lot.seller_reputation,
+                lot.is_direct_sell,
+                lot.buyout_price,
+                lot.starting_price,
+                lot.top_bid,
+                lot.mod_name,
+                lot.mod_rank,
+                lot.re_rolls,
+                lot.mastery_level,
+                lot.polarity,
+                lot.attributes,
+                lot.endo_value,
+                lot.efficiency,
+                lot.lot_created_at,
+                lot.lot_updated_at
+              ]);
+            }
 
-          // Determine new tier and activity score
-          let newTier = 3; // Default COLD
-          if (TIER_HOT_SLUGS.has(weaponSlug) || maxEfficiencyFound >= 12 || (hasFreshLot && validLots.length >= 10)) {
-            newTier = 1; // HOT
-          } else if (validLots.length >= 3 || hasFreshLot) {
-            newTier = 2; // WARM
-          }
-
-          const activityScore = Number((validLots.length * 0.1 + maxEfficiencyFound * 0.5).toFixed(2));
-
-          await db.run(
-            `UPDATE riven_weapons 
-             SET last_synced_at = CURRENT_TIMESTAMP, 
-                 active_lots_count = ?, 
-                 priority_tier = ?, 
-                 activity_score = ?
-             WHERE slug = ?`,
-            [validLots.length, newTier, activityScore, weaponSlug]
-          );
-
-          await db.run('COMMIT');
+            await db.run(
+              `UPDATE riven_weapons 
+               SET last_synced_at = CURRENT_TIMESTAMP, 
+                   active_lots_count = ?, 
+                   priority_tier = ?, 
+                   activity_score = ?
+               WHERE slug = ?`,
+              [validLots.length, newTier, activityScore, weaponSlug]
+            );
+          });
 
           // Record cycle metric
           const durationSec = Math.round((Date.now() - startMs) / 1000);
           this.recordTierMetric(newTier, durationSec);
         } catch (err: any) {
-          await db.run('ROLLBACK').catch(() => {});
           console.warn(`[RivenService] SQLite error writing lots for ${weaponSlug}:`, err.message);
         }
       } else {

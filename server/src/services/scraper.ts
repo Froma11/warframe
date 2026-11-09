@@ -23,20 +23,6 @@ interface RawItem {
   };
 }
 
-interface RawOrder {
-  id: string;
-  type: 'sell' | 'buy';
-  platinum: number;
-  quantity: number;
-  rank: number;
-  visible: boolean;
-  user: {
-    ingameName: string;
-    status: 'ingame' | 'online' | 'offline';
-    reputation: number;
-  };
-}
-
 class WarframeMarketScraper {
   private isRunning: boolean = false;
   private readonly baseUrl: string = 'https://api.warframe.market/v2';
@@ -67,8 +53,7 @@ class WarframeMarketScraper {
     const url = `https://api.warframe.market/v1/items/${slug}/statistics`;
     try {
       return await proxyPool.fetchJson(url, { priority: 'LOW', lang: 'ru' });
-    } catch (err: any) {
-      // console.warn(`[Scraper] Could not fetch statistics for ${slug}:`, err.message);
+    } catch {
       return null;
     }
   }
@@ -134,57 +119,40 @@ class WarframeMarketScraper {
   }
 
   /**
-   * Incremental Delta Sync:
-   * 1. Preserves ALL existing 90-day history in `price_history` and `price_history_hourly`.
-   * 2. Only checks recent hours from `h48` and upserts latest 4 hours into `price_history_hourly`.
-   * 3. Aggregates today's row in `price_history`.
+   * Stream A: High-Speed Live Orderbook Sync for a single arcane
+   * Fetches real live orders from /v2/orders/item/:slug and hydrates wsMarketClient
    */
-  public async syncItemOrders(slug: string, maxRank: number = 5): Promise<any> {
+  public async syncLiveOrderbook(slug: string): Promise<number> {
     try {
-      // 1. Fetch live orders to feed WebSocket in-memory cache and snapshot
-      let orders: RawOrder[] = [];
-      try {
-        const ordersJson = await proxyPool.fetchJson(`${this.baseUrl}/orders/item/${slug}`, {
-          priority: 'LOW',
-          lang: 'ru'
-        });
-        orders = ordersJson.data || [];
-        // Inject orders into wsMarketClient in-memory state
-        for (const o of orders) {
-          wsMarketClient.injectOrder({
-            id: o.id,
-            itemSlug: slug,
-            rank: o.rank,
-            platinum: o.platinum,
-            quantity: o.quantity,
-            orderType: o.type,
-            visible: o.visible,
-            user: {
-              ingameName: o.user.ingameName,
-              status: o.user.status,
-              reputation: o.user.reputation
-            },
-            updatedAt: Date.now()
-          });
-        }
-      } catch (e: any) {
-        // live orders fetch failure is non-fatal
-      }
+      const ordersJson = await proxyPool.fetchJson(`${this.baseUrl}/orders/item/${slug}`, {
+        priority: 'NORMAL',
+        lang: 'ru',
+      });
+      const rawOrders = ordersJson?.data || [];
+      wsMarketClient.hydrateItemOrders(slug, rawOrders);
+      return rawOrders.length;
+    } catch (err: any) {
+      return 0;
+    }
+  }
 
-      // 2. Fetch real closed trade statistics
+  /**
+   * Stream B: Archive Delta Sync for closed trade statistics
+   * Preserves all 24,000+ historical rows; only updates latest hours & today
+   */
+  public async syncArchiveDelta(slug: string, maxRank: number = 5): Promise<void> {
+    try {
       const statsJson = await this.fetchItemStatistics(slug);
       const closedStats = statsJson?.payload?.statistics_closed || {};
       const h48: any[] = closedStats['48hours'] || [];
 
-      const cutoff24h = new Date(Date.now() - 24 * 3600 * 1000);
-      const tradesLast24h = h48.filter((s) => new Date(s.datetime) >= cutoff24h);
-      const totalVolume24h = tradesLast24h.reduce((acc, s) => acc + (s.volume || 0), 0);
+      if (!h48 || h48.length === 0) return;
 
       const ranksToProcess = [0, maxRank];
 
       // Upsert only recent hourly statistics (last 6 hours) into price_history_hourly
       const cutoffRecentHourly = new Date(Date.now() - 6 * 3600 * 1000);
-      const recentH48 = h48.filter(s => new Date(s.datetime) >= cutoffRecentHourly);
+      const recentH48 = h48.filter((s) => new Date(s.datetime) >= cutoffRecentHourly);
 
       const upsertHourly = `
         INSERT INTO price_history_hourly (item_slug, rank, datetime, median_price, volume, min_price, max_price)
@@ -223,17 +191,28 @@ class WarframeMarketScraper {
       `;
 
       for (const rank of ranksToProcess) {
-        const todayRows = await db.all<{ median_price: number; volume: number; min_price: number; max_price: number }>(
-          "SELECT median_price, volume, min_price, max_price FROM price_history_hourly WHERE item_slug = ? AND rank = ? AND datetime LIKE ?",
+        const todayRows = await db.all<{
+          median_price: number;
+          volume: number;
+          min_price: number;
+          max_price: number;
+        }>(
+          'SELECT median_price, volume, min_price, max_price FROM price_history_hourly WHERE item_slug = ? AND rank = ? AND datetime LIKE ?',
           [slug, rank, `${todayDateStr}%`]
         );
 
         if (todayRows.length > 0) {
           const totalVol = todayRows.reduce((acc, r) => acc + (r.volume || 0), 0);
-          const minP = Math.min(...todayRows.map(r => r.min_price || 999999));
-          const maxP = Math.max(...todayRows.map(r => r.max_price || 0));
-          const weightedSum = todayRows.reduce((acc, r) => acc + (r.median_price || 0) * (r.volume || 1), 0);
-          const medianP = totalVol > 0 ? Math.round(weightedSum / totalVol) : Math.round(weightedSum / todayRows.length);
+          const minP = Math.min(...todayRows.map((r) => r.min_price || 999999));
+          const maxP = Math.max(...todayRows.map((r) => r.max_price || 0));
+          const weightedSum = todayRows.reduce(
+            (acc, r) => acc + (r.median_price || 0) * (r.volume || 1),
+            0
+          );
+          const medianP =
+            totalVol > 0
+              ? Math.round(weightedSum / totalVol)
+              : Math.round(weightedSum / todayRows.length);
 
           if (medianP > 0) {
             await db.run(upsertHistory, [
@@ -243,100 +222,83 @@ class WarframeMarketScraper {
               medianP,
               totalVol,
               minP === 999999 ? medianP : minP,
-              maxP === 0 ? medianP : maxP
+              maxP === 0 ? medianP : maxP,
             ]);
           }
         }
       }
-
-      // 3. Fallback snapshot if WebSocket hasn't populated yet
-      const insertSnapshot = `
-        INSERT INTO market_snapshots 
-        (item_slug, rank, min_sell, max_buy, spread, spread_pct, median_price, sellers_count, buyers_count)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-
-      for (const rank of ranksToProcess) {
-        const sellOrders = orders
-          .filter((o) => o.type === 'sell' && o.visible && o.rank === rank && (o.user.status === 'ingame' || o.user.status === 'online'))
-          .sort((a, b) => a.platinum - b.platinum);
-
-        const minLiveSell = sellOrders.length > 0 ? sellOrders[0].platinum : 0;
-        const rankStats24h = tradesLast24h.filter((s) => s.mod_rank === rank);
-        const rankVolume24h = rankStats24h.reduce((acc, s) => acc + (s.volume || 0), 0);
-
-        let realAvgSoldPrice = 0;
-        if (rankVolume24h > 0) {
-          const weightedSum = rankStats24h.reduce(
-            (acc, s) => acc + (s.wa_price || s.avg_price || s.median) * (s.volume || 1),
-            0
-          );
-          realAvgSoldPrice = Math.round(weightedSum / rankVolume24h);
-        } else {
-          realAvgSoldPrice = minLiveSell;
-        }
-
-        const effectiveMinSell = minLiveSell > 0 ? minLiveSell : realAvgSoldPrice;
-
-        await db.run(insertSnapshot, [
-          slug,
-          rank,
-          effectiveMinSell,
-          0,
-          0,
-          0,
-          realAvgSoldPrice,
-          rankVolume24h,
-          totalVolume24h,
-        ]);
-      }
-
-      return { slug, totalVolume24h };
-    } catch (err: any) {
-      console.warn(`[Scraper] Error syncing item ${slug}:`, err.message);
-      return null;
+    } catch {
+      // Non-fatal
     }
   }
 
-  // Graceful slow background delta sync loop (1 item every 8-10s = ~0.1 req/s)
-  public startBackgroundWorker(intervalMinutes: number = 30) {
+  /**
+   * Starts both background workers:
+   * - Stream A: Live Orderbook Sync (1200ms gap, 170 items updated in ~3.5 min)
+   * - Stream B: Archive Delta Sync (every 30-45 minutes with LOW priority)
+   */
+  public startBackgroundWorker(intervalMinutes: number = 30): void {
     if (this.isRunning) return;
     this.isRunning = true;
 
-    console.log(`[Scraper Worker] Started incremental background sync (delays 8s between items)`);
+    console.log('[Scraper Worker] Started Stream A (Live Orderbook Sync: 1300ms gap) & Stream B (Archive Delta Sync)');
 
-    const runCycle = async () => {
+    // Initial check of catalog
+    setTimeout(async () => {
       try {
-        await this.performDailyArchiveCleanup();
-
         const count = await db.get<{ cnt: number }>('SELECT COUNT(*) as cnt FROM items');
         if (!count || count.cnt === 0) {
           await this.syncArcanesCatalog();
         }
-
-        const items = await db.all<{ slug: string; max_rank: number }>('SELECT slug, max_rank FROM items');
-        for (const item of items) {
-          if (!this.isRunning) break;
-          const telemetry = proxyPool.getTelemetry();
-          const vpsNode = telemetry.nodes.find(n => n.id === 'DIRECT-VPS');
-          if (vpsNode && vpsNode.status === 'COOLDOWN') {
-            await new Promise(r => setTimeout(r, 15000));
-            continue;
-          }
-          await this.syncItemOrders(item.slug, item.max_rank || 5);
-          // Polite 10-second interval per item: leaves plenty of throughput for user queries
-          await new Promise(r => setTimeout(r, 10000));
-        }
-      } catch (e: any) {
-        console.warn('[Scraper Worker] Cycle warning:', e.message);
+      } catch (err: any) {
+        console.warn('[Scraper Worker] Catalog check warning:', err.message);
       }
+    }, 2000);
 
-      if (this.isRunning) {
-        setTimeout(runCycle, intervalMinutes * 60 * 1000);
+    // --- STREAM A: Rapid Live Orderbook Sync Loop ---
+    const runLiveOrderbookLoop = async () => {
+      while (this.isRunning) {
+        try {
+          const items = await db.all<{ slug: string }>('SELECT slug FROM items');
+          if (items && items.length > 0) {
+            for (const item of items) {
+              if (!this.isRunning) break;
+              await this.syncLiveOrderbook(item.slug);
+              // 1300ms pacing: ~0.77 req/s across the 5 IP pool, completes all 170 items in ~3.6 minutes
+              await new Promise((r) => setTimeout(r, 1300));
+            }
+          }
+        } catch (e: any) {
+          console.warn('[Scraper Stream A] Loop warning:', e.message);
+        }
+        await new Promise((r) => setTimeout(r, 5000));
       }
     };
 
-    setTimeout(runCycle, 5000);
+    // --- STREAM B: Archive Statistics Delta Sync Loop ---
+    const runArchiveDeltaLoop = async () => {
+      while (this.isRunning) {
+        try {
+          await this.performDailyArchiveCleanup();
+          const items = await db.all<{ slug: string; max_rank: number }>('SELECT slug, max_rank FROM items');
+          if (items && items.length > 0) {
+            for (const item of items) {
+              if (!this.isRunning) break;
+              await this.syncArchiveDelta(item.slug, item.max_rank || 5);
+              // Polite 3000ms pause per item with LOW priority
+              await new Promise((r) => setTimeout(r, 3000));
+            }
+          }
+        } catch (e: any) {
+          console.warn('[Scraper Stream B] Loop warning:', e.message);
+        }
+        // Run delta sync every 35 minutes
+        await new Promise((r) => setTimeout(r, intervalMinutes * 60 * 1000));
+      }
+    };
+
+    setTimeout(runLiveOrderbookLoop, 4000);
+    setTimeout(runArchiveDeltaLoop, 20000);
   }
 }
 
