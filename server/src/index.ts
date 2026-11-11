@@ -388,13 +388,13 @@ app.use('/api/assets', async (req, res) => {
 
 // --- ARCANES MARKET DATA ROUTES (Publicly accessible for terminal users) ---
 app.get('/api/arcanes', async (_req, res) => {
-  // 1. Instant RAM Cache Check (< 0.5 ms, Zero SQLite load)
-  const cached = memoryCache.getArcanes();
-  if (cached) {
-    return res.json(cached);
-  }
-
-  const query = `
+  try {
+    const payload = await memoryCache.getOrFetch(
+      'arcanes_catalog',
+      () => memoryCache.getArcanes(),
+      (data) => memoryCache.setArcanes(data, 60000),
+      async () => {
+        const query = `
     SELECT 
       i.id,
       i.slug as urlName,
@@ -478,59 +478,59 @@ app.get('/api/arcanes', async (_req, res) => {
     ORDER BY trades24h DESC
   `;
 
-  try {
-    const items = await db.all(query);
-    
-    // Format into clean client DTO with proxied image paths
-    const formatted = items.map((item: any) => {
-      const isSet = Boolean(item.isSet);
-      const cat = item.category || (isSet ? 'warframe' : 'arcane');
-      const r0Avg = Math.round(Number(item.r0_avgPrice)) || 1;
-      const r0Min = item.r0_minPrice || r0Avg || 1;
-      const rMaxAvg = Math.round(Number(item.rMax_avgPrice)) || 10;
-      const rMaxMin = item.rMax_minPrice || rMaxAvg || 10;
+        const items = await db.all(query);
+        
+        // Format into clean client DTO with proxied image paths
+        const formatted = items.map((item: any) => {
+          const isSet = Boolean(item.isSet);
+          const cat = item.category || (isSet ? 'warframe' : 'arcane');
+          const r0Avg = Math.round(Number(item.r0_avgPrice)) || 1;
+          const r0Min = item.r0_minPrice || r0Avg || 1;
+          const rMaxAvg = Math.round(Number(item.rMax_avgPrice)) || 10;
+          const rMaxMin = item.rMax_minPrice || rMaxAvg || 10;
 
-      return {
-        id: item.id || item.urlName,
-        name: item.name,
-        nameRu: item.nameRu || item.name,
-        urlName: item.urlName,
-        icon: toProxyAsset(item.thumb || item.icon),
-        rarity: item.rarity,
-        maxRank: item.maxRank || (isSet ? 0 : 5),
-        source: item.source || 'Warframe Market',
-        effect: item.effect || '',
-        category: cat,
-        isSet: isSet,
-        ducats: item.ducats || 0,
-        // Unified single prices (for Prime Sets)
-        avgPrice: isSet ? r0Avg : rMaxAvg,
-        minPrice: isSet ? r0Min : rMaxMin,
-        activeSellers: isSet ? (item.r0_sellers || 0) : (item.rMax_sellers || 0),
-        // Two-tier prices (for Arcanes)
-        rank0: {
-          avgPrice: r0Avg,
-          minPrice: r0Min,
-          activeSellers: item.r0_sellers || 0,
-          sold24h: item.r0_sold || 0,
-        },
-        rank5: {
-          avgPrice: rMaxAvg,
-          minPrice: rMaxMin,
-          activeSellers: item.rMax_sellers || 0,
-          sold24h: item.rMax_sold || 0,
-        },
-        trades24h: item.trades24h || 0,
-        volume24h: item.trades24h || 0,
-      };
-    });
+          return {
+            id: item.id || item.urlName,
+            name: item.name,
+            nameRu: item.nameRu || item.name,
+            urlName: item.urlName,
+            icon: toProxyAsset(item.thumb || item.icon),
+            rarity: item.rarity,
+            maxRank: item.maxRank || (isSet ? 0 : 5),
+            source: item.source || 'Warframe Market',
+            effect: item.effect || '',
+            category: cat,
+            isSet: isSet,
+            ducats: item.ducats || 0,
+            // Unified single prices (for Prime Sets)
+            avgPrice: isSet ? r0Avg : rMaxAvg,
+            minPrice: isSet ? r0Min : rMaxMin,
+            activeSellers: isSet ? (item.r0_sellers || 0) : (item.rMax_sellers || 0),
+            // Two-tier prices (for Arcanes)
+            rank0: {
+              avgPrice: r0Avg,
+              minPrice: r0Min,
+              activeSellers: item.r0_sellers || 0,
+              sold24h: item.r0_sold || 0,
+            },
+            rank5: {
+              avgPrice: rMaxAvg,
+              minPrice: rMaxMin,
+              activeSellers: item.rMax_sellers || 0,
+              sold24h: item.rMax_sold || 0,
+            },
+            trades24h: item.trades24h || 0,
+            volume24h: item.trades24h || 0,
+          };
+        });
 
-    const payload = {
-      success: true,
-      count: formatted.length,
-      data: formatted,
-    };
-    memoryCache.setArcanes(payload, 60000);
+        return {
+          success: true,
+          count: formatted.length,
+          data: formatted,
+        };
+      }
+    );
 
     res.json(payload);
   } catch (err: any) {

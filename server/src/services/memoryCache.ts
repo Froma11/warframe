@@ -37,6 +37,38 @@ export class MemoryCacheManager {
   private misses = 0;
   private responseTimes: number[] = [];
 
+  // Singleflight map to coalesce concurrent identical requests and eliminate cache stampedes
+  private inFlight = new Map<string, Promise<any>>();
+
+  public async getOrFetch<T>(
+    key: string,
+    getter: () => T | null,
+    setter: (val: T) => void,
+    fetcher: () => Promise<T>
+  ): Promise<T> {
+    const cached = getter();
+    if (cached !== null && cached !== undefined) {
+      return cached;
+    }
+
+    if (this.inFlight.has(key)) {
+      return this.inFlight.get(key) as Promise<T>;
+    }
+
+    const promise = (async () => {
+      try {
+        const fresh = await fetcher();
+        setter(fresh);
+        return fresh;
+      } finally {
+        this.inFlight.delete(key);
+      }
+    })();
+
+    this.inFlight.set(key, promise);
+    return promise;
+  }
+
   // --- ARCANES & MARKET ITEMS ---
   public getArcanes(): any | null {
     const now = Date.now();

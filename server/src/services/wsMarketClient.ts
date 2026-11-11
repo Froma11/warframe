@@ -574,8 +574,8 @@ class WsMarketClient {
           await db.batchInsert('latest_market_snapshots', cols, snapshotRows, 50);
         });
 
-        // Invalidate in-memory caches so GET /api/arcanes and /api/status return live values instantly
-        memoryCache.invalidateArcanes();
+        // Invalidate status cache so GET /api/status returns live values immediately;
+        // Keep arcanes catalog cache on its 60s window to prevent cache stampedes under high concurrency
         memoryCache.invalidateStatus();
       }
     } catch (err: any) {
