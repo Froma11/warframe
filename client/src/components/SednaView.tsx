@@ -3,6 +3,7 @@ import { ArcaneItem, ItemCategory } from '../types/arcane';
 import { ArcaneCard } from './ArcaneCard';
 import { PlatinumIcon } from './PlatinumIcon';
 import { resolveAssetUrl } from '../utils/assets';
+import { prefetchArcaneDetails } from './ArcaneDrawer';
 import {
   Search,
   ArrowUpDown,
@@ -409,6 +410,7 @@ export const SednaView: React.FC<SednaViewProps> = ({
                   <tr
                     key={arcane.urlName || arcane.id}
                     onClick={() => onOpenDetails(arcane)}
+                    onMouseEnter={() => prefetchArcaneDetails(arcane.urlName || (arcane as any).slug || (arcane as any).id)}
                     className="hover:bg-slate-50 dark:hover:bg-[#00e5ff]/[0.04] cursor-pointer transition-colors group"
                   >
                     <td className="py-3.5 px-6">

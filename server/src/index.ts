@@ -387,14 +387,9 @@ app.use('/api/assets', async (req, res) => {
 });
 
 // --- ARCANES MARKET DATA ROUTES (Publicly accessible for terminal users) ---
-app.get('/api/arcanes', async (_req, res) => {
-  try {
-    const payload = await memoryCache.getOrFetch(
-      'arcanes_catalog',
-      () => memoryCache.getArcanes(),
-      (data) => memoryCache.setArcanes(data, 60000),
-      async () => {
-        const query = `
+// Helper to query and format full arcane catalog DTO
+async function loadArcanesCatalog(): Promise<{ success: boolean; count: number; data: any[] }> {
+  const query = `
     SELECT 
       i.id,
       i.slug as urlName,
@@ -524,12 +519,21 @@ app.get('/api/arcanes', async (_req, res) => {
           };
         });
 
-        return {
-          success: true,
-          count: formatted.length,
-          data: formatted,
-        };
-      }
+  return {
+    success: true,
+    count: formatted.length,
+    data: formatted,
+  };
+}
+
+// --- ARCANES MARKET DATA ROUTES (Publicly accessible for terminal users) ---
+app.get('/api/arcanes', async (_req, res) => {
+  try {
+    const payload = await memoryCache.getOrFetch(
+      'arcanes_catalog',
+      () => memoryCache.getArcanes(),
+      (data) => memoryCache.setArcanes(data, 60000),
+      loadArcanesCatalog
     );
 
     res.json(payload);
@@ -600,24 +604,8 @@ app.get('/api/arcanes/:slug', async (req, res) => {
       ORDER BY date ASC
     `, [slug]);
 
-    // If history is missing or very sparse (< 5 days), hydrate it immediately on-demand
-    if (!history || history.length < 5) {
-      try {
-        await Promise.race([
-          scraper.syncArchiveDelta(slug, item.max_rank || 5),
-          new Promise((resolve) => setTimeout(resolve, 1500)),
-        ]);
-        history = await db.all(`
-          SELECT rank, date, median_price as medianPrice, volume, min_price as minPrice, max_price as maxPrice
-          FROM price_history
-          WHERE item_slug = ?
-          ORDER BY date ASC
-        `, [slug]);
-      } catch {}
-    } else {
-      // Trigger background archive delta refresh if overdue (> 1h cooldown)
-      scraper.syncArchiveDelta(slug, item.max_rank || 5).catch(() => {});
-    }
+    // Non-blocking background archive delta refresh (never delays user HTTP response)
+    scraper.syncArchiveDelta(slug, item.max_rank || 5).catch(() => {});
 
     const hourly = await db.all(`
       SELECT rank, datetime, median_price as medianPrice, volume, min_price as minPrice, max_price as maxPrice
@@ -1041,6 +1029,16 @@ async function start() {
   proxyPool.initNodes();
   await initDatabase();
   await initAuth();
+
+  // Instant Cold-Start Warmup: pre-calculate showcase catalog into RAM before opening port
+  console.log('[SERVER] Pre-warming in-memory showcase catalog into RAM...');
+  try {
+    const initialCatalog = await loadArcanesCatalog();
+    memoryCache.setArcanes(initialCatalog, 60000);
+    console.log(`[SERVER] In-memory catalog pre-warmed (${initialCatalog.count} items). 0ms response guaranteed.`);
+  } catch (err: any) {
+    console.warn('[SERVER] Warmup error:', err.message);
+  }
 
   app.listen(PORT, () => {
     console.log(`[SERVER] Warframe Market Analytics running on port ${PORT}`);

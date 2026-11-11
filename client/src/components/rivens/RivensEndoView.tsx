@@ -789,6 +789,8 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
                         <img
                           src={resolveAssetUrl(w.thumb_url)}
                           alt={w.name_ru}
+                          loading="lazy"
+                          decoding="async"
                           className="w-7 h-7 object-contain shrink-0 drop-shadow-sm"
                           onError={(e) => {
                             (e.target as HTMLElement).style.display = 'none';

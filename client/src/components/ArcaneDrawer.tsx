@@ -33,7 +33,24 @@ interface ChartPoint {
 const timeframes: Timeframe[] = ['24h', '7d', '30d', '90d'];
 
 // Global client-side cache for item details to guarantee instant (0ms) re-opening
-const detailsClientCache = new Map<string, { history: any[]; hourly: any[]; parts: SetPart[] }>();
+export const detailsClientCache = new Map<string, { history: any[]; hourly: any[]; parts: SetPart[] }>();
+
+// Instant hover prefetcher: loads item history into RAM while user moves mouse over card (Zero spinner delay on click)
+export const prefetchArcaneDetails = (slug: string | null | undefined) => {
+  if (!slug || detailsClientCache.has(slug)) return;
+  fetch(`/api/arcanes/${slug}`, { credentials: 'include' })
+    .then((r) => r.json())
+    .then((res) => {
+      if (res.success && res.data) {
+        detailsClientCache.set(slug, {
+          history: Array.isArray(res.data.history) ? res.data.history : [],
+          hourly: Array.isArray(res.data.hourly) ? res.data.hourly : [],
+          parts: Array.isArray(res.data.parts) ? res.data.parts : [],
+        });
+      }
+    })
+    .catch(() => {});
+};
 
 const getRarityBadge = (rarity: string, lang: 'ru' | 'en') => {
   switch (rarity) {

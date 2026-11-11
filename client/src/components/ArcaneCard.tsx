@@ -3,6 +3,7 @@ import { ArcaneItem } from '../types/arcane';
 import { PlatinumIcon } from './PlatinumIcon';
 import { ExternalLink } from 'lucide-react';
 import { resolveAssetUrl } from '../utils/assets';
+import { prefetchArcaneDetails } from './ArcaneDrawer';
 
 interface ArcaneCardProps {
   arcane: ArcaneItem;
@@ -57,6 +58,7 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = React.memo(({ arcane, onOpe
     <div
       data-arcane-card="true"
       onClick={() => onOpenDetails(arcane)}
+      onMouseEnter={() => prefetchArcaneDetails(arcane.urlName || (arcane as any).slug || (arcane as any).id)}
       onMouseMove={handleMouseMove}
       className="group relative cursor-pointer bg-white dark:bg-[#0e1117] hover:bg-slate-50 dark:hover:bg-[#121620] border border-slate-200 dark:border-white/[0.08] hover:border-transparent p-5 rounded-3xl transition-all duration-300 ease-out flex flex-col justify-between shadow-sm dark:shadow-[0_10px_30px_rgba(0,0,0,0.5)] hover:shadow-xl dark:hover:shadow-[0_18px_45px_rgba(0,0,0,0.7),0_0_30px_rgba(16,185,129,0.12)] hover:-translate-y-1.5 overflow-hidden select-none font-sans"
     >
