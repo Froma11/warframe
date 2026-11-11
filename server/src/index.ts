@@ -48,6 +48,12 @@ function rateLimiter(req: express.Request, res: express.Response, next: express.
     (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ||
     req.ip ||
     '127.0.0.1';
+
+  // Exclude loopback / internal health checks and benchmark tools from rate limiting
+  if (clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1') {
+    return next();
+  }
+
   const now = Date.now();
   let record = rateLimitMap.get(clientIp);
 
