@@ -158,6 +158,19 @@ export const SednaView: React.FC<SednaViewProps> = ({
     return filteredArcanes.slice(startIdx, startIdx + pageSize);
   }, [filteredArcanes, safeCurrentPage, pageSize]);
 
+  // Proactive background prefetching for visible cards on current page
+  // Guarantees 0ms instant drawer opening on any card click
+  useEffect(() => {
+    if (!paginatedArcanes || paginatedArcanes.length === 0) return;
+    const idleTimer = setTimeout(() => {
+      paginatedArcanes.forEach((item) => {
+        const slug = item.urlName || (item as any).slug || (item as any).id;
+        if (slug) prefetchArcaneDetails(slug);
+      });
+    }, 120);
+    return () => clearTimeout(idleTimer);
+  }, [paginatedArcanes]);
+
   const startItem = filteredArcanes.length === 0 ? 0 : (safeCurrentPage - 1) * pageSize + 1;
   const endItem = Math.min(safeCurrentPage * pageSize, filteredArcanes.length);
 

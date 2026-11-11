@@ -34,10 +34,12 @@ const timeframes: Timeframe[] = ['24h', '7d', '30d', '90d'];
 
 // Global client-side cache for item details to guarantee instant (0ms) re-opening
 export const detailsClientCache = new Map<string, { history: any[]; hourly: any[]; parts: SetPart[] }>();
+const inFlightPrefetches = new Set<string>();
 
 // Instant hover prefetcher: loads item history into RAM while user moves mouse over card (Zero spinner delay on click)
 export const prefetchArcaneDetails = (slug: string | null | undefined) => {
-  if (!slug || detailsClientCache.has(slug)) return;
+  if (!slug || detailsClientCache.has(slug) || inFlightPrefetches.has(slug)) return;
+  inFlightPrefetches.add(slug);
   fetch(`/api/arcanes/${slug}`, { credentials: 'include' })
     .then((r) => r.json())
     .then((res) => {
@@ -49,7 +51,10 @@ export const prefetchArcaneDetails = (slug: string | null | undefined) => {
         });
       }
     })
-    .catch(() => {});
+    .catch(() => {})
+    .finally(() => {
+      inFlightPrefetches.delete(slug);
+    });
 };
 
 const getRarityBadge = (rarity: string, lang: 'ru' | 'en') => {
@@ -146,11 +151,16 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
     setParts(arcane.parts || []);
     setIsLoadingDetails(true);
 
+    const controller = new AbortController();
+    let isCurrent = true;
+
     fetch(`/api/arcanes/${currentSlug}`, {
       credentials: 'include',
+      signal: controller.signal,
     })
       .then((r) => r.json())
       .then((res) => {
+        if (!isCurrent) return;
         if (res.success && res.data) {
           const hist = Array.isArray(res.data.history) ? res.data.history : [];
           const hrly = Array.isArray(res.data.hourly) ? res.data.hourly : [];
@@ -181,11 +191,19 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
         }
       })
       .catch((err) => {
+        if (err.name === 'AbortError') return;
         console.warn('History fetch error:', err);
       })
       .finally(() => {
-        setIsLoadingDetails(false);
+        if (isCurrent) {
+          setIsLoadingDetails(false);
+        }
       });
+
+    return () => {
+      isCurrent = false;
+      controller.abort();
+    };
   }, [arcane, maxRank]);
 
   // Base price for current selected rank / set
@@ -682,14 +700,9 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
           )}
         </svg>
 
-        {/* Loading overlay when history is being fetched */}
+        {/* Sleek non-blocking top shimmer pulse while fresh history streams in */}
         {isLoadingDetails && (
-          <div className="absolute inset-0 bg-[#04060a]/70 backdrop-blur-[1px] rounded-xl flex flex-col items-center justify-center gap-2 z-20 pointer-events-none">
-            <div className="w-6 h-6 rounded-full border-2 border-[#00e5ff]/20 border-t-[#00e5ff] animate-spin" />
-            <span className="text-xs font-mono text-[#00e5ff] tracking-wide">
-              {lang === 'ru' ? 'Загрузка истории торгов...' : 'Loading trade history...'}
-            </span>
-          </div>
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#00e5ff] to-transparent animate-pulse z-20 pointer-events-none rounded-t-xl" />
         )}
 
         {/* Floating Tooltip */}
@@ -1110,16 +1123,24 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
                     );
                   })}
 
-                  {parts.length === 0 && (
-                    <div className="py-8 text-center text-xs text-[#64748b] font-mono flex flex-col items-center justify-center gap-2">
-                      {isLoadingDetails ? (
-                        <>
-                          <div className="w-5 h-5 rounded-full border-2 border-[#00e5ff]/20 border-t-[#00e5ff] animate-spin" />
-                          <span>{lang === 'ru' ? 'Синхронизация компонентов...' : 'Syncing components...'}</span>
-                        </>
-                      ) : (
-                        <span>{lang === 'ru' ? 'Нет данных о компонентах' : 'No components data'}</span>
-                      )}
+                  {parts.length === 0 && isLoadingDetails && (
+                    <div className="space-y-2 py-2">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04] animate-pulse">
+                          <div className="w-8 h-8 rounded-lg bg-white/[0.06] shrink-0" />
+                          <div className="flex-1 space-y-1.5 min-w-0">
+                            <div className="h-3 w-28 bg-white/[0.08] rounded" />
+                            <div className="h-2 w-16 bg-white/[0.04] rounded" />
+                          </div>
+                          <div className="h-4 w-12 bg-white/[0.06] rounded shrink-0" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {parts.length === 0 && !isLoadingDetails && (
+                    <div className="py-8 text-center text-xs text-[#64748b] font-mono">
+                      {lang === 'ru' ? 'Нет данных о компонентах' : 'No components data'}
                     </div>
                   )}
                 </div>
