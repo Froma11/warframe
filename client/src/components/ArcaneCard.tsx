@@ -10,7 +10,7 @@ interface ArcaneCardProps {
   lang: 'ru' | 'en';
 }
 
-export const ArcaneCard: React.FC<ArcaneCardProps> = ({ arcane, onOpenDetails, lang }) => {
+export const ArcaneCard: React.FC<ArcaneCardProps> = React.memo(({ arcane, onOpenDetails, lang }) => {
   const maxRank = (arcane as any).maxRank || 5;
   const median5 = arcane.rank5.avgPrice || arcane.rank5.minPrice;
 
@@ -285,4 +285,6 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = ({ arcane, onOpenDetails, l
       </div>
     </div>
   );
-};
+});
+
+ArcaneCard.displayName = 'ArcaneCard';

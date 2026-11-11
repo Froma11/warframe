@@ -3,6 +3,7 @@ import path from 'path';
 import { db } from '../db';
 import { proxyPool } from './proxyPool';
 import { wsMarketClient } from './wsMarketClient';
+import { memoryCache } from './memoryCache';
 
 interface RawItem {
   id: string;
@@ -255,6 +256,8 @@ class WarframeMarketScraper {
       });
 
       console.log(`[Scraper] Successfully indexed ${totalIndexed} items (Arcanes, Prime Sets, and Crafting Components) into SQLite.`);
+      memoryCache.invalidateArcanes();
+      memoryCache.invalidateStatus();
       return totalIndexed;
     } catch (err: any) {
       console.error('[Scraper] Failed to sync market catalog:', err.message);
@@ -376,6 +379,8 @@ class WarframeMarketScraper {
     }
 
     console.log(`[Scraper] Pre-warming complete! All ${sets.length} sets and ${parts.length} components fully hydrated.`);
+    memoryCache.invalidateArcanes();
+    memoryCache.invalidateStatus();
     return { setsCount: sets.length, partsCount: parts.length };
   }
 
@@ -562,6 +567,8 @@ class WarframeMarketScraper {
         });
 
         this.archiveSyncTimestamps.set(slug, Date.now());
+        memoryCache.invalidateItemDetail(slug);
+        memoryCache.invalidateArcanes();
       } catch (err: any) {
         console.warn(`[Scraper] Archive sync error for ${slug}:`, err.message);
       } finally {

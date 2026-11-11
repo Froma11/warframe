@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   Search,
   Filter,
@@ -68,6 +68,217 @@ interface RivensEndoViewProps {
 // In-memory cache for riven lots to eliminate 0-lot flashes and loading spinners on weapon switch
 const rivenLotsClientCache = new Map<string, RivenLot[]>();
 
+// Memoized Riven Lot Card: eliminates re-rendering 24+ cards on search/timer ticks
+const RivenLotCard = React.memo<{
+  lot: RivenLot;
+  weaponTitle: string;
+  lang: 'ru' | 'en';
+  onOpenMarket: (lot: RivenLot) => void;
+  onCopyWhisper: (e: React.MouseEvent, lot: RivenLot) => void;
+  isCopied: boolean;
+}>(({ lot, weaponTitle, lang, onOpenMarket, onCopyWhisper, isCopied }) => {
+  const isDirect = lot.is_direct_sell;
+  const price = isDirect ? lot.buyout_price || 0 : lot.top_bid || lot.starting_price || 0;
+  const isUnrolled = lot.re_rolls === 0;
+
+  const formatTimeAgo = (dateStr: string) => {
+    if (!dateStr) return '';
+    const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+    if (diff < 60) return lang === 'ru' ? 'только что' : 'just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)} ${lang === 'ru' ? 'мин. назад' : 'm ago'}`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} ${lang === 'ru' ? 'ч. назад' : 'h ago'}`;
+    return `${Math.floor(diff / 86400)} ${lang === 'ru' ? 'дн. назад' : 'd ago'}`;
+  };
+
+  return (
+    <div
+      onClick={() => onOpenMarket(lot)}
+      title={lang === 'ru' ? 'ЛКМ — Открыть контракт на Warframe Market (ПК) ↗' : 'Click to open contract on Warframe Market (PC) ↗'}
+      className="group relative rounded-2xl p-4 bg-white/95 dark:bg-[#070c14]/95 border border-slate-200 dark:border-white/[0.08] hover:border-[#00e5ff]/70 hover:shadow-[0_12px_32px_rgba(0,229,255,0.18)] dark:hover:shadow-[0_12px_32px_rgba(0,229,255,0.22)] transition-all duration-200 flex flex-col justify-between cursor-pointer overflow-hidden active:scale-[0.995]"
+    >
+      {/* Top: Header Info */}
+      <div className="relative z-10 flex flex-col gap-2.5">
+        {/* Title & Trade Type + External Link */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-baseline gap-2 flex-wrap min-w-0">
+            <span className="font-comfortaa font-bold text-base text-slate-900 dark:text-white group-hover:text-[#00e5ff] transition-colors truncate">
+              {weaponTitle}
+            </span>
+            <span className="font-comfortaa font-semibold text-sm text-[#00e5ff] dark:text-[#38bdf8] tracking-wide">
+              {lot.mod_name}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span
+              className={`px-2.5 py-0.5 rounded-full text-[10px] font-comfortaa font-bold uppercase tracking-wider ${
+                isDirect
+                  ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                  : 'bg-[#a855f7]/15 text-[#c084fc] border border-[#a855f7]/30'
+              }`}
+            >
+              {isDirect ? (lang === 'ru' ? 'Фикс Ᵽ' : 'Buyout') : (lang === 'ru' ? 'Аукцион' : 'Auction')}
+            </span>
+            <div className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-white/[0.06] group-hover:bg-[#00e5ff] group-hover:text-slate-950 text-slate-400 flex items-center justify-center transition-all">
+              <ExternalLink className="w-3.5 h-3.5" />
+            </div>
+          </div>
+        </div>
+
+        {/* Crisp Meta Row: MR, Mod Rank, Rerolls & Seller Status */}
+        <div className="flex items-center justify-between gap-2 pt-0.5 border-t border-slate-100 dark:border-white/[0.05] text-[11px]">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="px-2 py-0.5 rounded-md font-comfortaa font-bold bg-slate-100 dark:bg-[#121c2c] border border-slate-200 dark:border-white/[0.1] text-slate-800 dark:text-slate-200">
+              MR {lot.mastery_level}
+            </span>
+
+            <span
+              className={`px-2 py-0.5 rounded-md font-comfortaa ${
+                lot.mod_rank === 8
+                  ? 'bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30 font-bold'
+                  : 'bg-slate-100 dark:bg-white/[0.04] text-slate-500 dark:text-slate-400 font-medium'
+              }`}
+            >
+              {lang === 'ru' ? `Ранг ${lot.mod_rank}/8` : `Rank ${lot.mod_rank}/8`}
+            </span>
+
+            <span
+              className={`px-2 py-0.5 rounded-md font-comfortaa font-bold flex items-center gap-1 ${
+                isUnrolled
+                  ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                  : 'bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30'
+              }`}
+            >
+              {isUnrolled ? (
+                <span>{lang === 'ru' ? '✨ 0 роллов' : '✨ 0 Rolls'}</span>
+              ) : (
+                <>
+                  <RefreshCw className="w-3 h-3 text-purple-400 shrink-0" />
+                  <span>
+                    {lot.re_rolls} {lang === 'ru' ? 'роллов' : 'rolls'}
+                  </span>
+                </>
+              )}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 shrink-0">
+            <span
+              className={`w-2 h-2 rounded-full shrink-0 ${
+                lot.seller_status === 'ingame'
+                  ? 'bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.8)]'
+                  : lot.seller_status === 'online'
+                  ? 'bg-[#00e5ff]'
+                  : 'bg-slate-400'
+              }`}
+            />
+            <span className="font-onest font-medium text-xs text-slate-700 dark:text-slate-300 truncate max-w-[95px]">
+              {lot.seller_name}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Middle: Stat Attribute Lines */}
+      <div className="relative z-10 my-3 space-y-1.5">
+        {lot.attributes.map((attr, idx) => (
+          <div
+            key={idx}
+            className={`flex items-center justify-between px-2.5 py-1.5 rounded-xl border transition-colors ${
+              attr.positive
+                ? 'bg-emerald-500/[0.06] border-emerald-500/20 text-slate-800 dark:text-slate-100'
+                : 'bg-rose-500/[0.06] border-rose-500/20 text-slate-800 dark:text-slate-100'
+            }`}
+          >
+            <div className="flex items-center gap-1.5 truncate mr-2">
+              <span
+                className={`w-4 h-4 rounded-md flex items-center justify-center font-mono text-[11px] font-black shrink-0 ${
+                  attr.positive
+                    ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                    : 'bg-rose-500/20 text-rose-600 dark:text-rose-400'
+                }`}
+              >
+                {attr.positive ? '+' : '−'}
+              </span>
+              <span className="font-onest text-xs font-medium text-slate-700 dark:text-slate-200 truncate">
+                {formatRivenStatName(attr.url_name, lang)}
+              </span>
+            </div>
+            <span
+              className={`font-mono text-xs font-bold shrink-0 ${
+                attr.positive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+              }`}
+            >
+              {attr.positive ? `+${attr.value}%` : `${attr.value}%`}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Bottom: Hero Financial Metrics (Endo & Price) */}
+      <div className="relative z-10 pt-3 border-t border-slate-100 dark:border-white/[0.06]">
+        <div className="flex items-end justify-between gap-3">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-comfortaa font-bold uppercase tracking-wider text-slate-400">
+              {lang === 'ru' ? 'Выход Эндо' : 'Endo Scrap'}
+            </span>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <EndoIcon size={20} />
+              <span className="font-mono text-lg font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+                {lot.endo_value.toLocaleString()}
+              </span>
+            </div>
+            {lot.efficiency > 0 && (
+              <span className="text-[10px] font-onest font-medium text-slate-500 dark:text-slate-400 mt-0.5">
+                ⚡ {lot.efficiency} {lang === 'ru' ? 'эндо / 1Ᵽ' : 'e / 1Ᵽ'}
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] font-comfortaa font-bold uppercase tracking-wider text-slate-400">
+              {isDirect ? (lang === 'ru' ? 'Цена' : 'Price') : (lang === 'ru' ? 'Ставка' : 'Bid')}
+            </span>
+            <div className="flex items-center gap-1 mt-0.5">
+              <span className="font-mono text-2xl font-black text-slate-900 dark:text-white group-hover:text-[#00e5ff] transition-colors">
+                {price}
+              </span>
+              <PlatinumIcon className="w-5 h-5 text-[#00e5ff]" />
+            </div>
+            <div className="flex items-center gap-1 text-[10px] font-onest text-slate-400 mt-0.5">
+              <Clock className="w-3 h-3" />
+              <span>{formatTimeAgo(lot.lot_created_at)}</span>
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={(e) => onCopyWhisper(e, lot)}
+          title={lang === 'ru' ? `Скопировать шепот (/w ${lot.seller_name})` : `Copy whisper (/w ${lot.seller_name})`}
+          className={`w-full mt-3 flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl border text-xs font-comfortaa font-bold transition-all active:scale-[0.98] cursor-pointer shadow-sm ${
+            isCopied
+              ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-600 dark:text-emerald-300'
+              : 'bg-slate-100 hover:bg-[#00e5ff]/15 dark:bg-white/[0.04] dark:hover:bg-[#00e5ff]/20 text-slate-700 hover:text-[#0284c7] dark:text-slate-300 dark:hover:text-[#00e5ff] border-slate-200/60 dark:border-white/[0.06] hover:border-[#00e5ff]/40'
+          }`}
+        >
+          {isCopied ? (
+            <>
+              <Check className="w-3.5 h-3.5 text-emerald-500" />
+              <span>{lang === 'ru' ? 'Шепот скопирован в буфер!' : 'Whisper copied to clipboard!'}</span>
+            </>
+          ) : (
+            <>
+              <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#00e5ff]" />
+              <span className="font-onest font-medium truncate">/w {lot.seller_name}</span>
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+});
+RivenLotCard.displayName = 'RivenLotCard';
+
 export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
   // State: Weapons list with instant cache initialization (0ms load time!)
   const [weapons, setWeapons] = useState<RivenWeapon[]>(() => {
@@ -98,9 +309,15 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
     return null;
   });
 
-  // Search & Categories
+  // Search & Categories with 250ms debounce
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [activeGroup, setActiveGroup] = useState<string>('all');
+
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedSearchQuery(searchQuery), 250);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   // Lots state
   const [lots, setLots] = useState<RivenLot[]>([]);
@@ -181,11 +398,11 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
     fetchWeapons();
   }, [activeGroup]);
 
-  // Load lots for the selected weapon (fetches on weapon switch with instant cache hydration)
+  // Load lots for the selected weapon (fetches on weapon switch with AbortController and instant cache hydration)
   useEffect(() => {
     if (!selectedWeapon) return;
 
-    let isMounted = true;
+    const controller = new AbortController();
     const slug = selectedWeapon.slug;
     const cached = rivenLotsClientCache.get(slug);
 
@@ -198,18 +415,20 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
 
     const fetchLots = async () => {
       try {
-        const res = await fetch(`/api/rivens/lots/${slug}`);
+        const res = await fetch(`/api/rivens/lots/${slug}`, { signal: controller.signal });
         if (res.ok) {
           const json = await res.json();
-          if (isMounted && json.success && Array.isArray(json.data)) {
+          if (json.success && Array.isArray(json.data)) {
             rivenLotsClientCache.set(slug, json.data);
             setLots(json.data);
           }
         }
-      } catch (err) {
-        console.error('Failed to fetch lots:', err);
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          console.error('Failed to fetch lots:', err);
+        }
       } finally {
-        if (isMounted) {
+        if (!controller.signal.aborted) {
           setIsLoadingLots(false);
         }
       }
@@ -217,17 +436,23 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
 
     fetchLots();
     return () => {
-      isMounted = false;
+      controller.abort();
     };
   }, [selectedWeapon?.slug]);
 
-  // Real-time automatic background polling (every 8 seconds quietly updates lots without resetting view or showing loader)
+  // Real-time automatic background polling (paused when browser tab is hidden to eliminate network/CPU waste)
   useEffect(() => {
     if (!selectedWeapon) return;
 
+    let intervalId: any = null;
+    let pollController: AbortController | null = null;
+
     const silentPoll = async () => {
+      if (document.visibilityState === 'hidden') return;
       try {
-        const res = await fetch(`/api/rivens/lots/${selectedWeapon.slug}`);
+        pollController?.abort();
+        pollController = new AbortController();
+        const res = await fetch(`/api/rivens/lots/${selectedWeapon.slug}`, { signal: pollController.signal });
         if (res.ok) {
           const json = await res.json();
           if (json.success && Array.isArray(json.data)) {
@@ -235,18 +460,36 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
             setLots(json.data);
           }
         }
-      } catch {
-        // Silent real-time update
+      } catch {}
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        silentPoll();
+        if (!intervalId) {
+          intervalId = setInterval(silentPoll, 8000);
+        }
+      } else {
+        if (intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
       }
     };
 
-    const interval = setInterval(silentPoll, 8000);
-    return () => clearInterval(interval);
+    intervalId = setInterval(silentPoll, 8000);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      pollController?.abort();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [selectedWeapon?.slug]);
 
-  // Filter weapons by search query
+  // Filter weapons by debounced search query
   const filteredWeapons = useMemo(() => {
-    const q = searchQuery.toLowerCase().trim();
+    const q = debouncedSearchQuery.toLowerCase().trim();
     if (!q) return weapons;
     return weapons.filter((w) => {
       const ru = (w.name_ru || '').toLowerCase();
@@ -254,7 +497,7 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
       const slug = (w.slug || '').toLowerCase();
       return ru.includes(q) || en.includes(q) || slug.includes(q);
     });
-  }, [weapons, searchQuery]);
+  }, [weapons, debouncedSearchQuery]);
 
   // Instant zero-lag in-memory filtering & sorting
   const filteredLots = useMemo(() => {
@@ -340,8 +583,8 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
     }
   };
 
-  // Open Warframe Market with the exact contract or canonical search
-  const handleOpenMarket = (lot: RivenLot) => {
+  // Open Warframe Market with the exact contract or canonical search (memoized)
+  const handleOpenMarket = useCallback((lot: RivenLot) => {
     const isRealLiveId = lot.id && /^[0-9a-fA-F]{24}$/.test(lot.id);
     
     // If it's a real live ID, open the individual contract page
@@ -353,10 +596,10 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
     // Canonical PC auction search URL (never pass positive_stats query param that causes 400 Bad Request)
     const weaponSlug = selectedWeapon?.slug || lot.weapon_slug;
     window.open(`https://warframe.market/auctions/search?type=riven&weapon_url_name=${weaponSlug}&sort_by=price_asc`, '_blank', 'noopener,noreferrer');
-  };
+  }, [selectedWeapon?.slug]);
 
-  // In-game whisper copy
-  const handleCopyWhisper = (e: React.MouseEvent, lot: RivenLot) => {
+  // In-game whisper copy (memoized)
+  const handleCopyWhisper = useCallback((e: React.MouseEvent, lot: RivenLot) => {
     e.stopPropagation();
     const weaponName = selectedWeapon ? (lang === 'ru' ? selectedWeapon.name_ru : selectedWeapon.name_en) : '';
     const price = lot.is_direct_sell ? lot.buyout_price || 0 : lot.top_bid || lot.starting_price || 0;
@@ -364,7 +607,7 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
     navigator.clipboard.writeText(whisper);
     setCopiedWhisperId(lot.id);
     setTimeout(() => setCopiedWhisperId(null), 2000);
-  };
+  }, [selectedWeapon, lang]);
 
   const categories = [
     { id: 'all', labelRu: 'Все', labelEn: 'All' },
@@ -828,200 +1071,17 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
               ) : (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {paginatedLots.map((lot) => {
-                      const isDirect = lot.is_direct_sell;
-                      const price = isDirect
-                        ? lot.buyout_price || 0
-                        : lot.top_bid || lot.starting_price || 0;
-                      const isUnrolled = lot.re_rolls === 0;
-                      const weaponTitle = selectedWeapon ? (lang === 'ru' ? selectedWeapon.name_ru : selectedWeapon.name_en) : '';
-
-                      return (
-                        <div
-                          key={lot.id}
-                          onClick={() => handleOpenMarket(lot)}
-                          title={lang === 'ru' ? 'ЛКМ — Открыть контракт на Warframe Market (ПК) ↗' : 'Click to open contract on Warframe Market (PC) ↗'}
-                          className="group relative rounded-2xl p-4 bg-white/90 dark:bg-[#070c14]/90 backdrop-blur-xl border border-slate-200/90 dark:border-white/[0.08] hover:border-[#00e5ff]/70 hover:shadow-[0_12px_32px_rgba(0,229,255,0.18)] dark:hover:shadow-[0_12px_32px_rgba(0,229,255,0.22)] transition-all duration-200 flex flex-col justify-between cursor-pointer overflow-hidden active:scale-[0.995]"
-                        >
-                          {/* Top: Header Info */}
-                          <div className="relative z-10 flex flex-col gap-2.5">
-                            
-                            {/* Title & Trade Type + External Link */}
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex items-baseline gap-2 flex-wrap min-w-0">
-                                <span className="font-comfortaa font-bold text-base text-slate-900 dark:text-white group-hover:text-[#00e5ff] transition-colors truncate">
-                                  {weaponTitle}
-                                </span>
-                                <span className="font-comfortaa font-semibold text-sm text-[#00e5ff] dark:text-[#38bdf8] tracking-wide">
-                                  {lot.mod_name}
-                                </span>
-                              </div>
-
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-comfortaa font-bold uppercase tracking-wider ${
-                                  isDirect
-                                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-                                    : 'bg-[#a855f7]/15 text-[#c084fc] border border-[#a855f7]/30'
-                                }`}>
-                                  {isDirect ? (lang === 'ru' ? 'Фикс Ᵽ' : 'Buyout') : (lang === 'ru' ? 'Аукцион' : 'Auction')}
-                                </span>
-                                <div className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-white/[0.06] group-hover:bg-[#00e5ff] group-hover:text-slate-950 text-slate-400 flex items-center justify-center transition-all">
-                                  <ExternalLink className="w-3.5 h-3.5" />
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Crisp Meta Row: MR, Mod Rank, Rerolls & Seller Status */}
-                            <div className="flex items-center justify-between gap-2 pt-0.5 border-t border-slate-100 dark:border-white/[0.05] text-[11px]">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                {/* MR Badge */}
-                                <span className="px-2 py-0.5 rounded-md font-comfortaa font-bold bg-slate-100 dark:bg-[#121c2c] border border-slate-200 dark:border-white/[0.1] text-slate-800 dark:text-slate-200">
-                                  MR {lot.mastery_level}
-                                </span>
-
-                                {/* Rank Badge */}
-                                <span className={`px-2 py-0.5 rounded-md font-comfortaa ${
-                                  lot.mod_rank === 8
-                                    ? 'bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30 font-bold'
-                                    : 'bg-slate-100 dark:bg-white/[0.04] text-slate-500 dark:text-slate-400 font-medium'
-                                }`}>
-                                  {lang === 'ru' ? `Ранг ${lot.mod_rank}/8` : `Rank ${lot.mod_rank}/8`}
-                                </span>
-
-                                {/* Rerolls Badge */}
-                                <span className={`px-2 py-0.5 rounded-md font-comfortaa font-bold flex items-center gap-1 ${
-                                  isUnrolled
-                                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-                                    : 'bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30'
-                                }`}>
-                                  {isUnrolled ? (
-                                    <span>{lang === 'ru' ? '✨ 0 роллов' : '✨ 0 Rolls'}</span>
-                                  ) : (
-                                    <>
-                                      <RefreshCw className="w-3 h-3 text-purple-400 shrink-0" />
-                                      <span>{lot.re_rolls} {lang === 'ru' ? 'роллов' : 'rolls'}</span>
-                                    </>
-                                  )}
-                                </span>
-                              </div>
-
-                              {/* Seller Status & Name */}
-                              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 shrink-0">
-                                <span className={`w-2 h-2 rounded-full shrink-0 ${
-                                  lot.seller_status === 'ingame'
-                                    ? 'bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.8)]'
-                                    : lot.seller_status === 'online'
-                                    ? 'bg-[#00e5ff]'
-                                    : 'bg-slate-400'
-                                }`} />
-                                <span className="font-onest font-medium text-xs text-slate-700 dark:text-slate-300 truncate max-w-[95px]">
-                                  {lot.seller_name}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Middle: Refined Stat Attribute Lines */}
-                          <div className="relative z-10 my-3 space-y-1.5">
-                            {lot.attributes.map((attr, idx) => (
-                              <div
-                                key={idx}
-                                className={`flex items-center justify-between px-2.5 py-1.5 rounded-xl border transition-colors ${
-                                  attr.positive
-                                    ? 'bg-emerald-500/[0.06] border-emerald-500/20 text-slate-800 dark:text-slate-100'
-                                    : 'bg-rose-500/[0.06] border-rose-500/20 text-slate-800 dark:text-slate-100'
-                                }`}
-                              >
-                                <div className="flex items-center gap-1.5 truncate mr-2">
-                                  <span className={`w-4 h-4 rounded-md flex items-center justify-center font-mono text-[11px] font-black shrink-0 ${
-                                    attr.positive
-                                      ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                                      : 'bg-rose-500/20 text-rose-600 dark:text-rose-400'
-                                  }`}>
-                                    {attr.positive ? '+' : '−'}
-                                  </span>
-                                  <span className="font-onest text-xs font-medium text-slate-700 dark:text-slate-200 truncate">
-                                    {formatRivenStatName(attr.url_name, lang)}
-                                  </span>
-                                </div>
-                                <span className={`font-mono text-xs font-bold shrink-0 ${
-                                  attr.positive
-                                    ? 'text-emerald-600 dark:text-emerald-400'
-                                    : 'text-rose-600 dark:text-rose-400'
-                                }`}>
-                                  {attr.positive ? `+${attr.value}%` : `${attr.value}%`}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-
-                          {/* Bottom: Hero Financial Metrics (Endo & Price) */}
-                          <div className="relative z-10 pt-3 border-t border-slate-100 dark:border-white/[0.06]">
-                            <div className="flex items-end justify-between gap-3">
-                              
-                              {/* Left: Endo Core Metric */}
-                              <div className="flex flex-col">
-                                <span className="text-[10px] font-comfortaa font-bold uppercase tracking-wider text-slate-400">
-                                  {lang === 'ru' ? 'Выход Эндо' : 'Endo Scrap'}
-                                </span>
-                                <div className="flex items-center gap-1.5 mt-0.5">
-                                  <EndoIcon size={20} />
-                                  <span className="font-mono text-lg font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
-                                    {lot.endo_value.toLocaleString()}
-                                  </span>
-                                </div>
-                                {lot.efficiency > 0 && (
-                                  <span className="text-[10px] font-onest font-medium text-slate-500 dark:text-slate-400 mt-0.5">
-                                    ⚡ {lot.efficiency} {lang === 'ru' ? 'эндо / 1Ᵽ' : 'e / 1Ᵽ'}
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* Right: Trading Price Hero */}
-                              <div className="flex flex-col items-end">
-                                <span className="text-[10px] font-comfortaa font-bold uppercase tracking-wider text-slate-400">
-                                  {isDirect ? (lang === 'ru' ? 'Цена' : 'Price') : (lang === 'ru' ? 'Ставка' : 'Bid')}
-                                </span>
-                                <div className="flex items-center gap-1 mt-0.5">
-                                  <span className="font-mono text-2xl font-black text-slate-900 dark:text-white group-hover:text-[#00e5ff] transition-colors">
-                                    {price}
-                                  </span>
-                                  <PlatinumIcon className="w-5 h-5 text-[#00e5ff]" />
-                                </div>
-                                <div className="flex items-center gap-1 text-[10px] font-onest text-slate-400 mt-0.5">
-                                  <Clock className="w-3 h-3" />
-                                  <span>{formatTimeAgo(lot.lot_created_at)}</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Whisper Copy Button Bar */}
-                            <button
-                              onClick={(e) => handleCopyWhisper(e, lot)}
-                              title={lang === 'ru' ? `Скопировать шепот (/w ${lot.seller_name})` : `Copy whisper (/w ${lot.seller_name})`}
-                              className={`w-full mt-3 flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl border text-xs font-comfortaa font-bold transition-all active:scale-[0.98] cursor-pointer shadow-sm ${
-                                copiedWhisperId === lot.id
-                                  ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-600 dark:text-emerald-300'
-                                  : 'bg-slate-100 hover:bg-[#00e5ff]/15 dark:bg-white/[0.04] dark:hover:bg-[#00e5ff]/20 text-slate-700 hover:text-[#0284c7] dark:text-slate-300 dark:hover:text-[#00e5ff] border-slate-200/60 dark:border-white/[0.06] hover:border-[#00e5ff]/40'
-                              }`}
-                            >
-                              {copiedWhisperId === lot.id ? (
-                                <>
-                                  <Check className="w-3.5 h-3.5 text-emerald-500" />
-                                  <span>{lang === 'ru' ? 'Шепот скопирован в буфер!' : 'Whisper copied to clipboard!'}</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#00e5ff]" />
-                                  <span className="font-onest font-medium truncate">/w {lot.seller_name}</span>
-                                </>
-                              )}
-                            </button>
-                          </div>
-
-                        </div>
-                      );
-                    })}
+                    {paginatedLots.map((lot) => (
+                      <RivenLotCard
+                        key={lot.id}
+                        lot={lot}
+                        weaponTitle={selectedWeapon ? (lang === 'ru' ? selectedWeapon.name_ru : selectedWeapon.name_en) : ''}
+                        lang={lang}
+                        isCopied={copiedWhisperId === lot.id}
+                        onOpenMarket={handleOpenMarket}
+                        onCopyWhisper={handleCopyWhisper}
+                      />
+                    ))}
                   </div>
 
                   {/* 3. PAGINATION CONTROLS BAR (Clean & Ergonomic) */}

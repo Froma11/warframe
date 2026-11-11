@@ -220,6 +220,11 @@ export class ProxyPoolManager {
     const retriesLeft = options.retries !== undefined ? options.retries : 3;
 
     return new Promise<T>((resolve, reject) => {
+      // Memory protection: drop LOW priority requests if queue exceeds safe limit
+      if (this.queue.length > 300 && priority === 'LOW') {
+        return reject(new Error('Proxy queue saturated (LOW priority dropped)'));
+      }
+
       const item: QueuedRequest<T> = {
         id: Math.random().toString(36).substring(2, 9),
         url: targetUrl,

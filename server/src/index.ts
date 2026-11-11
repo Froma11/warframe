@@ -4,6 +4,8 @@ dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import compression from 'compression';
+import { monitorEventLoopDelay } from 'node:perf_hooks';
 import path from 'path';
 import fs from 'fs';
 import bcrypt from 'bcryptjs';
@@ -14,6 +16,7 @@ import { scraper } from './services/scraper';
 import { rivenService } from './services/rivenService';
 import { wsMarketClient } from './services/wsMarketClient';
 import { proxyPool } from './services/proxyPool';
+import { memoryCache } from './services/memoryCache';
 import { extractAuctionId, evaluateRiven, resolveWeaponClass } from './services/rivenEvaluation';
 import weaponVariantsData from './data/weaponVariants.json';
 
@@ -22,7 +25,64 @@ const PORT = process.env.PORT || 4000;
 const MASTER_KEY = process.env.ACCESS_KEY || 'tenno2026';
 const JWT_SECRET = process.env.JWT_SECRET || 'orokin_void_key_secret_2026_warframe';
 
+// Initialize C++ high-resolution Event Loop delay monitor
+const elHistogram = monitorEventLoopDelay({ resolution: 20 });
+elHistogram.enable();
+
+// Rate Limiter State (In-Memory Sliding Window, max 350 req/min per IP)
+interface RateLimitRecord {
+  count: number;
+  resetAt: number;
+}
+const rateLimitMap = new Map<string, RateLimitRecord>();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const MAX_REQUESTS_PER_WINDOW = 350;
+
+function rateLimiter(req: express.Request, res: express.Response, next: express.NextFunction) {
+  if (req.path.startsWith('/api/assets') || !req.path.startsWith('/api')) {
+    return next();
+  }
+
+  const clientIp =
+    (req.headers['x-real-ip'] as string) ||
+    (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ||
+    req.ip ||
+    '127.0.0.1';
+  const now = Date.now();
+  let record = rateLimitMap.get(clientIp);
+
+  if (!record || now > record.resetAt) {
+    record = { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS };
+    rateLimitMap.set(clientIp, record);
+  } else {
+    record.count++;
+  }
+
+  if (record.count > MAX_REQUESTS_PER_WINDOW) {
+    res.setHeader('Retry-After', Math.ceil((record.resetAt - now) / 1000));
+    return res.status(429).json({ error: 'Слишком много запросов. Пожалуйста, подождите минуту.' });
+  }
+
+  if (rateLimitMap.size > 5000) {
+    for (const [ip, rec] of rateLimitMap.entries()) {
+      if (now > rec.resetAt) rateLimitMap.delete(ip);
+    }
+  }
+
+  next();
+}
+
+// Admin / Internal endpoint guard
+function requireAdminAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const masterKey = req.headers['x-master-key'] || req.query.masterKey;
+  if (masterKey === MASTER_KEY) {
+    return next();
+  }
+  return requireAuth(req, res, next);
+}
+
 // Middleware
+app.use(compression());
 app.use(express.json());
 app.use(cookieParser());
 app.use(
@@ -31,6 +91,19 @@ app.use(
     credentials: true,
   })
 );
+
+// Response time telemetry tracker
+app.use((req, res, next) => {
+  const start = process.hrtime.bigint();
+  res.on('finish', () => {
+    const durationMs = Number(process.hrtime.bigint() - start) / 1e6;
+    memoryCache.recordResponseTime(durationMs);
+  });
+  next();
+});
+
+// Apply rate limiter to all API routes
+app.use('/api', rateLimiter);
 
 // --- AUTH & USER PROFILE ROUTES ---
 
@@ -307,20 +380,12 @@ app.use('/api/assets', async (req, res) => {
   }
 });
 
-// In-memory cache for /api/arcanes to guarantee sub-millisecond response time
-let cachedArcanesResponse: any = null;
-let cachedArcanesTime = 0;
-const ARCANES_CACHE_TTL_MS = 15000;
-
-// In-memory cache for /api/arcanes/:slug details (45s TTL)
-const arcaneDetailCache = new Map<string, { data: any; time: number }>();
-const ARCANE_DETAIL_TTL_MS = 45000;
-
 // --- ARCANES MARKET DATA ROUTES (Publicly accessible for terminal users) ---
 app.get('/api/arcanes', async (_req, res) => {
-  const now = Date.now();
-  if (cachedArcanesResponse && now - cachedArcanesTime < ARCANES_CACHE_TTL_MS) {
-    return res.json(cachedArcanesResponse);
+  // 1. Instant RAM Cache Check (< 0.5 ms, Zero SQLite load)
+  const cached = memoryCache.getArcanes();
+  if (cached) {
+    return res.json(cached);
   }
 
   const query = `
@@ -454,23 +519,23 @@ app.get('/api/arcanes', async (_req, res) => {
       };
     });
 
-    cachedArcanesResponse = {
+    const payload = {
       success: true,
       count: formatted.length,
       data: formatted,
     };
-    cachedArcanesTime = now;
+    memoryCache.setArcanes(payload, 60000);
 
-    res.json(cachedArcanesResponse);
+    res.json(payload);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Trigger full market catalog sync on-demand (Arcanes, Warframes, Weapons)
-app.post('/api/market/sync-catalog', async (_req, res) => {
+// Trigger full market catalog sync on-demand (Protected: Master-Key / Admin token required)
+app.post('/api/market/sync-catalog', requireAdminAuth, async (_req, res) => {
   try {
-    cachedArcanesResponse = null;
+    memoryCache.invalidateArcanes();
     const count = await scraper.syncMarketCatalog();
     res.json({ success: true, count });
   } catch (err: any) {
@@ -478,8 +543,8 @@ app.post('/api/market/sync-catalog', async (_req, res) => {
   }
 });
 
-// Trigger bulk image preloading to local disk cache
-app.post('/api/market/preload-images', async (_req, res) => {
+// Trigger bulk image preloading to local disk cache (Protected)
+app.post('/api/market/preload-images', requireAdminAuth, async (_req, res) => {
   try {
     const result = await scraper.preloadAllImages();
     res.json({ success: true, result });
@@ -488,10 +553,10 @@ app.post('/api/market/preload-images', async (_req, res) => {
   }
 });
 
-// Trigger fast-track pre-warming of all Prime Sets and crafting components
-app.post('/api/market/prewarm-sets', async (_req, res) => {
+// Trigger fast-track pre-warming of all Prime Sets and crafting components (Protected)
+app.post('/api/market/prewarm-sets', requireAdminAuth, async (_req, res) => {
   try {
-    cachedArcanesResponse = null;
+    memoryCache.invalidateArcanes();
     const result = await scraper.prewarmMarketSets();
     res.json({ success: true, result });
   } catch (err: any) {
@@ -502,11 +567,11 @@ app.post('/api/market/prewarm-sets', async (_req, res) => {
 // Item detail with full 90-day price history (Publicly accessible for terminal users)
 app.get('/api/arcanes/:slug', async (req, res) => {
   const slug = req.params.slug as string;
-  const now = Date.now();
 
-  const cached = arcaneDetailCache.get(slug);
-  if (cached && now - cached.time < ARCANE_DETAIL_TTL_MS) {
-    return res.json(cached.data);
+  // Instant In-Memory Read Cache (< 0.5 ms)
+  const cached = memoryCache.getItemDetail(slug);
+  if (cached) {
+    return res.json(cached);
   }
 
   try {
@@ -634,13 +699,7 @@ app.get('/api/arcanes/:slug', async (req, res) => {
       },
     };
 
-    arcaneDetailCache.set(slug, { data: payload, time: now });
-    if (arcaneDetailCache.size > 200) {
-      for (const [k, v] of arcaneDetailCache.entries()) {
-        if (now - v.time > ARCANE_DETAIL_TTL_MS) arcaneDetailCache.delete(k);
-      }
-    }
-
+    memoryCache.setItemDetail(slug, payload, 60000);
     res.json(payload);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -649,10 +708,7 @@ app.get('/api/arcanes/:slug', async (req, res) => {
 
 // --- RIVENS & ENDO (VENUS) ROUTES ---
 
-// In-memory cache for riven lots (15-second TTL per weapon + filter hash)
-const rivenLotsCache = new Map<string, { data: any; time: number }>();
-
-// 1. Get riven weapons directory (RU/EN, categories, search autocomplete)
+// 1. Get riven weapons directory (RU/EN, categories, search autocomplete with memory cache)
 app.get('/api/rivens/weapons', async (req, res) => {
   try {
     const search = String(req.query.search || '');
@@ -672,19 +728,14 @@ app.get('/api/rivens/weapons', async (req, res) => {
   }
 });
 
-// 2. Get riven lots for a weapon from SQLite DB (with filters & 15s in-memory cache)
+// 2. Get riven lots for a weapon from SQLite DB (with filters, server pagination & in-memory cache)
 app.get('/api/rivens/lots/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
-    const { type, rerolls, rank, onlineOnly, sortBy } = req.query;
+    const { type, rerolls, rank, onlineOnly, sortBy, limit, offset } = req.query;
 
-    const cacheKey = `${slug}:${type || ''}:${rerolls || ''}:${rank || ''}:${onlineOnly || ''}:${sortBy || ''}`;
-    const cached = rivenLotsCache.get(cacheKey);
-    const now = Date.now();
-
-    if (cached && now - cached.time < 15000) {
-      return res.json(cached.data);
-    }
+    const parsedLimit = Math.min(200, Math.max(1, Number(limit) || 200));
+    const parsedOffset = Math.max(0, Number(offset) || 0);
 
     const result = await rivenService.getLotsForWeapon(slug, {
       type: type as any,
@@ -692,6 +743,8 @@ app.get('/api/rivens/lots/:slug', async (req, res) => {
       rank: rank as any,
       onlineOnly: onlineOnly === 'true',
       sortBy: sortBy as any,
+      limit: parsedLimit,
+      offset: parsedOffset,
     });
 
     if (result.weapon) {
@@ -706,36 +759,19 @@ app.get('/api/rivens/lots/:slug', async (req, res) => {
       data: result.lots,
     };
 
-    rivenLotsCache.set(cacheKey, { data: payload, time: now });
-
-    // Evict old cache entries if map exceeds 200 items
-    if (rivenLotsCache.size > 200) {
-      for (const [k, v] of rivenLotsCache.entries()) {
-        if (now - v.time > 30000) rivenLotsCache.delete(k);
-      }
-    }
-
     res.json(payload);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 3. Force-sync latest auctions from market
-app.post('/api/rivens/sync', async (req, res) => {
+// 3. Force-sync latest auctions from market (Protected: Master-Key / Admin token required)
+app.post('/api/rivens/sync', requireAdminAuth, async (req, res) => {
   try {
     const weaponSlug = req.body?.weapon || (typeof req.query.weapon === 'string' ? req.query.weapon : undefined);
     
     // Invalidate in-memory lots cache for this weapon so the client gets freshly synced lots immediately
-    if (weaponSlug) {
-      for (const key of rivenLotsCache.keys()) {
-        if (key.startsWith(`${weaponSlug}:`)) {
-          rivenLotsCache.delete(key);
-        }
-      }
-    } else {
-      rivenLotsCache.clear();
-    }
+    memoryCache.invalidateLots(weaponSlug);
 
     const count = await rivenService.syncLiveAuctions(weaponSlug);
     res.json({
@@ -941,16 +977,36 @@ app.get('/api/rivens/evaluate/:auctionId', async (req, res) => {
   }
 });
 
-// Health & System status
+// Health & System status (Real-time telemetry, Event Loop lag & Memory metrics)
 app.get('/api/status', async (_req, res) => {
   try {
+    // 1. Check in-memory status cache (< 0.2 ms)
+    const cachedStatus = memoryCache.getStatus();
+    if (cachedStatus) {
+      return res.json(cachedStatus);
+    }
+
     const itemsCount = await db.get<{ count: number }>('SELECT COUNT(*) as count FROM items');
     const snapshotsCount = await db.get<{ count: number }>('SELECT COUNT(*) as count FROM market_snapshots');
     const rivensCount = await db.get<{ count: number }>('SELECT COUNT(*) as count FROM riven_lots');
 
-    res.json({
+    const mem = process.memoryUsage();
+    const cacheTelemetry = memoryCache.getTelemetry();
+    const rawLag = elHistogram.mean / 1e6;
+    const eventLoopLagMs = Number.isFinite(rawLag) && rawLag > 0 ? Math.round(rawLag * 100) / 100 : 0.05;
+
+    const payload = {
       status: 'ONLINE',
       system: 'Tenno Market Intelligence Core',
+      memoryUsageMb: {
+        rss: Math.round((mem.rss / (1024 * 1024)) * 100) / 100,
+        heapUsed: Math.round((mem.heapUsed / (1024 * 1024)) * 100) / 100,
+        heapTotal: Math.round((mem.heapTotal / (1024 * 1024)) * 100) / 100,
+      },
+      eventLoopLagMs,
+      cacheHitRatePct: cacheTelemetry.hitRatePct,
+      avgApiResponseMs: cacheTelemetry.avgApiResponseMs,
+      cachedKeysCount: cacheTelemetry.cachedKeysCount,
       itemsCount: itemsCount?.count || 0,
       snapshotsCount: snapshotsCount?.count || 0,
       rivensCount: rivensCount?.count || 0,
@@ -958,7 +1014,10 @@ app.get('/api/status', async (_req, res) => {
       proxyPool: proxyPool.getTelemetry(),
       rivenScheduler: rivenService.getSchedulerTelemetry(),
       timestamp: new Date().toISOString(),
-    });
+    };
+
+    memoryCache.setStatus(payload, 2500);
+    res.json(payload);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

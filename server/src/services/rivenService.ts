@@ -1,5 +1,6 @@
 import { db } from '../db';
 import { proxyPool } from './proxyPool';
+import { memoryCache } from './memoryCache';
 
 export interface RivenWeapon {
   id: string;
@@ -208,6 +209,7 @@ class RivenMarketService {
       }
 
       console.log(`[RivenService] Successfully synced ${inserted} riven weapons into SQLite.`);
+      memoryCache.invalidateWeapons();
       await this.initializeTierDistribution();
       return inserted;
     } catch (err: any) {
@@ -322,38 +324,34 @@ class RivenMarketService {
           await db.run('DELETE FROM riven_lots WHERE weapon_slug = ?', [weaponSlug]);
 
           if (validLots.length > 0) {
-            const insertStmt = `
-              INSERT OR REPLACE INTO riven_lots (
-                id, weapon_slug, seller_name, seller_status, seller_reputation,
-                is_direct_sell, buyout_price, starting_price, top_bid,
-                mod_name, mod_rank, re_rolls, mastery_level, polarity,
-                attributes, endo_value, efficiency, lot_created_at, lot_updated_at, fetched_at
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-            `;
-
-            for (const lot of validLots) {
-              await db.run(insertStmt, [
-                lot.id,
-                lot.weapon_slug,
-                lot.seller_name,
-                lot.seller_status,
-                lot.seller_reputation,
-                lot.is_direct_sell,
-                lot.buyout_price,
-                lot.starting_price,
-                lot.top_bid,
-                lot.mod_name,
-                lot.mod_rank,
-                lot.re_rolls,
-                lot.mastery_level,
-                lot.polarity,
-                lot.attributes,
-                lot.endo_value,
-                lot.efficiency,
-                lot.lot_created_at,
-                lot.lot_updated_at
-              ]);
-            }
+            const columns = [
+              'id', 'weapon_slug', 'seller_name', 'seller_status', 'seller_reputation',
+              'is_direct_sell', 'buyout_price', 'starting_price', 'top_bid',
+              'mod_name', 'mod_rank', 're_rolls', 'mastery_level', 'polarity',
+              'attributes', 'endo_value', 'efficiency', 'lot_created_at', 'lot_updated_at'
+            ];
+            const rows = validLots.map((lot) => [
+              lot.id,
+              lot.weapon_slug,
+              lot.seller_name,
+              lot.seller_status,
+              lot.seller_reputation,
+              lot.is_direct_sell ? 1 : 0,
+              lot.buyout_price,
+              lot.starting_price,
+              lot.top_bid,
+              lot.mod_name,
+              lot.mod_rank,
+              lot.re_rolls,
+              lot.mastery_level,
+              lot.polarity,
+              typeof lot.attributes === 'string' ? lot.attributes : JSON.stringify(lot.attributes || []),
+              lot.endo_value,
+              lot.efficiency,
+              lot.lot_created_at,
+              lot.lot_updated_at,
+            ]);
+            await db.batchInsert('riven_lots', columns, rows, 30);
           }
 
           await db.run(
@@ -367,11 +365,17 @@ class RivenMarketService {
           );
         });
 
+        // Invalidate in-memory read cache for this weapon
+        memoryCache.invalidateLots(weaponSlug);
+
         // Record cycle metric & timestamp
         this.lastSyncedTimestamps.set(weaponSlug, Date.now());
         const durationSec = Math.round((Date.now() - startMs) / 1000);
         this.recordTierMetric(newTier, durationSec);
         await this.refreshTierCounts();
+
+        // Cooperative yield to keep event loop responsive
+        await new Promise((resolve) => setImmediate(resolve));
       } catch (err: any) {
         console.warn(`[RivenService] SQLite error writing lots for ${weaponSlug}:`, err.message);
       }
@@ -543,30 +547,37 @@ class RivenMarketService {
    * Search weapons in catalog (Russian / English Unicode-safe)
    */
   public async getWeapons(search: string = '', group: string = 'all'): Promise<RivenWeapon[]> {
-    let sql = 'SELECT * FROM riven_weapons';
-    const params: any[] = [];
-    const whereClauses: string[] = [];
+    const cleanGroup = group.toLowerCase().trim() || 'all';
+    const cacheKey = `group:${cleanGroup}`;
+    
+    let allRows = memoryCache.getWeapons(cacheKey) as RivenWeapon[] | null;
 
-    const cleanGroup = group.toLowerCase().trim();
-    if (cleanGroup && cleanGroup !== 'all') {
-      if (cleanGroup === 'melee') {
-        whereClauses.push('(group_type = "melee" OR group_type = "zaw")');
-      } else if (cleanGroup === 'primary') {
-        whereClauses.push('(group_type = "primary" OR group_type = "rifle" OR group_type = "shotgun")');
-      } else if (cleanGroup === 'secondary') {
-        whereClauses.push('(group_type = "secondary" OR group_type = "pistol" OR group_type = "kitgun")');
-      } else {
-        whereClauses.push('group_type = ?');
-        params.push(cleanGroup);
+    if (!allRows) {
+      let sql = 'SELECT * FROM riven_weapons';
+      const params: any[] = [];
+      const whereClauses: string[] = [];
+
+      if (cleanGroup && cleanGroup !== 'all') {
+        if (cleanGroup === 'melee') {
+          whereClauses.push('(group_type = "melee" OR group_type = "zaw")');
+        } else if (cleanGroup === 'primary') {
+          whereClauses.push('(group_type = "primary" OR group_type = "rifle" OR group_type = "shotgun")');
+        } else if (cleanGroup === 'secondary') {
+          whereClauses.push('(group_type = "secondary" OR group_type = "pistol" OR group_type = "kitgun")');
+        } else {
+          whereClauses.push('group_type = ?');
+          params.push(cleanGroup);
+        }
       }
-    }
 
-    if (whereClauses.length > 0) {
-      sql += ' WHERE ' + whereClauses.join(' AND ');
-    }
+      if (whereClauses.length > 0) {
+        sql += ' WHERE ' + whereClauses.join(' AND ');
+      }
 
-    sql += ' ORDER BY name_ru ASC';
-    const allRows = await db.all<RivenWeapon>(sql, params);
+      sql += ' ORDER BY name_ru ASC';
+      allRows = await db.all<RivenWeapon>(sql, params);
+      memoryCache.setWeapons(cacheKey, allRows, 300000);
+    }
 
     const cleanSearch = search.toLowerCase().trim();
     if (!cleanSearch) return allRows;
@@ -580,7 +591,7 @@ class RivenMarketService {
   }
 
   /**
-   * Query lots for a specific weapon from SQLite with filtering and sorting
+   * Query lots for a specific weapon from SQLite with filtering, sorting, server pagination, and in-memory cache
    */
   public async getLotsForWeapon(
     weaponSlug: string,
@@ -590,8 +601,19 @@ class RivenMarketService {
       rank?: 'all' | 'unranked' | 'max';
       onlineOnly?: boolean;
       sortBy?: 'date_desc' | 'price_asc' | 'price_desc' | 'endo_desc' | 'efficiency_desc';
+      limit?: number;
+      offset?: number;
     } = {}
   ): Promise<{ lots: RivenLot[]; total: number; weapon?: RivenWeapon }> {
+    const limit = Math.min(200, Math.max(1, Number(options.limit) || 200));
+    const offset = Math.max(0, Number(options.offset) || 0);
+    const filterKey = `${options.type || ''}:${options.rerolls || ''}:${options.rank || ''}:${options.onlineOnly ? '1' : '0'}:${options.sortBy || ''}:${limit}:${offset}`;
+
+    const cached = memoryCache.getLots(weaponSlug, filterKey);
+    if (cached) {
+      return cached;
+    }
+
     const weapon = await db.get<RivenWeapon>('SELECT * FROM riven_weapons WHERE slug = ?', [weaponSlug]);
 
     // Check if weapon has any lots. If not or if capped at 100 or overdue (> 180s), trigger on-demand sync
@@ -660,6 +682,9 @@ class RivenMarketService {
         break;
     }
 
+    sql += ' LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+
     const rows = await db.all<any>(sql, params);
 
     const lots: RivenLot[] = rows.map((r) => {
@@ -692,11 +717,14 @@ class RivenMarketService {
       };
     });
 
-    return {
+    const payload = {
       lots,
-      total: lots.length,
+      total: countRow?.count || lots.length,
       weapon,
     };
+
+    memoryCache.setLots(weaponSlug, filterKey, payload, 30000);
+    return payload;
   }
 
   /**

@@ -39,9 +39,18 @@ export const SednaView: React.FC<SednaViewProps> = ({
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<MarketCategory>('arcanes');
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('volume24h');
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+
+  // Debounce search query (250ms) to eliminate per-keystroke filter freezes
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 250);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   // Pagination State (Optimized: default 24 items per page = 6 clean 4-col rows)
   const [currentPage, setCurrentPage] = useState(1);
@@ -64,7 +73,7 @@ export const SednaView: React.FC<SednaViewProps> = ({
   // Reset to page 1 whenever search, sort, category or page size changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, sortBy, pageSize, selectedCategory]);
+  }, [debouncedSearchQuery, sortBy, pageSize, selectedCategory]);
 
   const sortOptions: { id: SortOption; labelRu: string; labelEn: string }[] = [
     { id: 'volume24h', labelRu: 'Сделки 24ч (наибольший объем)', labelEn: '24h Trades volume' },
@@ -91,9 +100,9 @@ export const SednaView: React.FC<SednaViewProps> = ({
           }
         }
 
-        // Search filter (RU / EN / Slug)
-        if (searchQuery.trim()) {
-          const query = searchQuery.toLowerCase().trim();
+        // Search filter (RU / EN / Slug) using debounced query
+        if (debouncedSearchQuery.trim()) {
+          const query = debouncedSearchQuery.toLowerCase().trim();
           const matchEn = item.name.toLowerCase().includes(query);
           const matchRu = (item.nameRu || '').toLowerCase().includes(query);
           const matchSlug = item.urlName.toLowerCase().includes(query);
@@ -380,7 +389,7 @@ export const SednaView: React.FC<SednaViewProps> = ({
           ))}
         </div>
       ) : (
-        <div className="w-full bg-white dark:bg-[#0b1019]/90 border border-slate-200 dark:border-white/[0.1] rounded-3xl overflow-x-auto shadow-2xl backdrop-blur-md">
+        <div className="w-full bg-white dark:bg-[#0b1019] border border-slate-200 dark:border-white/[0.1] rounded-3xl overflow-x-auto shadow-2xl">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
               <tr className="border-b border-slate-200 dark:border-white/[0.08] bg-slate-100/90 dark:bg-[#060a12]/90 text-xs text-slate-500 dark:text-[#a3a29d] uppercase select-none font-comfortaa">

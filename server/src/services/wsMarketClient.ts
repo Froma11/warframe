@@ -14,6 +14,7 @@
 
 import WebSocket from 'ws';
 import { db } from '../db';
+import { memoryCache } from './memoryCache';
 
 export interface ActiveOrder {
   id: string;
@@ -196,6 +197,15 @@ class WsMarketClient {
    */
   private connect(): void {
     if (!this.isRunning) return;
+
+    // Clean up any stale websocket instance before reconnecting
+    if (this.ws) {
+      try {
+        this.ws.removeAllListeners();
+        this.ws.terminate();
+      } catch {}
+      this.ws = null;
+    }
 
     const wsUrl = 'wss://warframe.market/socket?platform=pc';
     try {
@@ -484,91 +494,90 @@ class WsMarketClient {
   }
 
   /**
-   * Flushes snapshots for specified items into SQLite using serialized db.transaction()
+   * Flushes snapshots for specified items into SQLite using high-speed batch inserts
    */
   private async flushSnapshots(slugs: string[]): Promise<void> {
-    const insertSnapshotSql = `
-      INSERT INTO market_snapshots 
-      (item_slug, rank, min_sell, max_buy, spread, spread_pct, median_price, sellers_count, buyers_count, timestamp)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-    `;
-
-    const upsertLatestSql = `
-      INSERT INTO latest_market_snapshots 
-      (item_slug, rank, min_sell, max_buy, spread, spread_pct, median_price, sellers_count, buyers_count, timestamp)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(item_slug, rank) DO UPDATE SET
-        min_sell = excluded.min_sell,
-        max_buy = excluded.max_buy,
-        spread = excluded.spread,
-        spread_pct = excluded.spread_pct,
-        median_price = excluded.median_price,
-        sellers_count = excluded.sellers_count,
-        buyers_count = excluded.buyers_count,
-        timestamp = CURRENT_TIMESTAMP
-    `;
+    const snapshotRows: any[][] = [];
 
     try {
-      await db.transaction(async () => {
-        for (const slug of slugs) {
-          const book = this.orderBooks.get(slug);
-          if (!book || book.size === 0) continue;
+      for (const slug of slugs) {
+        const book = this.orderBooks.get(slug);
+        if (!book || book.size === 0) continue;
 
-          const maxRank = this.trackedArcanes.get(slug) ?? 5;
-          const ranks = [0, maxRank];
+        const maxRank = this.trackedArcanes.get(slug) ?? 5;
+        const ranks = [0, maxRank];
 
-          const allOrders = Array.from(book.values());
-          const activeOrders = allOrders.filter(
-            (o) => o.visible && (o.user.status === 'ingame' || o.user.status === 'online')
-          );
+        const allOrders = Array.from(book.values());
+        const activeOrders = allOrders.filter(
+          (o) => o.visible && (o.user.status === 'ingame' || o.user.status === 'online')
+        );
 
-          for (const rank of ranks) {
-            const sellOrders = activeOrders
-              .filter((o) => o.orderType === 'sell' && o.rank === rank)
-              .sort((a, b) => a.platinum - b.platinum);
+        for (const rank of ranks) {
+          const sellOrders = activeOrders
+            .filter((o) => o.orderType === 'sell' && o.rank === rank)
+            .sort((a, b) => a.platinum - b.platinum);
 
-            const buyOrders = activeOrders
-              .filter((o) => o.orderType === 'buy' && o.rank === rank)
-              .sort((a, b) => b.platinum - a.platinum);
+          const buyOrders = activeOrders
+            .filter((o) => o.orderType === 'buy' && o.rank === rank)
+            .sort((a, b) => b.platinum - a.platinum);
 
-            const minSell = sellOrders.length > 0 ? sellOrders[0].platinum : 0;
-            const maxBuy = buyOrders.length > 0 ? buyOrders[0].platinum : 0;
+          const minSell = sellOrders.length > 0 ? sellOrders[0].platinum : 0;
+          const maxBuy = buyOrders.length > 0 ? buyOrders[0].platinum : 0;
 
-            const spread = minSell > 0 && maxBuy > 0 ? minSell - maxBuy : 0;
-            const spreadPct = minSell > 0 && maxBuy > 0 ? Number(((spread / minSell) * 100).toFixed(2)) : 0;
+          const spread = minSell > 0 && maxBuy > 0 ? minSell - maxBuy : 0;
+          const spreadPct = minSell > 0 && maxBuy > 0 ? Number(((spread / minSell) * 100).toFixed(2)) : 0;
 
-            // Compute median of top-5 sell and top-5 buy orders
-            const sampleSell = sellOrders.slice(0, 5).map((o) => o.platinum);
-            const sampleBuy = buyOrders.slice(0, 5).map((o) => o.platinum);
-            const sampleAll = [...sampleSell, ...sampleBuy].sort((a, b) => a - b);
+          // Compute median of top-5 sell and top-5 buy orders
+          const sampleSell = sellOrders.slice(0, 5).map((o) => o.platinum);
+          const sampleBuy = buyOrders.slice(0, 5).map((o) => o.platinum);
+          const sampleAll = [...sampleSell, ...sampleBuy].sort((a, b) => a - b);
 
-            let medianPrice = minSell;
-            if (sampleAll.length > 0) {
-              const mid = Math.floor(sampleAll.length / 2);
-              medianPrice =
-                sampleAll.length % 2 !== 0
-                  ? sampleAll[mid]
-                  : Math.round((sampleAll[mid - 1] + sampleAll[mid]) / 2);
-            }
+          let medianPrice = minSell;
+          if (sampleAll.length > 0) {
+            const mid = Math.floor(sampleAll.length / 2);
+            medianPrice =
+              sampleAll.length % 2 !== 0
+                ? sampleAll[mid]
+                : Math.round((sampleAll[mid - 1] + sampleAll[mid]) / 2);
+          }
 
-            if (minSell > 0 || maxBuy > 0) {
-              const params = [
-                slug,
-                rank,
-                minSell,
-                maxBuy,
-                spread,
-                spreadPct,
-                medianPrice,
-                sellOrders.length,
-                buyOrders.length,
-              ];
-              await db.run(insertSnapshotSql, params);
-              await db.run(upsertLatestSql, params);
-            }
+          if (minSell > 0 || maxBuy > 0) {
+            snapshotRows.push([
+              slug,
+              rank,
+              minSell,
+              maxBuy,
+              spread,
+              spreadPct,
+              medianPrice,
+              sellOrders.length,
+              buyOrders.length,
+            ]);
           }
         }
-      });
+      }
+
+      if (snapshotRows.length > 0) {
+        const cols = [
+          'item_slug',
+          'rank',
+          'min_sell',
+          'max_buy',
+          'spread',
+          'spread_pct',
+          'median_price',
+          'sellers_count',
+          'buyers_count',
+        ];
+        await db.transaction(async () => {
+          await db.batchInsert('market_snapshots', cols, snapshotRows, 50);
+          await db.batchInsert('latest_market_snapshots', cols, snapshotRows, 50);
+        });
+
+        // Invalidate in-memory caches so GET /api/arcanes and /api/status return live values instantly
+        memoryCache.invalidateArcanes();
+        memoryCache.invalidateStatus();
+      }
     } catch (err: any) {
       console.warn('[WsMarketClient] Error flushing snapshots to SQLite:', err.message);
     }
