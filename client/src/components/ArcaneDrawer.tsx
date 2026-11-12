@@ -10,7 +10,7 @@ import {
   Zap,
   Activity,
   Layers,
-  Sparkles,
+  Package,
   Coins,
 } from 'lucide-react';
 import { resolveAssetUrl } from '../utils/assets';
@@ -804,7 +804,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
               {arcane.isSet ? (
                 <>
                   <span className="inline-flex items-center gap-1 text-[10px] uppercase font-mono font-bold text-amber-300 bg-amber-400/15 px-2 py-0.5 rounded border border-amber-400/40 tracking-wider">
-                    <Sparkles className="w-3 h-3 text-amber-400" />
+                    <Package className="w-3 h-3 text-amber-400" />
                     {arcane.category === 'warframe'
                       ? (lang === 'ru' ? 'ВАРФРЕЙМ СЕТ' : 'WARFRAME SET')
                       : (lang === 'ru' ? 'ОРУЖИЕ СЕТ' : 'WEAPON SET')}

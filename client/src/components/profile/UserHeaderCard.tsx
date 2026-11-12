@@ -62,8 +62,8 @@ export const UserHeaderCard: React.FC<UserHeaderCardProps> = ({
               </span>
               <span className="text-slate-300 dark:text-white/20">•</span>
               <span className="flex items-center gap-1.5 font-sans text-emerald-600 dark:text-[#34d399]">
-                <Database className="w-3.5 h-3.5" />
-                SQLite WAL
+                <ShieldCheck className="w-3.5 h-3.5" />
+                {lang === 'ru' ? 'Синхронизировано' : 'Synchronized'}
               </span>
               <span className="text-slate-300 dark:text-white/20">•</span>
               <span className="font-sans text-slate-700 dark:text-white font-medium">

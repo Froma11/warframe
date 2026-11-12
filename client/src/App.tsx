@@ -135,6 +135,8 @@ export const App: React.FC = () => {
         onToggleLang={() => setLang((prev) => (prev === 'ru' ? 'en' : 'ru'))}
         isStarChart={isStarChart}
         onGoToStarChart={() => setActiveTab('starchart')}
+        activeTab={activeTab}
+        onSelectTab={(tab) => setActiveTab(tab)}
       />
 
       {/* 2. MAIN VIEW ENGINE */}

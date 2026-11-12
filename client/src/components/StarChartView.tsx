@@ -27,6 +27,35 @@ const STATIC_STARDUST = Array.from({ length: 40 }, (_, i) => {
   return { id: i, x, y, size, opacity };
 });
 
+// Tactical Orokin Reticle HUD for planet focus
+const TacticalReticle: React.FC<{ color: string }> = ({ color }) => (
+  <div className="absolute -inset-4 sm:-inset-5 rounded-full pointer-events-none transition-all duration-700 ease-out opacity-0 group-hover:opacity-100 group-hover:rotate-90 scale-90 group-hover:scale-105 z-10">
+    <svg className="w-full h-full" viewBox="0 0 100 100" fill="none">
+      <circle
+        cx="50"
+        cy="50"
+        r="48"
+        stroke={color}
+        strokeWidth="0.75"
+        strokeDasharray="4 8 16 8"
+        strokeOpacity="0.65"
+      />
+      <line x1="50" y1="0" x2="50" y2="6" stroke={color} strokeWidth="1.5" strokeOpacity="0.9" />
+      <line x1="50" y1="94" x2="50" y2="100" stroke={color} strokeWidth="1.5" strokeOpacity="0.9" />
+      <line x1="0" y1="50" x2="6" y2="50" stroke={color} strokeWidth="1.5" strokeOpacity="0.9" />
+      <line x1="94" y1="50" x2="100" y2="50" stroke={color} strokeWidth="1.5" strokeOpacity="0.9" />
+      <circle
+        cx="50"
+        cy="50"
+        r="44"
+        stroke={color}
+        strokeWidth="0.5"
+        strokeOpacity="0.25"
+      />
+    </svg>
+  </div>
+);
+
 export const StarChartView: React.FC<StarChartViewProps> = ({
   onSelectPlanet,
   lang,
@@ -248,11 +277,14 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
             left: 'calc(50% - 250px)',
             top: 'calc(50% + 80px)',
             transform: selectedPlanet === 'earth'
-              ? 'translate(250px, -80px) scale(2.4)'
+              ? 'translate(250px, -80px) scale(2.6)'
               : 'translate(-50%, -50%) scale(1)',
             transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
+          {/* Tactical Targeting Reticle */}
+          <TacticalReticle color="#10b981" />
+
           {/* Sphere with Directional Sun Illumination (100% Round Circle) */}
           <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden bg-gradient-to-br from-emerald-950 via-[#0a2020] to-[#041014] shadow-[0_0_35px_rgba(16,185,129,0.45),inset_18px_18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(16,185,129,0.75)] transition-all duration-300">
             <img
@@ -276,7 +308,7 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
             />
           </div>
 
-          {/* ONLY the label «Профиль» (High-contrast Warframe holographic badge) */}
+          {/* Badge & Tactical Sector HUD */}
           <div
             className={`flex flex-col items-center mt-3.5 transition-all duration-200 ${
               selectedPlanet === 'earth' ? 'opacity-0 scale-90' : 'opacity-100 scale-100'
@@ -288,6 +320,9 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
                 {lang === 'ru' ? 'Профиль' : 'Profile'}
               </span>
             </div>
+            <span className="text-[10px] font-jetbrains font-medium text-emerald-400/80 tracking-wider mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              {lang === 'ru' ? 'СЕКТОР • КОНСОЛЬ' : 'SECTOR • CONSOLE'}
+            </span>
           </div>
         </div>
 
@@ -301,11 +336,14 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
             left: 'calc(50% + 310px)',
             top: 'calc(50% - 100px)',
             transform: selectedPlanet === 'sedna'
-              ? 'translate(-310px, 100px) scale(2.4)'
+              ? 'translate(-310px, 100px) scale(2.6)'
               : 'translate(-50%, -50%) scale(1)',
             transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
+          {/* Tactical Targeting Reticle */}
+          <TacticalReticle color="#00e5ff" />
+
           {/* Sphere with Directional Sun Illumination (100% Round Circle) */}
           <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden bg-gradient-to-br from-[#062438] via-[#051522] to-[#020910] shadow-[0_0_35px_rgba(0,229,255,0.45),inset_-18px_-18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(0,229,255,0.75)] transition-all duration-300">
             <img
@@ -329,7 +367,7 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
             />
           </div>
 
-          {/* ONLY the label «Маркет» (High-contrast Warframe holographic badge) */}
+          {/* Badge & Tactical Sector HUD */}
           <div
             className={`flex flex-col items-center mt-3.5 transition-all duration-200 ${
               selectedPlanet === 'sedna' ? 'opacity-0 scale-90' : 'opacity-100 scale-100'
@@ -341,6 +379,9 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
                 {lang === 'ru' ? 'Маркет' : 'Market'}
               </span>
             </div>
+            <span className="text-[10px] font-jetbrains font-medium text-cyan-400/80 tracking-wider mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              {lang === 'ru' ? 'СЕКТОР • ТОРГОВЛЯ' : 'SECTOR • MARKETPLACE'}
+            </span>
           </div>
         </div>
 
@@ -354,11 +395,14 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
             left: 'calc(50% - 220px)',
             top: 'calc(50% - 135px)',
             transform: selectedPlanet === 'venus'
-              ? 'translate(220px, 135px) scale(2.4)'
+              ? 'translate(220px, 135px) scale(2.6)'
               : 'translate(-50%, -50%) scale(1)',
             transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
+          {/* Tactical Targeting Reticle */}
+          <TacticalReticle color="#00e5ff" />
+
           {/* Sphere with Directional Sun Illumination (100% Round Circle) */}
           <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden bg-gradient-to-br from-[#052030] via-[#041420] to-[#020a12] shadow-[0_0_35px_rgba(0,229,255,0.35),inset_18px_-18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(0,229,255,0.65)] transition-all duration-300">
             <img
@@ -382,7 +426,7 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
             />
           </div>
 
-          {/* ONLY the label «МР в эндо» / «Rivens-endo» (No planet name!) */}
+          {/* Badge & Tactical Sector HUD */}
           <div
             className={`flex flex-col items-center mt-3.5 transition-all duration-200 ${
               selectedPlanet === 'venus' ? 'opacity-0 scale-90' : 'opacity-100 scale-100'
@@ -394,6 +438,9 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
                 {lang === 'ru' ? 'МР в эндо' : 'Rivens-endo'}
               </span>
             </div>
+            <span className="text-[10px] font-jetbrains font-medium text-cyan-400/80 tracking-wider mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              {lang === 'ru' ? 'СЕКТОР • УТИЛИЗАЦИЯ' : 'SECTOR • DISSOLUTION'}
+            </span>
           </div>
         </div>
 
@@ -407,11 +454,14 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
             left: 'calc(50% + 240px)',
             top: 'calc(50% + 110px)',
             transform: selectedPlanet === 'mars'
-              ? 'translate(-240px, -110px) scale(2.4)'
+              ? 'translate(-240px, -110px) scale(2.6)'
               : 'translate(-50%, -50%) scale(1)',
             transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
+          {/* Tactical Targeting Reticle */}
+          <TacticalReticle color="#f97316" />
+
           {/* Sphere with Directional Sun Illumination (100% Round Circle) */}
           <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden bg-gradient-to-br from-[#2a1005] via-[#1a0a03] to-[#0d0502] shadow-[0_0_35px_rgba(249,115,22,0.45),inset_-18px_-18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(249,115,22,0.75)] transition-all duration-300">
             <img
@@ -435,7 +485,7 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
             />
           </div>
 
-          {/* ONLY the label «Оценка модов» (High-contrast Warframe holographic badge) */}
+          {/* Badge & Tactical Sector HUD */}
           <div
             className={`flex flex-col items-center mt-3.5 transition-all duration-200 ${
               selectedPlanet === 'mars' ? 'opacity-0 scale-90' : 'opacity-100 scale-100'
@@ -447,6 +497,9 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
                 {lang === 'ru' ? 'Оценка модов' : 'Mod Appraisal'}
               </span>
             </div>
+            <span className="text-[10px] font-jetbrains font-medium text-amber-400/80 tracking-wider mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              {lang === 'ru' ? 'СЕКТОР • АНАЛИЗ МР' : 'SECTOR • APPRAISAL'}
+            </span>
           </div>
         </div>
 

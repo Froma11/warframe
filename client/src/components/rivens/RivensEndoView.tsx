@@ -150,7 +150,7 @@ const RivenLotCard = React.memo<{
               }`}
             >
               {isUnrolled ? (
-                <span>{lang === 'ru' ? '✨ 0 роллов' : '✨ 0 Rolls'}</span>
+                <span>{lang === 'ru' ? '0 роллов' : '0 Rolls'}</span>
               ) : (
                 <>
                   <RefreshCw className="w-3 h-3 text-purple-400 shrink-0" />

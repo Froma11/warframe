@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Layers, Image as ImageIcon, Table as TableIcon } from 'lucide-react';
+import { Layers, Image as ImageIcon, Table as TableIcon } from 'lucide-react';
 
 interface ArcaneUpgradeGuideProps {
   lang: 'ru' | 'en';
@@ -33,7 +33,7 @@ export const ArcaneUpgradeGuide: React.FC<ArcaneUpgradeGuideProps> = ({ lang }) 
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-5 border-b border-slate-200 dark:border-white/[0.08]">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#00e5ff]/20 to-[#10b981]/20 border border-[#00e5ff]/40 flex items-center justify-center shadow-[0_0_15px_rgba(0,229,255,0.25)]">
-            <Sparkles className="w-4 h-4 text-[#00e5ff]" />
+            <Layers className="w-4 h-4 text-[#00e5ff]" />
           </div>
           <div>
             <h2 className="text-base sm:text-lg font-comfortaa font-bold text-slate-900 dark:text-white tracking-wide flex items-center gap-2">

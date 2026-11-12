@@ -17,7 +17,7 @@ import {
   ChevronsRight,
   ExternalLink,
   Layers,
-  Sparkles,
+  Gem,
   Shield,
   Swords,
 } from 'lucide-react';
@@ -214,7 +214,7 @@ export const SednaView: React.FC<SednaViewProps> = ({
       {/* Category Pills Navigation */}
       <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
         {[
-          { id: 'arcanes', labelRu: 'Мистификаторы', labelEn: 'Arcanes', icon: Sparkles, count: categoryCounts.arcanes },
+          { id: 'arcanes', labelRu: 'Мистификаторы', labelEn: 'Arcanes', icon: Gem, count: categoryCounts.arcanes },
           { id: 'warframes', labelRu: 'Варфреймы (Прайм)', labelEn: 'Warframes (Prime)', icon: Shield, count: categoryCounts.warframes },
           { id: 'weapons', labelRu: 'Оружие (Прайм)', labelEn: 'Weapons (Prime)', icon: Swords, count: categoryCounts.weapons },
         ].map((tab) => {
