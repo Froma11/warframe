@@ -784,32 +784,14 @@ export const RivensEndoView: React.FC<RivensEndoViewProps> = ({ lang }) => {
                         : 'bg-slate-50 dark:bg-[#0b1018] border-slate-200/80 dark:border-white/[0.04] hover:border-[#00e5ff]/40 hover:bg-slate-100 dark:hover:bg-[#101724]'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      {w.thumb_url ? (
-                        <img
-                          src={resolveAssetUrl(w.thumb_url)}
-                          alt={w.name_ru}
-                          loading="lazy"
-                          decoding="async"
-                          className="w-7 h-7 object-contain shrink-0 drop-shadow-sm"
-                          onError={(e) => {
-                            (e.target as HTMLElement).style.display = 'none';
-                          }}
-                        />
-                      ) : (
-                        <div className="w-7 h-7 rounded-lg bg-slate-200 dark:bg-white/[0.06] flex items-center justify-center shrink-0">
-                          <Crosshair className="w-3.5 h-3.5 text-[#00e5ff]" />
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <div className={`font-comfortaa font-bold text-xs truncate transition-colors ${
-                          isSelected ? 'text-[#00e5ff]' : 'text-slate-900 dark:text-white group-hover/item:text-[#00e5ff]'
-                        }`}>
-                          {lang === 'ru' ? w.name_ru : w.name_en}
-                        </div>
-                        <div className="text-[10px] text-slate-400 truncate font-onest">
-                          {lang === 'ru' ? w.name_en : w.name_ru}
-                        </div>
+                    <div className="min-w-0 pr-2">
+                      <div className={`font-comfortaa font-bold text-xs truncate transition-colors ${
+                        isSelected ? 'text-[#00e5ff]' : 'text-slate-900 dark:text-white group-hover/item:text-[#00e5ff]'
+                      }`}>
+                        {lang === 'ru' ? w.name_ru : w.name_en}
+                      </div>
+                      <div className="text-[10px] text-slate-400 dark:text-slate-500 truncate font-onest">
+                        {lang === 'ru' ? w.name_en : w.name_ru}
                       </div>
                     </div>
 

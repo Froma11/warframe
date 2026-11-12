@@ -1,6 +1,5 @@
 import React from 'react';
 import { useTheme } from '../context/ThemeContext';
-import { Sun, Moon } from 'lucide-react';
 
 interface ThemeToggleProps {
   className?: string;
@@ -11,20 +10,34 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '', lang =
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <button
+    <div
       onClick={toggleTheme}
-      className={`relative flex items-center justify-center p-2 rounded-2xl border transition-all duration-200 cursor-pointer ${
-        theme === 'dark'
-          ? 'bg-[#0c1018] border-white/[0.08] text-[#00e5ff] hover:bg-[#121824] hover:border-[#00e5ff]/50'
-          : 'bg-white border-slate-200 text-amber-500 hover:bg-slate-100 shadow-sm'
-      } active:scale-95 ${className}`}
-      title={lang === 'ru' ? (theme === 'dark' ? 'Включить светлую тему' : 'Включить темную тему') : (theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme')}
+      className={`relative flex items-center p-0.5 rounded-full bg-slate-100 dark:bg-[#070b14] border border-slate-200 dark:border-white/[0.08] shadow-inner select-none cursor-pointer transition-colors ${className}`}
+      title={lang === 'ru' ? (theme === 'dark' ? 'Сменить на светлую тему' : 'Сменить на тёмную тему') : (theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode')}
     >
-      {theme === 'dark' ? (
-        <Sun className="w-4 h-4 transition-transform duration-300 hover:rotate-45" />
-      ) : (
-        <Moon className="w-4 h-4 transition-transform duration-300 hover:-rotate-12" />
-      )}
-    </button>
+      {/* Animated Sliding Thumb */}
+      <div
+        className={`absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-full transition-all duration-200 ease-out pointer-events-none ${
+          theme === 'dark'
+            ? 'left-0.5 translate-x-0 bg-gradient-to-r from-cyan-500/30 to-sky-500/25 border border-cyan-400/60 shadow-[0_0_12px_rgba(0,229,255,0.3)]'
+            : 'left-0.5 translate-x-full bg-gradient-to-r from-amber-400 to-orange-400 shadow-[0_0_12px_rgba(251,191,36,0.4)]'
+        }`}
+      />
+
+      <span
+        className={`relative z-10 px-2.5 py-1 text-[11px] font-comfortaa font-bold transition-colors ${
+          theme === 'dark' ? 'text-cyan-300' : 'text-slate-400 hover:text-slate-600'
+        }`}
+      >
+        {lang === 'ru' ? 'ТЁМ' : 'DARK'}
+      </span>
+      <span
+        className={`relative z-10 px-2.5 py-1 text-[11px] font-comfortaa font-bold transition-colors ${
+          theme === 'light' ? 'text-slate-950' : 'text-slate-500 hover:text-slate-300'
+        }`}
+      >
+        {lang === 'ru' ? 'СВЕТ' : 'LIGHT'}
+      </span>
+    </div>
   );
 };

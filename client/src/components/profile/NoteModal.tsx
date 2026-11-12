@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, FileText, Check, Image as ImageIcon, Trash2, Upload, Tag } from 'lucide-react';
+import { X, FileText, Check, Image as ImageIcon, Trash2, Paperclip, Tag } from 'lucide-react';
 import { NoteItem } from './NotesGrid';
 
 interface NoteModalProps {
@@ -43,11 +43,11 @@ export const NoteModal: React.FC<NoteModalProps> = ({
       }
       setTimeout(() => {
         textareaRef.current?.focus();
-      }, 60);
+      }, 80);
     }
   }, [isOpen, initialNote]);
 
-  // Handle escape to close
+  // Escape key listener
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -121,7 +121,6 @@ export const NoteModal: React.FC<NoteModalProps> = ({
     }
   };
 
-  // Drag and Drop handlers
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
@@ -186,61 +185,62 @@ export const NoteModal: React.FC<NoteModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 select-none font-sans cursor-pointer overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 select-none font-sans cursor-pointer overflow-hidden"
       onClick={handleBackdropClick}
       onMouseDown={handleBackdropClick}
       onPaste={handlePaste}
     >
       <div
-        className="relative w-full max-w-xl bg-white dark:bg-[#0c121d] border border-slate-200 dark:border-white/[0.12] rounded-3xl p-5 sm:p-7 shadow-[0_25px_70px_rgba(0,0,0,0.5),0_0_40px_rgba(0,229,255,0.15)] text-left cursor-default max-h-[92vh] overflow-y-auto flex flex-col"
+        className="relative w-full max-w-lg max-h-[90vh] bg-white dark:bg-[#0c121d] border border-slate-200 dark:border-white/[0.12] rounded-3xl p-5 sm:p-6 shadow-[0_25px_70px_rgba(0,0,0,0.6),0_0_40px_rgba(0,229,255,0.15)] text-left cursor-default flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-slate-900 dark:text-[#71717a] dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-all cursor-pointer"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        {/* Header (Always pinned) */}
+        <div className="flex items-center justify-between pb-4 border-b border-slate-200/80 dark:border-white/[0.08] shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-2xl bg-cyan-500/15 border border-cyan-400/35 flex items-center justify-center text-cyan-400 shadow-[0_0_12px_rgba(0,229,255,0.2)]">
+              <FileText className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-comfortaa font-bold text-base sm:text-lg text-slate-900 dark:text-white">
+                {isEditing
+                  ? lang === 'ru'
+                    ? 'Редактировать запись'
+                    : 'Edit Note'
+                  : lang === 'ru'
+                  ? 'Новая запись в блокнот'
+                  : 'New Trade Note'}
+              </h3>
+              <p className="text-xs text-slate-400 font-sans">
+                {lang === 'ru' ? 'Текст, цены или прикрепленные скриншоты' : 'Text, pricing or attached screenshots'}
+              </p>
+            </div>
+          </div>
 
-        {/* Modal Header */}
-        <div className="flex items-center gap-3 mb-5 pr-10">
-          <div className="w-10 h-10 rounded-2xl bg-[#00e5ff]/15 border border-[#00e5ff]/35 flex items-center justify-center text-[#00e5ff] shadow-[0_0_12px_rgba(0,229,255,0.2)] shrink-0">
-            <FileText className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="font-comfortaa font-bold text-lg text-slate-900 dark:text-white">
-              {isEditing
-                ? lang === 'ru'
-                  ? 'Редактировать заметку'
-                  : 'Edit Note'
-                : lang === 'ru'
-                ? 'Новая заметка'
-                : 'New Note'}
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-[#a3a29d]">
-              {lang === 'ru'
-                ? 'Вставляйте текст и скриншоты (поддерживается Ctrl+V)'
-                : 'Save text and screenshots (supports Ctrl+V)'}
-            </p>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-all cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 flex-1 flex flex-col justify-between">
-          <div className="space-y-4">
-            {/* Category Tag Pills */}
+        {/* Scrollable Form Body */}
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col justify-between overflow-y-auto pt-4 space-y-4 pr-0.5">
+          <div className="space-y-3.5">
+            {/* Category Tag Selector */}
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-xs font-comfortaa font-bold text-slate-400 mr-1 flex items-center gap-1">
                 <Tag className="w-3.5 h-3.5 text-cyan-400" />
-                {lang === 'ru' ? 'Тег:' : 'Tag:'}
+                {lang === 'ru' ? 'Категория:' : 'Category:'}
               </span>
               {PRESET_TAGS.map((t) => (
                 <button
                   key={t}
                   type="button"
                   onClick={() => setSelectedTag(t)}
-                  className={`px-3 py-1 rounded-xl text-[11px] font-mono font-bold transition-all cursor-pointer ${
+                  className={`px-3 py-1 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
                     selectedTag === t
                       ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 shadow-[0_0_10px_rgba(0,229,255,0.25)]'
                       : 'bg-slate-100 dark:bg-white/[0.04] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08] hover:text-white'
@@ -251,33 +251,31 @@ export const NoteModal: React.FC<NoteModalProps> = ({
               ))}
             </div>
 
-            {/* Content Textarea */}
+            {/* Note Content Textarea */}
             <div>
               <textarea
                 ref={textareaRef}
-                rows={5}
+                rows={4}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 onKeyDown={handleKeyDownOnTextarea}
                 placeholder={
                   lang === 'ru'
-                    ? 'Введите текст заметки, цены, билд, ник продавца... (или вставьте скриншот через Ctrl+V)'
-                    : 'Type note text, prices, build, trader whisper... (or paste screenshot via Ctrl+V)'
+                    ? 'Текст заметки: цена покупки/продажи, ник трейдера, билд...'
+                    : 'Note text: buy/sell price, trader whisper, build reminder...'
                 }
-                className="w-full px-4 py-3 bg-slate-50 dark:bg-[#070a10] border border-slate-200 dark:border-white/[0.1] focus:border-[#00e5ff] rounded-2xl text-sm font-sans text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-[#71717a] outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#00e5ff]/30 resize-none leading-relaxed"
+                className="w-full px-4 py-3 bg-slate-50 dark:bg-[#070a10] border border-slate-200 dark:border-white/[0.1] focus:border-cyan-400 rounded-2xl text-sm font-sans text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none transition-all shadow-inner focus:ring-1 focus:ring-cyan-400/30 resize-none leading-relaxed"
               />
-              <div className="flex items-center justify-between mt-1 px-1 text-[11px] text-slate-400 dark:text-[#71717a]">
+              <div className="flex items-center justify-between mt-1 px-1 text-[11px] text-slate-400">
                 <span>{content.length > 0 ? `${content.length} симв.` : ''}</span>
-                <span className="flex items-center gap-1 font-mono">
-                  <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.1] text-[10px]">
-                    Ctrl+Enter
-                  </kbd>
-                  <span>{lang === 'ru' ? 'сохранить' : 'save'}</span>
+                <span className="font-mono text-[10px] opacity-75">
+                  <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-white/[0.08]">Ctrl+Enter</kbd>{' '}
+                  {lang === 'ru' ? 'для сохранения' : 'to save'}
                 </span>
               </div>
             </div>
 
-            {/* Image Attachment Dropzone & Preview */}
+            {/* Compact Image Attachment Strip */}
             <input
               ref={fileInputRef}
               type="file"
@@ -287,30 +285,38 @@ export const NoteModal: React.FC<NoteModalProps> = ({
             />
 
             {imageUrl ? (
-              <div className="relative rounded-2xl overflow-hidden border border-cyan-500/30 bg-[#040810] p-2 flex flex-col items-center group/img">
-                <div className="relative w-full max-h-56 overflow-hidden rounded-xl bg-black/50 flex items-center justify-center">
+              <div className="relative rounded-2xl overflow-hidden border border-cyan-500/30 bg-[#040810] p-2.5 flex items-center justify-between gap-3 shadow-md">
+                <div className="flex items-center gap-3 min-w-0">
                   <img
                     src={imageUrl}
-                    alt="Attached preview"
-                    className="max-h-56 w-auto object-contain rounded-xl"
+                    alt="Preview"
+                    className="w-16 h-16 object-cover rounded-xl border border-white/[0.1] shrink-0"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setImageUrl(null)}
-                    className="absolute top-2 right-2 p-2 rounded-xl bg-black/80 hover:bg-rose-600 text-white backdrop-blur-md transition-all cursor-pointer shadow-lg"
-                    title={lang === 'ru' ? 'Удалить изображение' : 'Remove image'}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="min-w-0">
+                    <p className="text-xs font-comfortaa font-bold text-white truncate">
+                      {lang === 'ru' ? 'Скриншот прикреплен' : 'Screenshot attached'}
+                    </p>
+                    <p className="text-[11px] text-cyan-400 font-mono">
+                      ✓ {lang === 'ru' ? 'Готово к сохранению' : 'Ready to save'}
+                    </p>
+                  </div>
                 </div>
-                <div className="w-full flex items-center justify-between pt-2 px-1 text-[11px] text-slate-400 font-mono">
-                  <span className="text-cyan-400">✓ {lang === 'ru' ? 'Фото прикреплено' : 'Photo attached'}</span>
+
+                <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="text-slate-400 hover:text-white underline cursor-pointer"
+                    className="px-2.5 py-1 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-xs font-comfortaa text-slate-300 transition-colors cursor-pointer"
                   >
                     {lang === 'ru' ? 'Заменить' : 'Replace'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImageUrl(null)}
+                    className="p-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 transition-colors cursor-pointer"
+                    title={lang === 'ru' ? 'Удалить фото' : 'Delete photo'}
+                  >
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -320,37 +326,39 @@ export const NoteModal: React.FC<NoteModalProps> = ({
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${
+                className={`flex items-center justify-between p-3 rounded-2xl border border-dashed transition-all cursor-pointer ${
                   isDragging
-                    ? 'border-cyan-400 bg-cyan-500/10 scale-[1.01]'
+                    ? 'border-cyan-400 bg-cyan-500/10'
                     : 'border-slate-300 dark:border-white/[0.12] hover:border-cyan-400/60 hover:bg-cyan-500/5'
                 }`}
               >
-                <div className="w-9 h-9 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
-                  <ImageIcon className="w-4 h-4" />
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center text-cyan-400 shrink-0">
+                    <Paperclip className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-comfortaa font-bold text-slate-800 dark:text-slate-200">
+                      {lang === 'ru' ? 'Прикрепить скриншот' : 'Attach screenshot'}
+                    </span>
+                    <span className="block text-[11px] text-slate-400">
+                      {lang === 'ru' ? 'Или нажмите Ctrl+V в любом месте' : 'Or press Ctrl+V anywhere'}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <p className="text-xs font-comfortaa font-bold text-slate-700 dark:text-slate-200">
-                    {lang === 'ru'
-                      ? 'Нажмите для выбора фото или перетащите файл'
-                      : 'Click to select photo or drag & drop'}
-                  </p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    {lang === 'ru'
-                      ? 'Или просто нажмите Ctrl+V в любом месте для вставки скриншота'
-                      : 'Or press Ctrl+V anywhere to paste screenshot'}
-                  </p>
-                </div>
+
+                <span className="text-xs font-comfortaa font-semibold text-cyan-400 shrink-0">
+                  + {lang === 'ru' ? 'Выбрать' : 'Browse'}
+                </span>
               </div>
             )}
           </div>
 
-          {/* Modal Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-white/[0.08] mt-4">
+          {/* Modal Footer (Pinned to bottom, NEVER overflows) */}
+          <div className="flex items-center justify-end gap-3 pt-3.5 border-t border-slate-200/80 dark:border-white/[0.08] shrink-0 mt-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#070a10] dark:hover:bg-white/[0.06] border border-slate-200 dark:border-white/[0.08] text-xs font-comfortaa font-bold text-slate-600 dark:text-[#a3a29d] hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer"
+              className="px-4 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] text-xs font-comfortaa font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer"
             >
               {lang === 'ru' ? 'Отмена' : 'Cancel'}
             </button>
@@ -358,7 +366,7 @@ export const NoteModal: React.FC<NoteModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting || (!content.trim() && !imageUrl)}
-              className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-[#00e5ff] to-[#00b4d8] text-[#070a0e] text-xs font-comfortaa font-bold shadow-[0_0_20px_rgba(0,229,255,0.4)] hover:shadow-[0_0_28px_rgba(0,229,255,0.6)] hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:pointer-events-none transition-all cursor-pointer flex items-center gap-1.5"
+              className="px-5 py-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-sky-500 text-slate-950 text-xs font-comfortaa font-bold shadow-[0_0_20px_rgba(0,229,255,0.4)] hover:shadow-[0_0_28px_rgba(0,229,255,0.6)] hover:scale-[1.02] active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition-all cursor-pointer flex items-center gap-1.5"
             >
               <Check className="w-4 h-4" />
               <span>
@@ -371,7 +379,7 @@ export const NoteModal: React.FC<NoteModalProps> = ({
                     ? 'Сохранить изменения'
                     : 'Save Changes'
                   : lang === 'ru'
-                  ? 'Сохранить заметку'
+                  ? 'Сохранить запись'
                   : 'Save Note'}
               </span>
             </button>

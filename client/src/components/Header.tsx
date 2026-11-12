@@ -1,5 +1,5 @@
 import React from 'react';
-import { Globe, Compass, ShoppingBag, Flame, Sliders, User } from 'lucide-react';
+import { Compass, ShoppingBag, Flame, Sliders, User } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 
 export type NavigationTab = 'starchart' | 'sedna' | 'earth' | 'venus' | 'mars';
@@ -38,19 +38,20 @@ export const Header: React.FC<HeaderProps> = ({
     >
       <div className="max-w-[1920px] mx-auto h-full flex items-center justify-between gap-4 relative">
         
-        {/* Left: Brand Identity (Clicking brand also returns to Star Chart) */}
-        <div
-          onClick={onGoToStarChart}
-          className="flex items-center gap-2.5 cursor-pointer group shrink-0"
-          title={lang === 'ru' ? 'Нажмите, чтобы вернуться к звездной карте' : 'Click to return to Star Chart'}
-        >
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#00e5ff]/20 to-[#0077ff]/20 border border-[#00e5ff]/40 flex items-center justify-center shadow-[0_0_12px_rgba(0,229,255,0.25)] group-hover:scale-105 group-hover:shadow-[0_0_18px_rgba(0,229,255,0.4)] transition-all">
-            <Compass className="w-4 h-4 text-[#00e5ff] group-hover:rotate-45 transition-transform duration-300" />
-          </div>
-          <span className="font-comfortaa font-bold text-sm sm:text-base tracking-wide flex items-center gap-1.5">
-            <span className="text-slate-900 dark:text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">Warframe</span>
-            <span className="text-[#00e5ff] drop-shadow-[0_0_12px_rgba(0,229,255,0.6)]">Market</span>
-          </span>
+        {/* Left: Minimal Star Chart Anchor without "Warframe Market" text */}
+        <div className="shrink-0 flex items-center">
+          {/* Subtle Star Chart orb if on workspace */}
+          {!isStarChart && onGoToStarChart ? (
+            <button
+              onClick={onGoToStarChart}
+              className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] flex items-center justify-center text-cyan-400 transition-all cursor-pointer active:scale-95"
+              title={lang === 'ru' ? 'К Звездной карте' : 'To Star Chart'}
+            >
+              <Compass className="w-4 h-4 text-cyan-400" />
+            </button>
+          ) : (
+            <div className="w-8 h-8" />
+          )}
         </div>
 
         {/* Center: Navigation Controls (Only shown inside workspaces) */}
@@ -115,21 +116,37 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          {/* Language Toggle */}
-          <button
-            onClick={onToggleLang}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-150 active:scale-95 cursor-pointer shadow-sm ${
-              isStarChart
-                ? 'border-white/[0.08] bg-[#0c1018] hover:border-[#00e5ff]/50 text-white'
-                : 'border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#0c1018] hover:border-[#00e5ff]/50 text-slate-800 dark:text-white'
-            }`}
-            title="Switch Language"
-          >
-            <Globe className="w-3.5 h-3.5 text-[#00e5ff]" />
-            <span className="text-xs font-bold font-comfortaa uppercase text-[#00e5ff]">
-              {lang.toUpperCase()}
-            </span>
-          </button>
+          {/* Language Animated Segmented Slider */}
+          <div className="relative flex items-center p-0.5 rounded-full bg-slate-100 dark:bg-[#070b14] border border-slate-200 dark:border-white/[0.08] shadow-inner select-none">
+            {/* Sliding Thumb */}
+            <div
+              className={`absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-full bg-gradient-to-r from-cyan-500 to-sky-500 shadow-[0_0_12px_rgba(0,229,255,0.4)] transition-transform duration-200 ease-out pointer-events-none ${
+                lang === 'ru' ? 'left-0.5 translate-x-0' : 'left-0.5 translate-x-full'
+              }`}
+            />
+            <button
+              type="button"
+              onClick={() => lang !== 'ru' && onToggleLang()}
+              className={`relative z-10 px-2.5 py-1 text-[11px] font-comfortaa font-bold transition-colors cursor-pointer ${
+                lang === 'ru'
+                  ? 'text-slate-950'
+                  : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
+              }`}
+            >
+              RU
+            </button>
+            <button
+              type="button"
+              onClick={() => lang !== 'en' && onToggleLang()}
+              className={`relative z-10 px-2.5 py-1 text-[11px] font-comfortaa font-bold transition-colors cursor-pointer ${
+                lang === 'en'
+                  ? 'text-slate-950'
+                  : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
+              }`}
+            >
+              EN
+            </button>
+          </div>
 
           {/* Theme Toggle */}
           <ThemeToggle lang={lang} />

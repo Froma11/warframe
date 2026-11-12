@@ -3,6 +3,7 @@ import { UserHeaderCard } from './UserHeaderCard';
 import { NotesGrid, NoteItem } from './NotesGrid';
 import { ArcaneUpgradeGuide } from './ArcaneUpgradeGuide';
 import { AuthModal, UserProfile } from './AuthModal';
+import { FileText, Layers } from 'lucide-react';
 
 interface ProfileViewProps {
   lang: 'ru' | 'en';
@@ -12,8 +13,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ lang }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [notes, setNotes] = useState<NoteItem[]>([]);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [activeSubTab, setActiveSubTab] = useState<'notes' | 'guide'>('notes');
 
-  // 1. Check user session on mount
+  // Check user session
   const checkSession = async () => {
     try {
       const res = await fetch('/api/auth/me', { credentials: 'include' });
@@ -30,7 +32,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ lang }) => {
     }
   };
 
-  // 2. Fetch user notes from /api/notes
+  // Fetch user notes
   const loadNotes = async () => {
     try {
       const res = await fetch('/api/notes', { credentials: 'include' });
@@ -50,14 +52,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ lang }) => {
     loadNotes();
   }, []);
 
-  // 3. Handle Add or Edit Note
+  // Handle Add or Edit Note
   const handleSaveNote = async (
     noteData: { title?: string; content: string; tag?: string; image_url?: string | null },
     id?: number
   ) => {
     try {
       if (id) {
-        // Edit existing note via PUT /api/notes/:id
         await fetch(`/api/notes/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -65,7 +66,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ lang }) => {
           body: JSON.stringify(noteData),
         });
       } else {
-        // Create new note via POST /api/notes
         await fetch('/api/notes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -79,7 +79,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ lang }) => {
     }
   };
 
-  // 4. Handle Delete Note
+  // Handle Delete Note
   const handleDeleteNote = async (id: number) => {
     try {
       const res = await fetch(`/api/notes/${id}`, {
@@ -95,7 +95,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ lang }) => {
     }
   };
 
-  // 5. Handle Logout
+  // Handle Logout
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
@@ -104,7 +104,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ lang }) => {
     loadNotes();
   };
 
-  // 6. Handle Successful Auth (Register or Login)
   const handleAuthSuccess = (authUser: UserProfile) => {
     setUser(authUser);
     loadNotes();
@@ -112,8 +111,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ lang }) => {
 
   return (
     <div className="w-full max-w-[1920px] mx-auto px-4 sm:px-8 lg:px-10 py-6 sm:py-8 space-y-6 select-none font-sans animate-in fade-in duration-300">
-      
-      {/* 1. User Identity & Status Card */}
+      {/* 1. User Identity & Status Header */}
       <UserHeaderCard
         user={user}
         onOpenAuth={() => setIsAuthModalOpen(true)}
@@ -122,11 +120,43 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ lang }) => {
         lang={lang}
       />
 
-      {/* 2. Ergonomic 2-Column Balanced Dashboard (Notes Left 7-Cols, Fusion Guide Right 5-Cols) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        {/* Left: Trading Targets & Notes */}
-        <div className="lg:col-span-7">
+      {/* 2. Workspace Navigation Switcher */}
+      <div className="flex items-center justify-between gap-4 flex-wrap pb-1">
+        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100/90 dark:bg-[#070c18]/90 backdrop-blur-xl border border-slate-200 dark:border-white/[0.08] shadow-sm">
+          <button
+            type="button"
+            onClick={() => setActiveSubTab('notes')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-comfortaa font-bold transition-all cursor-pointer ${
+              activeSubTab === 'notes'
+                ? 'bg-gradient-to-r from-cyan-500/25 via-sky-500/20 to-cyan-500/25 border border-cyan-400/60 text-cyan-200 dark:text-white shadow-[0_0_16px_rgba(0,229,255,0.3)] scale-[1.02]'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/[0.05]'
+            }`}
+          >
+            <FileText className="w-4 h-4 text-cyan-400" />
+            <span>{lang === 'ru' ? 'Торговый блокнот & Скриншоты' : 'Trade Notes & Screenshots'}</span>
+            <span className="px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400 font-mono text-[10px]">
+              {notes.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSubTab('guide')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-comfortaa font-bold transition-all cursor-pointer ${
+              activeSubTab === 'guide'
+                ? 'bg-gradient-to-r from-cyan-500/25 via-sky-500/20 to-cyan-500/25 border border-cyan-400/60 text-cyan-200 dark:text-white shadow-[0_0_16px_rgba(0,229,255,0.3)] scale-[1.02]'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/[0.05]'
+            }`}
+          >
+            <Layers className="w-4 h-4 text-cyan-400" />
+            <span>{lang === 'ru' ? 'Справочник слияния мистификаторов' : 'Arcane Fusion Codex'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 3. Active Workspace Content */}
+      {activeSubTab === 'notes' ? (
+        <div className="w-full animate-in fade-in duration-200">
           <NotesGrid
             notes={notes}
             onAddNote={handleSaveNote}
@@ -134,22 +164,19 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ lang }) => {
             lang={lang}
           />
         </div>
-
-        {/* Right: Arcane Upgrade Fusion Guide */}
-        <div className="lg:col-span-5">
+      ) : (
+        <div className="w-full max-w-4xl mx-auto animate-in fade-in duration-200">
           <ArcaneUpgradeGuide lang={lang} />
         </div>
+      )}
 
-      </div>
-
-      {/* 3. Login / Registration Modal */}
+      {/* 4. Login / Registration Modal */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onSuccess={handleAuthSuccess}
         lang={lang}
       />
-
     </div>
   );
 };
