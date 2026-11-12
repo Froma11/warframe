@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   Copy,
@@ -24,80 +24,122 @@ interface ModAppraisalViewProps {
 interface GradeTheme {
   bar: string;
   accentText: string;
+  badgeBg: string;
+  badgeBorder: string;
+  glow: string;
 }
 
-// Clean, disciplined color tokens for grades (no heavy frames/boxes)
+// Clean, disciplined color tokens for grades with glowing holographic badges
 const getGradeStyle = (grade: string): GradeTheme => {
   switch (grade) {
     case 'S+':
     case 'S':
       return {
-        bar: 'from-cyan-500 to-teal-400',
-        accentText: 'text-cyan-400',
+        bar: 'from-cyan-400 via-sky-400 to-teal-300',
+        accentText: 'text-cyan-300',
+        badgeBg: 'bg-cyan-500/15',
+        badgeBorder: 'border-cyan-400/40',
+        glow: 'shadow-[0_0_20px_rgba(0,229,255,0.35)]',
       };
     case 'A+':
     case 'A':
       return {
-        bar: 'from-emerald-500 to-teal-400',
-        accentText: 'text-emerald-400',
+        bar: 'from-emerald-400 via-teal-400 to-cyan-300',
+        accentText: 'text-emerald-300',
+        badgeBg: 'bg-emerald-500/15',
+        badgeBorder: 'border-emerald-400/40',
+        glow: 'shadow-[0_0_18px_rgba(16,185,129,0.35)]',
       };
     case 'B':
       return {
-        bar: 'from-amber-500 to-yellow-400',
-        accentText: 'text-amber-400',
+        bar: 'from-amber-400 to-yellow-300',
+        accentText: 'text-amber-300',
+        badgeBg: 'bg-amber-500/15',
+        badgeBorder: 'border-amber-400/40',
+        glow: 'shadow-[0_0_16px_rgba(245,158,11,0.3)]',
       };
     case 'C':
       return {
-        bar: 'from-orange-500 to-amber-500',
-        accentText: 'text-orange-400',
+        bar: 'from-orange-400 to-amber-400',
+        accentText: 'text-orange-300',
+        badgeBg: 'bg-orange-500/15',
+        badgeBorder: 'border-orange-400/40',
+        glow: 'shadow-[0_0_16px_rgba(249,115,22,0.3)]',
       };
     default:
       return {
         bar: 'from-rose-500 to-red-400',
         accentText: 'text-rose-400',
+        badgeBg: 'bg-rose-500/15',
+        badgeBorder: 'border-rose-400/40',
+        glow: 'shadow-[0_0_16px_rgba(244,63,94,0.3)]',
       };
   }
 };
 
-// Clean Stat Card: frameless grades, sleek track, no clunky boxes
-const StatCard: React.FC<{ stat: EvaluatedStat; lang: 'ru' | 'en' }> = ({ stat, lang }) => {
+// Animated Stat Card: glowing holographic badges, animated progress bar, refined card depth
+const StatCard: React.FC<{ stat: EvaluatedStat; lang: 'ru' | 'en'; index?: number }> = ({
+  stat,
+  lang,
+  index = 0,
+}) => {
   const gradeTheme = getGradeStyle(stat.grade);
   const isBuff = stat.positive;
   const formattedValue = `${isBuff ? '+' : '-'}${stat.normalized_value}${stat.unit}`;
+  const [animatedPct, setAnimatedPct] = useState(0);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAnimatedPct(Math.max(4, Math.min(100, stat.raw_perfectness_pct)));
+    }, 60 + index * 70);
+    return () => clearTimeout(timer);
+  }, [stat.raw_perfectness_pct, index]);
 
   return (
-    <div className="p-5 sm:p-6 rounded-2xl bg-[#080c14] border border-white/[0.06] flex flex-col justify-between">
-      <div>
-        {/* Header: Stat name & formatted big value + frameless grade */}
+    <div
+      style={{ animationDelay: `${index * 70}ms` }}
+      className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-[#0c1220]/95 via-[#080d18]/95 to-[#060a12]/95 border border-white/[0.08] hover:border-cyan-400/40 flex flex-col justify-between shadow-xl hover:shadow-[0_12px_40px_rgba(0,0,0,0.5),0_0_20px_rgba(0,229,255,0.12)] transition-all duration-300 group animate-in fade-in slide-in-from-bottom-2 duration-400 relative overflow-hidden"
+    >
+      {/* Subtle ambient tier glow */}
+      <div
+        className={`absolute top-0 right-0 w-32 h-32 ${gradeTheme.badgeBg} blur-3xl pointer-events-none rounded-full -mr-10 -mt-10 opacity-35`}
+      />
+
+      <div className="relative z-10">
+        {/* Header: Stat name & formatted big value + glowing tier badge */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
               <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  isBuff ? 'bg-emerald-400' : 'bg-rose-400'
+                className={`w-2 h-2 rounded-full ${
+                  isBuff
+                    ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]'
+                    : 'bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.8)]'
                 }`}
               />
               <h3 className="font-comfortaa font-medium text-sm text-slate-300 tracking-wide">
                 {lang === 'ru' ? stat.name_ru : stat.name_en}
               </h3>
             </div>
-            <span className="font-jetbrains font-extrabold text-2xl sm:text-3xl tracking-tight text-white">
+            <span className="font-jetbrains font-extrabold text-2xl sm:text-3xl tracking-tight text-white drop-shadow-sm">
               {formattedValue}
             </span>
           </div>
 
-          {/* Clean frameless grade display */}
+          {/* Glowing grade badge */}
           <div className="flex flex-col items-end">
-            <span className={`font-comfortaa font-black text-2xl sm:text-3xl leading-none ${gradeTheme.accentText}`}>
+            <div
+              className={`px-3 py-1 rounded-2xl font-comfortaa font-black text-2xl sm:text-3xl leading-none flex items-center justify-center ${gradeTheme.badgeBg} ${gradeTheme.accentText} border ${gradeTheme.badgeBorder} ${gradeTheme.glow} transition-transform group-hover:scale-105 duration-200`}
+            >
               {stat.grade}
-            </span>
-            <span className="font-jetbrains text-[11px] font-semibold text-slate-400 mt-1">
+            </div>
+            <span className="font-jetbrains text-[11px] font-semibold text-slate-400 mt-1.5">
               {stat.effective_quality_pct}%
             </span>
           </div>
         </div>
 
-        {/* Quality Progress Gauge */}
+        {/* Quality Progress Gauge with Smooth Animated Bar */}
         <div className="mt-4 mb-4">
           <div className="flex justify-between items-center text-[11px] font-jetbrains text-slate-400 mb-1.5">
             <span>
@@ -115,11 +157,14 @@ const StatCard: React.FC<{ stat: EvaluatedStat; lang: 'ru' | 'en' }> = ({ stat, 
           </div>
 
           {/* Track */}
-          <div className="relative w-full h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
+          <div className="relative w-full h-2 rounded-full bg-white/[0.05] overflow-hidden shadow-inner">
             <div
-              className={`h-full rounded-full bg-gradient-to-r ${gradeTheme.bar} transition-all duration-700 ease-out`}
-              style={{ width: `${Math.max(3, Math.min(100, stat.raw_perfectness_pct))}%` }}
-            />
+              className={`h-full rounded-full bg-gradient-to-r ${gradeTheme.bar} transition-all duration-1000 ease-out relative`}
+              style={{ width: `${animatedPct}%` }}
+            >
+              {/* Glowing leading edge */}
+              <div className="absolute right-0 top-0 bottom-0 w-2 bg-white/80 rounded-full shadow-[0_0_8px_#00e5ff]" />
+            </div>
             {/* Center midpoint marker (50% average baseline) */}
             <div className="absolute top-0 bottom-0 left-1/2 w-[1.5px] -translate-x-1/2 bg-white/30 pointer-events-none z-10" />
           </div>
@@ -127,7 +172,7 @@ const StatCard: React.FC<{ stat: EvaluatedStat; lang: 'ru' | 'en' }> = ({ stat, 
       </div>
 
       {/* Footer Analytics */}
-      <div className="flex items-center justify-between pt-3.5 border-t border-white/[0.06] text-xs font-onest text-slate-400">
+      <div className="relative z-10 flex items-center justify-between pt-3.5 border-t border-white/[0.06] text-xs font-onest text-slate-400">
         <span className="flex items-center gap-1.5">
           <TrendingUp className="w-3.5 h-3.5 text-cyan-400" />
           <span>{lang === 'ru' ? 'Отклонение:' : 'Deviation:'}</span>
@@ -277,7 +322,7 @@ export const ModAppraisalView: React.FC<ModAppraisalViewProps> = ({ lang }) => {
             e.preventDefault();
             handleEvaluate();
           }}
-          className="relative flex items-center rounded-xl bg-[#080c14] border border-white/[0.08] focus-within:border-cyan-500/50 transition-colors"
+          className="relative flex items-center rounded-2xl bg-[#080c14] border border-white/[0.08] focus-within:border-cyan-500/50 shadow-lg transition-colors"
         >
           <div className="absolute left-4 pointer-events-none text-slate-400">
             <Search className="w-4 h-4" />
@@ -292,36 +337,39 @@ export const ModAppraisalView: React.FC<ModAppraisalViewProps> = ({ lang }) => {
                 ? 'Вставьте ссылку на аукцион warframe.market/auction/... или 24-значный ID лота'
                 : 'Paste warframe.market/auction/... auction link or 24-char lot ID'
             }
-            className="w-full pl-11 pr-28 py-3 rounded-xl bg-transparent text-white font-onest text-sm outline-none placeholder:text-slate-500"
+            className="w-full pl-11 pr-40 py-3.5 rounded-2xl bg-transparent text-white font-onest text-sm outline-none placeholder:text-slate-500"
           />
 
-          {inputValue && (
-            <button
-              type="button"
-              onClick={() => {
-                setInputValue('');
-                setErrorMsg(null);
-              }}
-              className="absolute right-24 p-1.5 rounded-lg hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-
-          <button
-            type="submit"
-            disabled={isLoading || !inputValue.trim()}
-            className="absolute right-2 px-4 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-comfortaa font-bold text-xs tracking-wider transition-all duration-150 active:scale-95 cursor-pointer flex items-center gap-1.5"
-          >
-            {isLoading ? (
-              <>
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span>{lang === 'ru' ? 'Парсинг...' : 'Parsing...'}</span>
-              </>
-            ) : (
-              <span>{lang === 'ru' ? 'Оценить' : 'Appraise'}</span>
+          <div className="absolute right-2.5 flex items-center gap-2">
+            {inputValue && (
+              <button
+                type="button"
+                onClick={() => {
+                  setInputValue('');
+                  setErrorMsg(null);
+                }}
+                className="p-1.5 rounded-xl hover:bg-white/[0.08] text-slate-400 hover:text-white transition-colors cursor-pointer"
+                title={lang === 'ru' ? 'Очистить' : 'Clear'}
+              >
+                <X className="w-4 h-4" />
+              </button>
             )}
-          </button>
+
+            <button
+              type="submit"
+              disabled={isLoading || !inputValue.trim()}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-400 hover:to-sky-400 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-comfortaa font-bold text-xs tracking-wider transition-all duration-150 active:scale-95 cursor-pointer flex items-center gap-1.5 shadow-[0_0_15px_rgba(0,229,255,0.35)] shrink-0"
+            >
+              {isLoading ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>{lang === 'ru' ? 'Парсинг...' : 'Parsing...'}</span>
+                </>
+              ) : (
+                <span>{lang === 'ru' ? 'Оценить' : 'Appraise'}</span>
+              )}
+            </button>
+          </div>
         </form>
       </div>
 
@@ -351,28 +399,34 @@ export const ModAppraisalView: React.FC<ModAppraisalViewProps> = ({ lang }) => {
             </div>
           )}
 
-          {/* B. Overview Card (Frameless, clean typography) */}
-          <div className="p-6 sm:p-7 rounded-2xl bg-[#080c14] border border-white/[0.06] flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          {/* B. Overview Card (Frameless weapon presentation & glowing grade) */}
+          <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-[#0c1220]/95 via-[#080d18]/95 to-[#060a12]/95 border border-white/[0.08] shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+            {/* Ambient Cyan Aura */}
+            <div className="absolute top-0 left-0 w-80 h-80 bg-cyan-500/10 blur-3xl pointer-events-none rounded-full -ml-20 -mt-20" />
+
             {/* Left: Weapon and Mod Identification */}
-            <div className="flex items-start gap-4 sm:gap-5">
+            <div className="relative z-10 flex items-center gap-5 sm:gap-7 min-w-0">
               {evaluation.icon_url ? (
-                <img
-                  src={resolveAssetUrl(evaluation.icon_url)}
-                  alt={evaluation.weapon_name_en}
-                  className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-2xl p-2 bg-white/[0.03] border border-white/[0.06] shrink-0"
-                />
+                <div className="relative shrink-0 flex items-center justify-center">
+                  <div className="absolute -inset-3 bg-cyan-500/20 rounded-full blur-2xl opacity-60 pointer-events-none" />
+                  <img
+                    src={resolveAssetUrl(evaluation.icon_url)}
+                    alt={evaluation.weapon_name_en}
+                    className="relative w-28 sm:w-36 h-20 sm:h-24 object-contain shrink-0 drop-shadow-[0_10px_25px_rgba(0,0,0,0.8)] filter hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
               ) : (
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center shrink-0">
-                  <Shield className="w-8 h-8 text-slate-400" />
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-500/15 to-transparent flex items-center justify-center shrink-0">
+                  <Shield className="w-10 h-10 text-cyan-400" />
                 </div>
               )}
 
-              <div>
+              <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2.5 mb-1.5">
-                  <h2 className="font-comfortaa font-bold text-xl sm:text-2xl text-white tracking-wide">
+                  <h2 className="font-comfortaa font-bold text-xl sm:text-2xl text-white tracking-wide truncate">
                     {lang === 'ru' ? evaluation.weapon_name_ru : evaluation.weapon_name_en}
                   </h2>
-                  <span className="px-2 py-0.5 rounded-full bg-white/[0.06] text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
+                  <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 text-[11px] font-semibold uppercase tracking-wider">
                     {evaluation.weapon_class}
                   </span>
                 </div>
@@ -385,18 +439,18 @@ export const ModAppraisalView: React.FC<ModAppraisalViewProps> = ({ lang }) => {
 
                 {/* Mod badges */}
                 <div className="flex flex-wrap items-center gap-2 text-xs font-onest text-slate-400">
-                  <span className="px-2 py-0.5 rounded-lg bg-white/[0.04] border border-white/[0.06] font-mono text-[11px]">
+                  <span className="px-2.5 py-0.5 rounded-xl bg-white/[0.04] border border-white/[0.08] font-mono text-[11px]">
                     {lang === 'ru' ? 'Ранг' : 'Rank'} {evaluation.effective_rank}/8
                   </span>
                   {evaluation.mod_info && (
                     <>
-                      <span className="px-2 py-0.5 rounded-lg bg-white/[0.04] border border-white/[0.06] font-mono text-[11px]">
+                      <span className="px-2.5 py-0.5 rounded-xl bg-white/[0.04] border border-white/[0.08] font-mono text-[11px]">
                         {evaluation.mod_info.rerolls} {lang === 'ru' ? 'роллов' : 'rolls'}
                       </span>
-                      <span className="px-2 py-0.5 rounded-lg bg-white/[0.04] border border-white/[0.06] font-mono text-[11px]">
+                      <span className="px-2.5 py-0.5 rounded-xl bg-white/[0.04] border border-white/[0.08] font-mono text-[11px]">
                         MR {evaluation.mod_info.mastery_level}
                       </span>
-                      <span className="px-2 py-0.5 rounded-lg bg-white/[0.04] border border-white/[0.06] capitalize font-mono text-[11px]">
+                      <span className="px-2.5 py-0.5 rounded-xl bg-white/[0.04] border border-white/[0.08] capitalize font-mono text-[11px]">
                         {evaluation.mod_info.polarity}
                       </span>
                     </>
@@ -405,8 +459,8 @@ export const ModAppraisalView: React.FC<ModAppraisalViewProps> = ({ lang }) => {
               </div>
             </div>
 
-            {/* Right: Clean Frameless Overall Grade (No boxes, no borders) */}
-            <div className="flex items-center gap-4 self-stretch md:self-auto justify-between md:justify-end border-t md:border-t-0 pt-4 md:pt-0 border-white/[0.06]">
+            {/* Right: Clean Glowing Overall Grade */}
+            <div className="relative z-10 flex items-center gap-5 self-stretch md:self-auto justify-between md:justify-end border-t md:border-t-0 pt-4 md:pt-0 border-white/[0.08]">
               <div className="flex flex-col items-end">
                 <span className="text-[11px] font-onest font-medium uppercase tracking-wider text-slate-400">
                   {lang === 'ru' ? 'Качество ролла' : 'Overall Quality'}
@@ -419,9 +473,15 @@ export const ModAppraisalView: React.FC<ModAppraisalViewProps> = ({ lang }) => {
                 </div>
               </div>
 
-              <span className={`font-comfortaa font-black text-4xl sm:text-5xl leading-none ${overallGradeTheme.accentText}`}>
-                {evaluation.overall_grade}
-              </span>
+              <div
+                className={`px-4 py-2 rounded-2xl ${overallGradeTheme.badgeBg} border ${overallGradeTheme.badgeBorder} ${overallGradeTheme.glow} shadow-xl flex items-center justify-center`}
+              >
+                <span
+                  className={`font-comfortaa font-black text-4xl sm:text-5xl leading-none ${overallGradeTheme.accentText}`}
+                >
+                  {evaluation.overall_grade}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -442,7 +502,7 @@ export const ModAppraisalView: React.FC<ModAppraisalViewProps> = ({ lang }) => {
                       onClick={() => handleVariantChange(v.name)}
                       className={`px-3 py-1 rounded-xl text-xs font-comfortaa font-semibold transition-all duration-150 cursor-pointer ${
                         isSelected
-                          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+                          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-[0_0_10px_rgba(0,229,255,0.25)]'
                           : 'bg-white/[0.03] hover:bg-white/[0.06] text-slate-400 border border-white/[0.06]'
                       }`}
                     >
@@ -467,9 +527,9 @@ export const ModAppraisalView: React.FC<ModAppraisalViewProps> = ({ lang }) => {
                   <span
                     className={`w-2 h-2 rounded-full ${
                       evaluation.seller_info.status === 'ingame'
-                        ? 'bg-emerald-400'
+                        ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]'
                         : evaluation.seller_info.status === 'online'
-                        ? 'bg-cyan-400'
+                        ? 'bg-cyan-400 shadow-[0_0_8px_#00e5ff]'
                         : 'bg-slate-500'
                     }`}
                   />
@@ -501,8 +561,8 @@ export const ModAppraisalView: React.FC<ModAppraisalViewProps> = ({ lang }) => {
 
           {/* D. Individual Stat Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
-            {evaluation.stats.map((stat) => (
-              <StatCard key={stat.url_name} stat={stat} lang={lang} />
+            {evaluation.stats.map((stat, i) => (
+              <StatCard key={stat.url_name} stat={stat} lang={lang} index={i} />
             ))}
           </div>
         </div>

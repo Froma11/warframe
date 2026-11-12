@@ -264,23 +264,52 @@ app.get('/api/notes', requireAuth, async (req: any, res) => {
   try {
     const userId = req.user?.id || 1;
     const notes = await db.all('SELECT * FROM notes WHERE user_id = ? ORDER BY created_at DESC', [userId]);
-    res.json({ success: true, data: notes });
+    const formattedNotes = notes.map((n: any) => {
+      let images: string[] = [];
+      if (n.image_url) {
+        const raw = n.image_url.trim();
+        if (raw.startsWith('[') && raw.endsWith(']')) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) images = parsed;
+          } catch {
+            images = [raw];
+          }
+        } else {
+          images = [raw];
+        }
+      }
+      return {
+        ...n,
+        images,
+        image_url: images[0] || null,
+      };
+    });
+    res.json({ success: true, data: formattedNotes });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
 
 app.post('/api/notes', requireAuth, async (req: any, res) => {
-  const { title, content, tag, image_url } = req.body;
-  if (!content && !title && !image_url) {
+  const { title, content, tag, image_url, images } = req.body;
+  const hasImages = (Array.isArray(images) && images.length > 0) || !!image_url;
+  if (!content && !title && !hasImages) {
     return res.status(400).json({ error: 'Content or image required.' });
   }
   try {
     const userId = req.user?.id || 1;
-    const cleanTag = tag || '';
+    const cleanTag = (tag || '').trim();
+    let storedImageUrl: string | null = null;
+    if (Array.isArray(images) && images.length > 0) {
+      storedImageUrl = JSON.stringify(images);
+    } else if (typeof image_url === 'string' && image_url.trim()) {
+      storedImageUrl = image_url.trim();
+    }
+
     const result = await db.run(
       'INSERT INTO notes (user_id, title, content, tag, image_url) VALUES (?, ?, ?, ?, ?)',
-      [userId, title || '', content || '', cleanTag, image_url || null]
+      [userId, title || '', content || '', cleanTag, storedImageUrl]
     );
     res.json({ success: true, id: result.lastID });
   } catch (err: any) {
@@ -289,17 +318,26 @@ app.post('/api/notes', requireAuth, async (req: any, res) => {
 });
 
 app.put('/api/notes/:id', requireAuth, async (req: any, res) => {
-  const { title, content, tag, image_url } = req.body;
-  if (!content && !title && !image_url) {
+  const { title, content, tag, image_url, images } = req.body;
+  const hasImages = (Array.isArray(images) && images.length > 0) || !!image_url;
+  if (!content && !title && !hasImages) {
     return res.status(400).json({ error: 'Content or image required.' });
   }
   try {
     const userId = req.user?.id || 1;
     const noteId = req.params.id;
-    const cleanTag = tag || '';
+    const cleanTag = (tag || '').trim();
+
+    let storedImageUrl: string | null = null;
+    if (Array.isArray(images)) {
+      storedImageUrl = images.length > 0 ? JSON.stringify(images) : null;
+    } else if (image_url !== undefined) {
+      storedImageUrl = image_url ? image_url.trim() : null;
+    }
+
     await db.run(
       'UPDATE notes SET title = ?, content = ?, tag = ?, image_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
-      [title || '', content || '', cleanTag, image_url !== undefined ? image_url : null, noteId, userId]
+      [title || '', content || '', cleanTag, storedImageUrl, noteId, userId]
     );
     res.json({ success: true });
   } catch (err: any) {

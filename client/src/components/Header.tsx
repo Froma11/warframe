@@ -38,21 +38,8 @@ export const Header: React.FC<HeaderProps> = ({
     >
       <div className="max-w-[1920px] mx-auto h-full flex items-center justify-between gap-4 relative">
         
-        {/* Left: Minimal Star Chart Anchor without "Warframe Market" text */}
-        <div className="shrink-0 flex items-center">
-          {/* Subtle Star Chart orb if on workspace */}
-          {!isStarChart && onGoToStarChart ? (
-            <button
-              onClick={onGoToStarChart}
-              className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] flex items-center justify-center text-cyan-400 transition-all cursor-pointer active:scale-95"
-              title={lang === 'ru' ? 'К Звездной карте' : 'To Star Chart'}
-            >
-              <Compass className="w-4 h-4 text-cyan-400" />
-            </button>
-          ) : (
-            <div className="w-8 h-8" />
-          )}
-        </div>
+        {/* Left: Clean spacer */}
+        <div className="shrink-0 w-4" />
 
         {/* Center: Navigation Controls (Only shown inside workspaces) */}
         {!isStarChart && (
