@@ -89,7 +89,8 @@ function requireAdminAuth(req: express.Request, res: express.Response, next: exp
 
 // Middleware
 app.use(compression());
-app.use(express.json());
+app.use(express.json({ limit: '25mb' }));
+app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 app.use(cookieParser());
 app.use(
   cors({
@@ -270,16 +271,16 @@ app.get('/api/notes', requireAuth, async (req: any, res) => {
 });
 
 app.post('/api/notes', requireAuth, async (req: any, res) => {
-  const { title, content, tag } = req.body;
-  if (!content && !title) {
-    return res.status(400).json({ error: 'Content required.' });
+  const { title, content, tag, image_url } = req.body;
+  if (!content && !title && !image_url) {
+    return res.status(400).json({ error: 'Content or image required.' });
   }
   try {
     const userId = req.user?.id || 1;
     const cleanTag = tag || '';
     const result = await db.run(
-      'INSERT INTO notes (user_id, title, content, tag) VALUES (?, ?, ?, ?)',
-      [userId, title || '', content || '', cleanTag]
+      'INSERT INTO notes (user_id, title, content, tag, image_url) VALUES (?, ?, ?, ?, ?)',
+      [userId, title || '', content || '', cleanTag, image_url || null]
     );
     res.json({ success: true, id: result.lastID });
   } catch (err: any) {
@@ -288,17 +289,17 @@ app.post('/api/notes', requireAuth, async (req: any, res) => {
 });
 
 app.put('/api/notes/:id', requireAuth, async (req: any, res) => {
-  const { title, content, tag } = req.body;
-  if (!content && !title) {
-    return res.status(400).json({ error: 'Content required.' });
+  const { title, content, tag, image_url } = req.body;
+  if (!content && !title && !image_url) {
+    return res.status(400).json({ error: 'Content or image required.' });
   }
   try {
     const userId = req.user?.id || 1;
     const noteId = req.params.id;
     const cleanTag = tag || '';
     await db.run(
-      'UPDATE notes SET title = ?, content = ?, tag = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
-      [title || '', content || '', cleanTag, noteId, userId]
+      'UPDATE notes SET title = ?, content = ?, tag = ?, image_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
+      [title || '', content || '', cleanTag, image_url !== undefined ? image_url : null, noteId, userId]
     );
     res.json({ success: true });
   } catch (err: any) {

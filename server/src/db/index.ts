@@ -251,6 +251,9 @@ export async function initDatabase() {
     await db.exec("ALTER TABLE notes ADD COLUMN tag TEXT DEFAULT 'СНАЙПИНГ'");
   } catch {}
   try {
+    await db.exec("ALTER TABLE notes ADD COLUMN image_url TEXT");
+  } catch {}
+  try {
     await db.exec("ALTER TABLE riven_weapons ADD COLUMN priority_tier INTEGER DEFAULT 2");
   } catch {}
   try {

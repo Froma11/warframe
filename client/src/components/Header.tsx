@@ -55,24 +55,24 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Center: Navigation Controls (Only shown inside workspaces) */}
         {!isStarChart && (
-          <div className="hidden md:flex items-center gap-2">
-            {/* 1. Orrery / Star Chart Button */}
+          <div className="hidden md:flex items-center gap-2.5">
+            {/* 1. Orrery / Star Chart Gateway Button */}
             {onGoToStarChart && (
               <button
                 onClick={onGoToStarChart}
-                className="group flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-xs font-comfortaa font-semibold transition-all cursor-pointer active:scale-95"
-                title={lang === 'ru' ? 'Открыть звездную карту' : 'Open Star Chart'}
+                className="group relative flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-gradient-to-r from-cyan-500/10 via-sky-500/10 to-transparent hover:from-cyan-500/20 hover:to-sky-500/20 border border-cyan-500/30 hover:border-cyan-400 text-cyan-300 hover:text-white text-xs font-comfortaa font-bold transition-all duration-200 cursor-pointer shadow-[0_0_12px_rgba(0,229,255,0.15)] hover:shadow-[0_0_22px_rgba(0,229,255,0.35)] active:scale-95"
+                title={lang === 'ru' ? 'Вернуться к Звездной карте' : 'Return to Star Chart'}
               >
-                <Compass className="w-3.5 h-3.5 text-[#00e5ff] group-hover:rotate-45 transition-transform duration-300" />
+                <Compass className="w-3.5 h-3.5 text-[#00e5ff] group-hover:rotate-90 transition-transform duration-500 ease-out" />
                 <span>{lang === 'ru' ? 'Звездная карта' : 'Star Chart'}</span>
               </button>
             )}
 
             {/* Subtle Divider */}
-            <div className="w-[1px] h-4 bg-slate-200 dark:bg-white/[0.08] mx-1" />
+            <div className="w-[1px] h-4 bg-slate-300 dark:bg-white/[0.1] mx-0.5" />
 
-            {/* 2. Instant Tab Switcher (0ms lag, no page reload) */}
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-[#070b14] border border-slate-200 dark:border-white/[0.06]">
+            {/* 2. Frosted Floating Command Dock for Tabs */}
+            <div className="flex items-center gap-1 p-1 rounded-2xl bg-slate-100/90 dark:bg-[#070c18]/90 backdrop-blur-2xl border border-slate-200/90 dark:border-white/[0.08] shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
                 const Icon = tab.icon;
@@ -80,14 +80,21 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     key={tab.id}
                     onClick={() => onSelectTab && onSelectTab(tab.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-comfortaa font-bold transition-all cursor-pointer ${
+                    className={`group relative flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-comfortaa font-bold transition-all duration-200 cursor-pointer active:scale-95 ${
                       isActive
-                        ? 'bg-[#00e5ff] text-slate-950 shadow-[0_0_14px_rgba(0,229,255,0.35)] scale-[1.02]'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/[0.05]'
+                        ? 'bg-gradient-to-r from-cyan-500/25 via-sky-500/20 to-cyan-500/25 border border-cyan-400/60 text-cyan-200 dark:text-white shadow-[0_0_18px_rgba(0,229,255,0.35)] scale-[1.02]'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/[0.06] border border-transparent'
                     }`}
                   >
-                    <Icon className="w-3.5 h-3.5 shrink-0" />
+                    <Icon className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${
+                      isActive ? 'text-cyan-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-cyan-400 group-hover:-translate-y-0.5'
+                    }`} />
                     <span>{lang === 'ru' ? tab.labelRu : tab.labelEn}</span>
+
+                    {/* Active Pulsing Indicator Pip */}
+                    {isActive && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#00e5ff]" />
+                    )}
                   </button>
                 );
               })}

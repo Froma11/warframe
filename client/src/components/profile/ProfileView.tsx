@@ -52,7 +52,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ lang }) => {
 
   // 3. Handle Add or Edit Note
   const handleSaveNote = async (
-    noteData: { title?: string; content: string; tag?: string },
+    noteData: { title?: string; content: string; tag?: string; image_url?: string | null },
     id?: number
   ) => {
     try {

@@ -5,19 +5,50 @@ interface StarChartViewProps {
   lang: 'ru' | 'en';
 }
 
-// Precomputed static cosmic stars (Zero CPU work on mount)
-const STATIC_STARS = Array.from({ length: 95 }, (_, i) => {
-  const top = (i * 19.3 + (i % 7) * 13) % 100;
-  const left = (i * 27.7 + (i % 5) * 19) % 100;
-  const layer = i % 6 === 0 ? 'bright' : i % 2 === 0 ? 'mid' : 'far';
-  const size = layer === 'bright' ? 2.5 : layer === 'mid' ? 1.5 : 1;
-  const opacity = layer === 'bright' ? 0.9 : layer === 'mid' ? 0.5 : 0.25;
-  return { id: i, top, left, size, opacity, layer };
+// Deterministic pseudo-random generator (SplitMix32)
+function createSeededRng(seed: number) {
+  let s = seed | 0;
+  return () => {
+    s = (s + 0x9e3779b9) | 0;
+    let t = s ^ (s >>> 16);
+    t = Math.imul(t, 0x21f0aaad);
+    t = t ^ (t >>> 15);
+    t = Math.imul(t, 0x735a2d97);
+    return ((t = t ^ (t >>> 15)) >>> 0) / 4294967296;
+  };
+}
+
+const rng = createSeededRng(772183);
+
+// 240 organically distributed cosmic stars across 3 distinct parallax depths
+const COSMIC_STARS = Array.from({ length: 240 }, (_, i) => {
+  const top = rng() * 100;
+  const left = rng() * 100;
+  const roll = rng();
+
+  const layer: 'far' | 'mid' | 'near' = roll < 0.65 ? 'far' : roll < 0.9 ? 'mid' : 'near';
+  const size = layer === 'near' ? 2.4 + rng() * 1.0 : layer === 'mid' ? 1.4 + rng() * 0.7 : 0.8 + rng() * 0.5;
+  const opacity = layer === 'near' ? 0.95 : layer === 'mid' ? 0.55 + rng() * 0.25 : 0.2 + rng() * 0.25;
+
+  const tintRoll = rng();
+  const tint =
+    tintRoll > 0.88
+      ? 'rgba(0, 229, 255, 0.95)'
+      : tintRoll > 0.75
+      ? 'rgba(255, 215, 160, 0.95)'
+      : tintRoll > 0.6
+      ? 'rgba(190, 220, 255, 0.95)'
+      : '#ffffff';
+
+  const duration = 2.2 + rng() * 3.8;
+  const delay = rng() * 6;
+
+  return { id: i, top, left, size, opacity, layer, tint, duration, delay };
 });
 
 // Precomputed floating stardust particles along the orbits
-const STATIC_STARDUST = Array.from({ length: 40 }, (_, i) => {
-  const angle = (i / 40) * Math.PI * 2 + (i % 3) * 0.2;
+const STATIC_STARDUST = Array.from({ length: 44 }, (_, i) => {
+  const angle = (i / 44) * Math.PI * 2 + (i % 3) * 0.2;
   const radiusX = 260 + (i % 4) * 75;
   const radiusY = 150 + (i % 4) * 45;
   const x = Math.cos(angle) * radiusX;
@@ -27,32 +58,52 @@ const STATIC_STARDUST = Array.from({ length: 40 }, (_, i) => {
   return { id: i, x, y, size, opacity };
 });
 
-// Tactical Orokin Reticle HUD for planet focus
+// Tactical Orokin Reticle HUD strictly centered on the planet sphere
 const TacticalReticle: React.FC<{ color: string }> = ({ color }) => (
-  <div className="absolute -inset-4 sm:-inset-5 rounded-full pointer-events-none transition-all duration-700 ease-out opacity-0 group-hover:opacity-100 group-hover:rotate-90 scale-90 group-hover:scale-105 z-10">
-    <svg className="w-full h-full" viewBox="0 0 100 100" fill="none">
-      <circle
-        cx="50"
-        cy="50"
-        r="48"
-        stroke={color}
-        strokeWidth="0.75"
-        strokeDasharray="4 8 16 8"
-        strokeOpacity="0.65"
-      />
-      <line x1="50" y1="0" x2="50" y2="6" stroke={color} strokeWidth="1.5" strokeOpacity="0.9" />
-      <line x1="50" y1="94" x2="50" y2="100" stroke={color} strokeWidth="1.5" strokeOpacity="0.9" />
-      <line x1="0" y1="50" x2="6" y2="50" stroke={color} strokeWidth="1.5" strokeOpacity="0.9" />
-      <line x1="94" y1="50" x2="100" y2="50" stroke={color} strokeWidth="1.5" strokeOpacity="0.9" />
-      <circle
-        cx="50"
-        cy="50"
-        r="44"
-        stroke={color}
-        strokeWidth="0.5"
-        strokeOpacity="0.25"
-      />
-    </svg>
+  <div className="absolute -inset-4 sm:-inset-5 rounded-full pointer-events-none z-10 flex items-center justify-center">
+    {/* 1. Corner Lock Brackets (4 corners: ┌ ┐ └ ┘) that snap inward on hover */}
+    <div className="absolute inset-0 transition-all duration-500 ease-out scale-125 opacity-0 group-hover:scale-100 group-hover:opacity-100">
+      <svg className="w-full h-full" viewBox="0 0 100 100" fill="none">
+        <path d="M 12 24 L 12 12 L 24 12" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M 88 24 L 88 12 L 76 12" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M 12 76 L 12 88 L 24 88" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M 88 76 L 88 88 L 76 88" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    </div>
+
+    {/* 2. Rotating Segmented Telemetry Ring */}
+    <div className="absolute inset-1 transition-all duration-700 ease-out opacity-0 group-hover:opacity-90 group-hover:rotate-180">
+      <svg className="w-full h-full" viewBox="0 0 100 100" fill="none">
+        <circle
+          cx="50"
+          cy="50"
+          r="47"
+          stroke={color}
+          strokeWidth="0.8"
+          strokeDasharray="4 10 24 10"
+          strokeOpacity="0.75"
+        />
+        {/* Tactical cardinal ticks - Top, Left, Right (omitting bottom to completely avoid badge collision!) */}
+        <line x1="50" y1="0" x2="50" y2="5" stroke={color} strokeWidth="2" strokeOpacity="1" />
+        <line x1="0" y1="50" x2="5" y2="50" stroke={color} strokeWidth="2" strokeOpacity="1" />
+        <line x1="95" y1="50" x2="100" y2="50" stroke={color} strokeWidth="2" strokeOpacity="1" />
+      </svg>
+    </div>
+
+    {/* 3. Inner Fine Precision Circle */}
+    <div className="absolute inset-2.5 transition-all duration-500 ease-out opacity-0 group-hover:opacity-60 scale-95 group-hover:scale-100">
+      <svg className="w-full h-full" viewBox="0 0 100 100" fill="none">
+        <circle
+          cx="50"
+          cy="50"
+          r="48"
+          stroke={color}
+          strokeWidth="0.5"
+          strokeDasharray="2 6"
+          strokeOpacity="0.5"
+        />
+      </svg>
+    </div>
   </div>
 );
 
@@ -81,7 +132,9 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
     });
   };
 
-  const stars = STATIC_STARS;
+  const farStars = useMemo(() => COSMIC_STARS.filter((s) => s.layer === 'far'), []);
+  const midStars = useMemo(() => COSMIC_STARS.filter((s) => s.layer === 'mid'), []);
+  const nearStars = useMemo(() => COSMIC_STARS.filter((s) => s.layer === 'near'), []);
   const stardust = STATIC_STARDUST;
 
   // Handle approach animation: smooth glide to center and scale
@@ -125,26 +178,77 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
         }}
       />
 
-      {/* 3. MULTI-DEPTH COSMIC STARS WITH LIVING TWINKLE */}
+      {/* 3. MULTI-TIER ORGANIC COSMIC STARFIELD (3-Layer Depth Parallax) */}
+      
+      {/* Tier A: Distant Deep Interstellar Field (Slow Parallax -4px) */}
       <div
-        className="absolute inset-0 pointer-events-none transition-transform duration-500 ease-out"
+        className="absolute inset-0 pointer-events-none transition-transform duration-700 ease-out"
         style={{
-          transform: `translate3d(${mousePos.x * -14}px, ${mousePos.y * -14}px, 0)`,
+          transform: `translate3d(${mousePos.x * -4}px, ${mousePos.y * -4}px, 0)`,
         }}
       >
-        {stars.map((s) => (
+        {farStars.map((s) => (
           <div
             key={s.id}
-            className="absolute rounded-full bg-white"
+            className="absolute rounded-full"
             style={{
               top: `${s.top}%`,
               left: `${s.left}%`,
               width: `${s.size}px`,
               height: `${s.size}px`,
+              backgroundColor: s.tint,
               opacity: s.opacity,
-              boxShadow: s.layer === 'bright' ? '0 0 6px rgba(255,255,255,0.95), 0 0 12px rgba(0,229,255,0.7)' : 'none',
-              animation: `starTwinkle ${(s.id % 4) * 0.8 + 2.4}s ease-in-out infinite`,
-              animationDelay: `${(s.id * 0.23) % 4.5}s`,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Tier B: Mid-distance Stellar Clusters with Twinkle (Medium Parallax -10px) */}
+      <div
+        className="absolute inset-0 pointer-events-none transition-transform duration-500 ease-out"
+        style={{
+          transform: `translate3d(${mousePos.x * -10}px, ${mousePos.y * -10}px, 0)`,
+        }}
+      >
+        {midStars.map((s) => (
+          <div
+            key={s.id}
+            className="absolute rounded-full"
+            style={{
+              top: `${s.top}%`,
+              left: `${s.left}%`,
+              width: `${s.size}px`,
+              height: `${s.size}px`,
+              backgroundColor: s.tint,
+              opacity: s.opacity,
+              animation: `starTwinkle ${s.duration}s ease-in-out infinite`,
+              animationDelay: `${s.delay}s`,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Tier C: Near Radiant Stars with Optical Halo (Fast Parallax -18px) */}
+      <div
+        className="absolute inset-0 pointer-events-none transition-transform duration-300 ease-out"
+        style={{
+          transform: `translate3d(${mousePos.x * -18}px, ${mousePos.y * -18}px, 0)`,
+        }}
+      >
+        {nearStars.map((s) => (
+          <div
+            key={s.id}
+            className="absolute rounded-full"
+            style={{
+              top: `${s.top}%`,
+              left: `${s.left}%`,
+              width: `${s.size}px`,
+              height: `${s.size}px`,
+              backgroundColor: s.tint,
+              opacity: s.opacity,
+              boxShadow: `0 0 6px ${s.tint}, 0 0 14px ${s.tint}`,
+              animation: `starTwinkle ${s.duration}s ease-in-out infinite`,
+              animationDelay: `${s.delay}s`,
             }}
           />
         ))}
@@ -282,30 +386,38 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
             transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
-          {/* Tactical Targeting Reticle */}
-          <TacticalReticle color="#10b981" />
+          {/* Planet Sphere + Perfectly Aligned Reticle */}
+          <div className="relative w-36 h-36 shrink-0 flex items-center justify-center">
+            {/* Tactical Targeting Reticle strictly around the sphere */}
+            <TacticalReticle color="#10b981" />
 
-          {/* Sphere with Directional Sun Illumination (100% Round Circle) */}
-          <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden bg-gradient-to-br from-emerald-950 via-[#0a2020] to-[#041014] shadow-[0_0_35px_rgba(16,185,129,0.45),inset_18px_18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(16,185,129,0.75)] transition-all duration-300">
-            <img
-              src="/earth_clean.webp"
-              alt="Profile"
-              width={144}
-              height={144}
-              loading="eager"
-              decoding="async"
-              className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin aspect-square"
-              style={{ animationDuration: '120s' }}
-            />
-
-            {/* Physical directional solar illumination on the surface facing the sun */}
+            {/* Glowing Atmospheric Aura */}
             <div
-              className="absolute inset-0 rounded-full pointer-events-none aspect-square"
-              style={{
-                background: 'radial-gradient(circle at 72% 28%, rgba(255, 210, 150, 0.35) 0%, transparent 60%)',
-                boxShadow: 'inset 0 0 20px rgba(16, 185, 129, 0.55)',
-              }}
+              className="absolute inset-0 rounded-full blur-2xl opacity-0 group-hover:opacity-40 transition-opacity duration-500 pointer-events-none"
+              style={{ background: '#10b981' }}
             />
+
+            {/* Sphere with Directional Sun Illumination */}
+            <div className="relative w-full h-full rounded-full aspect-square overflow-hidden bg-gradient-to-br from-emerald-950 via-[#0a2020] to-[#041014] shadow-[0_0_35px_rgba(16,185,129,0.45),inset_18px_18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(16,185,129,0.75)] transition-all duration-300">
+              <img
+                src="/earth_clean.webp"
+                alt="Profile"
+                width={144}
+                height={144}
+                loading="eager"
+                decoding="async"
+                className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin aspect-square"
+                style={{ animationDuration: '120s' }}
+              />
+
+              <div
+                className="absolute inset-0 rounded-full pointer-events-none aspect-square"
+                style={{
+                  background: 'radial-gradient(circle at 72% 28%, rgba(255, 210, 150, 0.35) 0%, transparent 60%)',
+                  boxShadow: 'inset 0 0 20px rgba(16, 185, 129, 0.55)',
+                }}
+              />
+            </div>
           </div>
 
           {/* Badge & Tactical Sector HUD */}
@@ -341,30 +453,38 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
             transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
-          {/* Tactical Targeting Reticle */}
-          <TacticalReticle color="#00e5ff" />
+          {/* Planet Sphere + Perfectly Aligned Reticle */}
+          <div className="relative w-36 h-36 shrink-0 flex items-center justify-center">
+            {/* Tactical Targeting Reticle strictly around the sphere */}
+            <TacticalReticle color="#00e5ff" />
 
-          {/* Sphere with Directional Sun Illumination (100% Round Circle) */}
-          <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden bg-gradient-to-br from-[#062438] via-[#051522] to-[#020910] shadow-[0_0_35px_rgba(0,229,255,0.45),inset_-18px_-18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(0,229,255,0.75)] transition-all duration-300">
-            <img
-              src="/sedna_clean.webp"
-              alt="Market"
-              width={144}
-              height={144}
-              loading="eager"
-              decoding="async"
-              className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin aspect-square"
-              style={{ animationDuration: '90s' }}
-            />
-
-            {/* Physical directional solar illumination on the surface facing the sun */}
+            {/* Glowing Atmospheric Aura */}
             <div
-              className="absolute inset-0 rounded-full pointer-events-none aspect-square"
-              style={{
-                background: 'radial-gradient(circle at 28% 72%, rgba(255, 210, 150, 0.35) 0%, transparent 60%)',
-                boxShadow: 'inset 0 0 20px rgba(0, 229, 255, 0.55)',
-              }}
+              className="absolute inset-0 rounded-full blur-2xl opacity-0 group-hover:opacity-40 transition-opacity duration-500 pointer-events-none"
+              style={{ background: '#00e5ff' }}
             />
+
+            {/* Sphere with Directional Sun Illumination */}
+            <div className="relative w-full h-full rounded-full aspect-square overflow-hidden bg-gradient-to-br from-[#062438] via-[#051522] to-[#020910] shadow-[0_0_35px_rgba(0,229,255,0.45),inset_-18px_-18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(0,229,255,0.75)] transition-all duration-300">
+              <img
+                src="/sedna_clean.webp"
+                alt="Market"
+                width={144}
+                height={144}
+                loading="eager"
+                decoding="async"
+                className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin aspect-square"
+                style={{ animationDuration: '90s' }}
+              />
+
+              <div
+                className="absolute inset-0 rounded-full pointer-events-none aspect-square"
+                style={{
+                  background: 'radial-gradient(circle at 28% 72%, rgba(255, 210, 150, 0.35) 0%, transparent 60%)',
+                  boxShadow: 'inset 0 0 20px rgba(0, 229, 255, 0.55)',
+                }}
+              />
+            </div>
           </div>
 
           {/* Badge & Tactical Sector HUD */}
@@ -400,30 +520,38 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
             transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
-          {/* Tactical Targeting Reticle */}
-          <TacticalReticle color="#00e5ff" />
+          {/* Planet Sphere + Perfectly Aligned Reticle */}
+          <div className="relative w-36 h-36 shrink-0 flex items-center justify-center">
+            {/* Tactical Targeting Reticle strictly around the sphere */}
+            <TacticalReticle color="#00e5ff" />
 
-          {/* Sphere with Directional Sun Illumination (100% Round Circle) */}
-          <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden bg-gradient-to-br from-[#052030] via-[#041420] to-[#020a12] shadow-[0_0_35px_rgba(0,229,255,0.35),inset_18px_-18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(0,229,255,0.65)] transition-all duration-300">
-            <img
-              src="/venus_clean.webp"
-              alt="Rivens-endo"
-              width={144}
-              height={144}
-              loading="eager"
-              decoding="async"
-              className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin aspect-square"
-              style={{ animationDuration: '110s' }}
-            />
-
-            {/* Physical directional solar illumination on the surface facing the sun */}
+            {/* Glowing Atmospheric Aura */}
             <div
-              className="absolute inset-0 rounded-full pointer-events-none aspect-square"
-              style={{
-                background: 'radial-gradient(circle at 75% 75%, rgba(0, 229, 255, 0.25) 0%, transparent 60%)',
-                boxShadow: 'inset 0 0 18px rgba(0, 229, 255, 0.45)',
-              }}
+              className="absolute inset-0 rounded-full blur-2xl opacity-0 group-hover:opacity-40 transition-opacity duration-500 pointer-events-none"
+              style={{ background: '#00e5ff' }}
             />
+
+            {/* Sphere with Directional Sun Illumination */}
+            <div className="relative w-full h-full rounded-full aspect-square overflow-hidden bg-gradient-to-br from-[#052030] via-[#041420] to-[#020a12] shadow-[0_0_35px_rgba(0,229,255,0.35),inset_18px_-18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(0,229,255,0.65)] transition-all duration-300">
+              <img
+                src="/venus_clean.webp"
+                alt="Rivens-endo"
+                width={144}
+                height={144}
+                loading="eager"
+                decoding="async"
+                className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin aspect-square"
+                style={{ animationDuration: '110s' }}
+              />
+
+              <div
+                className="absolute inset-0 rounded-full pointer-events-none aspect-square"
+                style={{
+                  background: 'radial-gradient(circle at 75% 75%, rgba(0, 229, 255, 0.25) 0%, transparent 60%)',
+                  boxShadow: 'inset 0 0 18px rgba(0, 229, 255, 0.45)',
+                }}
+              />
+            </div>
           </div>
 
           {/* Badge & Tactical Sector HUD */}
@@ -459,30 +587,38 @@ export const StarChartView: React.FC<StarChartViewProps> = ({
             transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
-          {/* Tactical Targeting Reticle */}
-          <TacticalReticle color="#f97316" />
+          {/* Planet Sphere + Perfectly Aligned Reticle */}
+          <div className="relative w-36 h-36 shrink-0 flex items-center justify-center">
+            {/* Tactical Targeting Reticle strictly around the sphere */}
+            <TacticalReticle color="#f97316" />
 
-          {/* Sphere with Directional Sun Illumination (100% Round Circle) */}
-          <div className="relative w-36 h-36 rounded-full aspect-square shrink-0 overflow-hidden bg-gradient-to-br from-[#2a1005] via-[#1a0a03] to-[#0d0502] shadow-[0_0_35px_rgba(249,115,22,0.45),inset_-18px_-18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(249,115,22,0.75)] transition-all duration-300">
-            <img
-              src="/mars_clean.webp"
-              alt="Mod Appraisal"
-              width={144}
-              height={144}
-              loading="eager"
-              decoding="async"
-              className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin aspect-square"
-              style={{ animationDuration: '100s' }}
-            />
-
-            {/* Physical directional solar illumination on the surface facing the sun */}
+            {/* Glowing Atmospheric Aura */}
             <div
-              className="absolute inset-0 rounded-full pointer-events-none aspect-square"
-              style={{
-                background: 'radial-gradient(circle at 26% 26%, rgba(255, 215, 170, 0.45) 0%, transparent 60%)',
-                boxShadow: 'inset 0 0 20px rgba(249, 115, 22, 0.55)',
-              }}
+              className="absolute inset-0 rounded-full blur-2xl opacity-0 group-hover:opacity-40 transition-opacity duration-500 pointer-events-none"
+              style={{ background: '#f97316' }}
             />
+
+            {/* Sphere with Directional Sun Illumination */}
+            <div className="relative w-full h-full rounded-full aspect-square overflow-hidden bg-gradient-to-br from-[#2a1005] via-[#1a0a03] to-[#0d0502] shadow-[0_0_35px_rgba(249,115,22,0.45),inset_-18px_-18px_36px_rgba(0,0,0,0.95)] group-hover:scale-105 group-hover:shadow-[0_0_55px_rgba(249,115,22,0.75)] transition-all duration-300">
+              <img
+                src="/mars_clean.webp"
+                alt="Mod Appraisal"
+                width={144}
+                height={144}
+                loading="eager"
+                decoding="async"
+                className="w-full h-full object-cover select-none pointer-events-none animate-sedna-spin aspect-square"
+                style={{ animationDuration: '100s' }}
+              />
+
+              <div
+                className="absolute inset-0 rounded-full pointer-events-none aspect-square"
+                style={{
+                  background: 'radial-gradient(circle at 26% 26%, rgba(255, 215, 170, 0.45) 0%, transparent 60%)',
+                  boxShadow: 'inset 0 0 20px rgba(249, 115, 22, 0.55)',
+                }}
+              />
+            </div>
           </div>
 
           {/* Badge & Tactical Sector HUD */}
