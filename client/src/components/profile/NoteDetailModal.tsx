@@ -13,7 +13,7 @@ import {
   ChevronRight,
   Images,
 } from 'lucide-react';
-import { NoteItem, downloadImage } from './NotesGrid';
+import { NoteItem, downloadImage, renderTradeNoteContent } from './NotesGrid';
 
 interface NoteDetailModalProps {
   note: NoteItem | null;
@@ -238,9 +238,9 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
           {/* Note Content Text */}
           {noteText && (
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#060a12] border border-slate-200/80 dark:border-white/[0.08] break-words">
-              <p className="text-sm font-sans text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap select-text">
-                {noteText}
-              </p>
+              <div className="text-sm font-sans text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap select-text">
+                {renderTradeNoteContent(noteText)}
+              </div>
             </div>
           )}
         </div>

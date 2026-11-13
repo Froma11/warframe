@@ -56,6 +56,52 @@ export const downloadImage = (dataUrl: string, filename = 'warframe-note.png') =
   document.body.removeChild(link);
 };
 
+// Render trade note text with [Item Name] cyan pill badges and crisp monospace numbers/ratios
+export const renderTradeNoteContent = (text: string): React.ReactNode => {
+  if (!text) return null;
+
+  const bracketParts = text.split(/(\[[^\]\n]+\])/g);
+  const numericTokenRegex =
+    /(?<![A-Za-zА-Яа-яЁё0-9])(\d+(?:[.,/:-]\d+)?(?:\s?(?:к|k|пл|pl|p|шт|pcs))?|[xх×]\d+)(?![A-Za-zА-Яа-яЁё0-9])/gi;
+
+  return bracketParts.map((segment, segIdx) => {
+    if (!segment) return null;
+
+    const bracketMatch = segment.match(/^\[([^\]\n]+)\]$/);
+    if (bracketMatch) {
+      return (
+        <span
+          key={`tag-${segIdx}`}
+          className="inline-flex items-center gap-1 px-1.5 py-[1px] mx-0.5 rounded-md bg-cyan-500/10 dark:bg-cyan-400/10 border border-cyan-500/30 dark:border-cyan-400/25 text-cyan-700 dark:text-cyan-300 font-medium text-[0.9em] leading-snug align-baseline shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+        >
+          <Tag className="w-2.5 h-2.5 text-cyan-600 dark:text-cyan-400 shrink-0 opacity-85" />
+          <span>{bracketMatch[1]}</span>
+        </span>
+      );
+    }
+
+    const subParts = segment.split(numericTokenRegex);
+    return (
+      <React.Fragment key={`txt-${segIdx}`}>
+        {subParts.map((part, partIdx) => {
+          if (!part) return null;
+          if (partIdx % 2 === 1) {
+            return (
+              <span
+                key={`num-${segIdx}-${partIdx}`}
+                className="font-mono font-semibold text-slate-900 dark:text-white bg-slate-200/70 dark:bg-white/[0.06] px-1 py-[0.5px] rounded text-[0.9em] tabular-nums"
+              >
+                {part}
+              </span>
+            );
+          }
+          return <React.Fragment key={`plain-${segIdx}-${partIdx}`}>{part}</React.Fragment>;
+        })}
+      </React.Fragment>
+    );
+  });
+};
+
 export const NotesGrid: React.FC<NotesGridProps> = ({
   notes,
   onAddNote,
@@ -133,21 +179,27 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
   }, [notes, activeCategory, searchQuery, sortOrder]);
 
   return (
-    <div className="w-full bg-white dark:bg-[#080d18]/90 border border-slate-200 dark:border-white/[0.1] rounded-[28px] sm:rounded-3xl p-5 sm:p-7 shadow-2xl backdrop-blur-md font-sans transition-colors">
+    <div className="w-full relative overflow-hidden bg-white dark:bg-[#090D16] border border-slate-200/90 dark:border-white/[0.08] rounded-3xl p-5 sm:p-6 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_20px_50px_rgba(0,0,0,0.45)] font-sans transition-colors">
+      {/* Subtle Ambient Corner Gradient */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_100%_0%,rgba(6,182,212,0.06),transparent_45%)]"
+      />
+
       {/* Section Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-5 border-b border-slate-200 dark:border-white/[0.08]">
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#00e5ff]/20 to-[#3b82f6]/20 border border-[#00e5ff]/40 flex items-center justify-center shadow-[0_0_15px_rgba(0,229,255,0.25)] shrink-0">
-            <FileText className="w-5 h-5 text-[#00e5ff]" />
+      <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-slate-200/80 dark:border-white/[0.07]">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 dark:border-cyan-400/25 flex items-center justify-center shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] shrink-0">
+            <FileText className="w-4.5 h-4.5 text-cyan-600 dark:text-cyan-400" />
           </div>
           <div>
             <h2 className="text-base sm:text-lg font-comfortaa font-bold text-slate-900 dark:text-white tracking-wide flex items-center gap-2">
               {lang === 'ru' ? 'Заметки & Скриншоты' : 'Notes & Screenshots'}
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#00e5ff]/15 text-[#00b4d8] dark:text-[#00e5ff] border border-[#00e5ff]/30 font-mono font-bold">
+              <span className="text-xs px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/25 font-mono font-bold tabular-nums">
                 {notes.length}
               </span>
             </h2>
-            <p className="text-xs text-slate-500 dark:text-[#a3a29d] font-sans">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-sans mt-0.5">
               {lang === 'ru'
                 ? 'Приватные записи с фото и скриншотами (поддерживает несколько фото и Ctrl+V)'
                 : 'Private trade notes with photo attachments & multi-screenshot support'}
@@ -157,119 +209,142 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
 
         {/* Add Note Button */}
         <button
+          type="button"
           onClick={() => {
             setEditingNote(null);
             setIsCreateModalOpen(true);
           }}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-[#00e5ff] to-[#00b4d8] text-[#070a0e] text-xs font-comfortaa font-bold shadow-[0_0_15px_rgba(0,229,255,0.35)] hover:shadow-[0_0_24px_rgba(0,229,255,0.55)] hover:scale-[1.02] active:scale-95 transition-all cursor-pointer shrink-0"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-comfortaa font-bold shadow-[inset_0_1px_0_0_rgba(255,255,255,0.4),0_4px_16px_rgba(6,182,212,0.3)] hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.5),0_6px_22px_rgba(6,182,212,0.45)] active:scale-[0.98] transition-all duration-150 cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>{lang === 'ru' ? 'Новая заметка' : 'New Note'}</span>
         </button>
       </div>
 
-      {/* User Topics Filter Bar (Dynamic, created by the user) */}
-      {userCategories.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 pt-4 pb-2">
+      {/* Unified Compact Toolbar: Topic Filters + Constrained Search & Sort */}
+      <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-3 py-4 border-b border-slate-200/60 dark:border-white/[0.05]">
+        {/* Left: User Topics Filter Bar (or subtle count indicator if none) */}
+        <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+          {userCategories.length > 0 ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setActiveCategory('ВСЕ')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all duration-150 cursor-pointer active:scale-[0.97] ${
+                  activeCategory === 'ВСЕ'
+                    ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/40 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]'
+                    : 'bg-slate-100 dark:bg-white/[0.03] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/[0.07] hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-white/[0.15]'
+                }`}
+              >
+                {lang === 'ru' ? 'ВСЕ' : 'ALL'}
+              </button>
+              {userCategories.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setActiveCategory(cat)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all duration-150 cursor-pointer active:scale-[0.97] ${
+                    activeCategory === cat
+                      ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/40 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]'
+                      : 'bg-slate-100 dark:bg-white/[0.03] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/[0.07] hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-white/[0.15]'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </>
+          ) : (
+            <span className="text-xs font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+              {lang === 'ru'
+                ? `Показано: ${filteredNotes.length}`
+                : `Showing: ${filteredNotes.length}`}
+            </span>
+          )}
+        </div>
+
+        {/* Right: Constrained Search Input + Sort Toggle */}
+        <div className="flex items-center gap-2 w-full lg:w-auto justify-end shrink-0">
+          <div className="group/search relative flex-1 sm:flex-initial sm:w-72 lg:w-80 flex items-center bg-slate-50 dark:bg-[#060911] border border-slate-200 dark:border-white/[0.08] focus-within:border-cyan-500/60 dark:focus-within:border-cyan-400/50 focus-within:ring-2 focus-within:ring-cyan-500/15 dark:focus-within:ring-cyan-400/15 rounded-xl transition-all duration-150 shadow-[inset_0_2px_4px_rgba(0,0,0,0.04)] dark:shadow-[inset_0_2px_6px_rgba(0,0,0,0.5)]">
+            <Search className="w-3.5 h-3.5 ml-3 text-slate-400 dark:text-slate-500 group-focus-within/search:text-cyan-600 dark:group-focus-within/search:text-cyan-400 transition-colors shrink-0" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={
+                lang === 'ru'
+                  ? 'Поиск по тексту или тегу...'
+                  : 'Search by text or tag...'
+              }
+              className="w-full pl-2.5 pr-8 py-2 bg-transparent text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                aria-label={lang === 'ru' ? 'Очистить поиск' : 'Clear search'}
+                className="absolute right-2 p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+
           <button
             type="button"
-            onClick={() => setActiveCategory('ВСЕ')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
-              activeCategory === 'ВСЕ'
-                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 shadow-[0_0_12px_rgba(0,229,255,0.25)]'
-                : 'bg-slate-100 dark:bg-white/[0.04] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08] hover:text-white'
-            }`}
-          >
-            {lang === 'ru' ? 'ВСЕ' : 'ALL'}
-          </button>
-          {userCategories.map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setActiveCategory(cat)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
-                activeCategory === cat
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 shadow-[0_0_12px_rgba(0,229,255,0.25)]'
-                  : 'bg-slate-100 dark:bg-white/[0.04] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08] hover:text-white'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Search & Sort Toolbar */}
-      <div className="flex items-center justify-between gap-3 pt-3 pb-3">
-        {/* Search */}
-        <div className="relative flex-1">
-          <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#71717a]" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={
-              lang === 'ru'
-                ? 'Поиск по тексту или темам заметок...'
-                : 'Search notes by text or topic...'
+            onClick={() => setSortOrder(sortOrder === 'newest' ? 'oldest' : 'newest')}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200/70 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.16] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-xs font-comfortaa font-bold shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] active:scale-[0.97] transition-all duration-150 cursor-pointer shrink-0"
+            title={
+              sortOrder === 'newest'
+                ? lang === 'ru'
+                  ? 'Сначала новые'
+                  : 'Newest first'
+                : lang === 'ru'
+                ? 'Сначала старые'
+                : 'Oldest first'
             }
-            className="w-full pl-9 pr-4 py-2.5 bg-slate-50 dark:bg-[#060a12] border border-slate-200 dark:border-white/[0.08] focus:border-[#00e5ff]/60 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-[#71717a] outline-none transition-colors"
-          />
+          >
+            <ArrowUpDown className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+            <span className="hidden sm:inline">
+              {sortOrder === 'newest'
+                ? lang === 'ru'
+                  ? 'Новые'
+                  : 'Newest'
+                : lang === 'ru'
+                ? 'Старые'
+                : 'Oldest'}
+            </span>
+          </button>
         </div>
-
-        {/* Sort order toggle */}
-        <button
-          onClick={() => setSortOrder(sortOrder === 'newest' ? 'oldest' : 'newest')}
-          className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] text-slate-600 dark:text-[#a3a29d] hover:text-slate-900 dark:hover:text-white text-xs font-comfortaa font-bold transition-colors cursor-pointer shrink-0"
-          title={
-            sortOrder === 'newest'
-              ? lang === 'ru'
-                ? 'Сначала новые'
-                : 'Newest first'
-              : lang === 'ru'
-              ? 'Сначала старые'
-              : 'Oldest first'
-          }
-        >
-          <ArrowUpDown className="w-3.5 h-3.5 text-[#00e5ff]" />
-          <span className="hidden sm:inline">
-            {sortOrder === 'newest'
-              ? lang === 'ru'
-                ? 'Новые'
-                : 'Newest'
-              : lang === 'ru'
-              ? 'Старые'
-              : 'Oldest'}
-          </span>
-        </button>
       </div>
 
       {/* Grid of Notes or Empty State */}
       {filteredNotes.length === 0 ? (
-        <div className="p-12 text-center flex flex-col items-center justify-center">
-          <div className="w-16 h-16 rounded-3xl bg-slate-100 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] flex items-center justify-center mb-3 text-slate-400 dark:text-[#71717a]">
-            <FileText className="w-7 h-7" />
+        <div className="relative z-10 p-12 text-center flex flex-col items-center justify-center">
+          <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-[#0B101B] border border-slate-200 dark:border-white/[0.08] flex items-center justify-center mb-3 text-slate-400 dark:text-slate-500 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+            <FileText className="w-6 h-6" />
           </div>
-          <p className="text-sm text-slate-800 dark:text-[#cbd5e1] font-comfortaa font-bold">
+          <p className="text-sm text-slate-800 dark:text-slate-200 font-comfortaa font-bold">
             {lang === 'ru' ? 'Заметок не найдено' : 'No notes found'}
           </p>
-          <p className="text-xs text-slate-500 dark:text-[#a3a29d] max-w-xs mt-1 mb-4">
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mt-1 mb-4">
             {lang === 'ru'
               ? 'Создайте заметку, укажите свою тему и прикрепите скриншоты'
               : 'Create a note, specify your topic and attach screenshots'}
           </p>
           <button
+            type="button"
             onClick={() => {
               setEditingNote(null);
               setIsCreateModalOpen(true);
             }}
-            className="px-5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#0e1624] dark:hover:bg-[#142236] border border-slate-200 dark:border-[#00e5ff]/40 text-[#00b4d8] dark:text-[#00e5ff] text-xs font-comfortaa font-bold transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-[#0E1624] dark:hover:bg-[#131F33] border border-slate-200 dark:border-cyan-400/35 text-cyan-700 dark:text-cyan-300 text-xs font-comfortaa font-bold active:scale-[0.98] transition-all cursor-pointer"
           >
-            + {lang === 'ru' ? 'Добавить заметку' : 'Add Note'}
+            <Plus className="w-3.5 h-3.5" />
+            <span>{lang === 'ru' ? 'Добавить заметку' : 'Add Note'}</span>
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5 mt-3">
+        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 pt-5">
           {filteredNotes.map((note) => {
             const noteText = note.content || note.title || '';
             const formattedDate = new Date(note.created_at).toLocaleDateString(
@@ -285,48 +360,69 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
                 ? [note.image_url]
                 : [];
 
+            const isCopied = copiedId === note.id;
+
             return (
-              <div
+              <article
                 key={note.id}
                 onClick={() => setSelectedNote(note)}
-                className="group relative bg-slate-50/90 dark:bg-gradient-to-b dark:from-[#090e18] dark:to-[#060a12] hover:bg-white dark:hover:from-[#0d1424] dark:hover:to-[#080d1a] border border-slate-200/90 dark:border-white/[0.08] hover:border-cyan-400/50 p-5 sm:p-6 rounded-[26px] sm:rounded-3xl transition-all duration-300 flex flex-col justify-between shadow-md hover:shadow-[0_16px_40px_rgba(0,0,0,0.5),0_0_24px_rgba(0,229,255,0.15)] hover:-translate-y-0.5 cursor-pointer overflow-hidden min-w-0 max-w-full break-words"
+                className="group relative flex flex-col justify-between rounded-2xl p-4 sm:p-5 bg-slate-50/90 dark:bg-[#0B101B] hover:bg-white dark:hover:bg-[#0F1625] border border-slate-200/90 dark:border-white/[0.08] hover:border-cyan-500/45 dark:hover:border-cyan-400/40 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_10px_28px_rgba(0,0,0,0.35)] hover:shadow-md dark:hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.14),0_16px_36px_rgba(0,0,0,0.55)] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer overflow-hidden min-w-0 max-w-full break-words"
               >
+                {/* Top subtle edge highlight accent on hover */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/0 group-hover:via-cyan-400/50 to-transparent transition-all duration-300"
+                />
+
                 <div className="min-w-0 w-full">
-                  {/* Top Bar: Date, Tag & Actions */}
-                  <div className="flex items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-200/60 dark:border-white/[0.06]">
+                  {/* Top Bar: Date, Tag & Hover-revealed Quick Actions */}
+                  <div className="flex items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-200/70 dark:border-white/[0.06]">
                     <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                      <span className="text-[11px] text-slate-400 dark:text-[#71717a] flex items-center gap-1 font-sans shrink-0">
-                        <Clock className="w-3 h-3 text-[#00e5ff]" />
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 font-mono tabular-nums shrink-0">
+                        <Clock className="w-3 h-3 text-cyan-600 dark:text-cyan-400/80" />
                         {formattedDate}
                       </span>
                       {note.tag && (
-                        <span className="px-2.5 py-0.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 text-[10px] font-mono font-bold tracking-wider truncate max-w-[140px]">
-                          {note.tag}
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/25 text-[10px] font-mono font-bold tracking-wide truncate max-w-[130px]">
+                          <Tag className="w-2.5 h-2.5 shrink-0 opacity-80" />
+                          <span className="truncate">{note.tag}</span>
                         </span>
                       )}
                     </div>
 
-                    {/* Quick Action Icons */}
-                    <div className="flex items-center gap-1 shrink-0">
+                    {/* Quick Action Icons (Smoothly revealed on hover/focus on desktop, always accessible on touch & when copied) */}
+                    <div
+                      className={`flex items-center gap-1 shrink-0 transition-all duration-150 ${
+                        isCopied
+                          ? 'opacity-100 translate-y-0'
+                          : 'sm:opacity-0 sm:translate-y-0.5 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 sm:group-focus-within:opacity-100'
+                      }`}
+                    >
                       {/* Download photo directly from card if images present */}
                       {noteImages.length > 0 && (
                         <button
+                          type="button"
                           onClick={(e) => handleDownloadClick(e, noteImages[0], note.id)}
-                          className="p-1.5 rounded-lg text-cyan-400 hover:text-white hover:bg-cyan-500/20 transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-cyan-700 dark:hover:text-cyan-300 hover:bg-cyan-500/15 border border-transparent hover:border-cyan-500/25 active:scale-90 transition-all cursor-pointer"
                           title={lang === 'ru' ? 'Скачать фото' : 'Download photo'}
                         >
                           <Download className="w-3.5 h-3.5" />
                         </button>
                       )}
 
-                      {/* Copy content */}
+                      {/* Copy content with immediate emerald feedback */}
                       <button
+                        type="button"
                         onClick={(e) => handleCopy(e, note.id, noteText)}
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-[#a3a29d] dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
+                        className={`p-1.5 rounded-lg border active:scale-90 transition-all cursor-pointer ${
+                          isCopied
+                            ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.25)]'
+                            : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-white/[0.08]'
+                        }`}
                         title={lang === 'ru' ? 'Скопировать текст' : 'Copy text'}
                       >
-                        {copiedId === note.id ? (
-                          <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-[#10b981]" />
+                        {isCopied ? (
+                          <Check className="w-3.5 h-3.5" />
                         ) : (
                           <Copy className="w-3.5 h-3.5" />
                         )}
@@ -334,8 +430,9 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
 
                       {/* Edit */}
                       <button
+                        type="button"
                         onClick={(e) => handleEditClick(e, note)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-[#0284c7] hover:bg-sky-50 dark:text-[#71717a] dark:hover:text-[#00e5ff] dark:hover:bg-[#00e5ff]/10 transition-colors cursor-pointer"
+                        className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-cyan-700 dark:hover:text-cyan-300 hover:bg-cyan-500/15 border border-transparent hover:border-cyan-500/25 active:scale-90 transition-all cursor-pointer"
                         title={lang === 'ru' ? 'Редактировать' : 'Edit'}
                       >
                         <Edit3 className="w-3.5 h-3.5" />
@@ -343,8 +440,9 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
 
                       {/* Delete */}
                       <button
+                        type="button"
                         onClick={(e) => handleDelete(e, note.id)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:text-[#71717a] dark:hover:text-[#f87171] dark:hover:bg-[#f87171]/10 transition-colors cursor-pointer"
+                        className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/15 border border-transparent hover:border-rose-500/25 active:scale-90 transition-all cursor-pointer"
                         title={lang === 'ru' ? 'Удалить' : 'Delete'}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -354,11 +452,10 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
 
                   {/* Attached Images Gallery Preview */}
                   {noteImages.length > 0 && (
-                    <div className="mb-3">
+                    <div className="mb-3.5">
                       {noteImages.length === 1 ? (
-                        // Single Image Preview
                         <div
-                          className="relative w-full h-44 rounded-2xl overflow-hidden bg-black/60 border border-slate-200/80 dark:border-white/[0.08] group/thumb flex items-center justify-center cursor-zoom-in"
+                          className="relative w-full h-44 rounded-xl overflow-hidden bg-black/60 border border-slate-200/80 dark:border-white/[0.08] group/thumb flex items-center justify-center cursor-zoom-in"
                           onClick={(e) => {
                             e.stopPropagation();
                             setLightboxUrl(noteImages[0]);
@@ -370,18 +467,17 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
                             className="w-full h-full object-cover group-hover/thumb:scale-105 transition-transform duration-300"
                           />
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
-                            <span className="p-2 rounded-xl bg-black/75 text-white backdrop-blur-md">
+                            <span className="p-2 rounded-xl bg-black/75 text-white backdrop-blur-md border border-white/10">
                               <Maximize2 className="w-4 h-4" />
                             </span>
                           </div>
                         </div>
                       ) : noteImages.length === 2 ? (
-                        // Two Images Grid
-                        <div className="grid grid-cols-2 gap-2 h-44 rounded-2xl overflow-hidden">
+                        <div className="grid grid-cols-2 gap-2 h-44 rounded-xl overflow-hidden">
                           {noteImages.slice(0, 2).map((img, idx) => (
                             <div
                               key={idx}
-                              className="relative w-full h-full bg-black/60 border border-white/[0.08] rounded-xl overflow-hidden cursor-zoom-in group/sub"
+                              className="relative w-full h-full bg-black/60 border border-slate-200/60 dark:border-white/[0.08] rounded-xl overflow-hidden cursor-zoom-in group/sub"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setLightboxUrl(img);
@@ -396,10 +492,9 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
                           ))}
                         </div>
                       ) : (
-                        // 3+ Images Collage with Count Badge
-                        <div className="grid grid-cols-3 gap-2 h-44 rounded-2xl overflow-hidden">
+                        <div className="grid grid-cols-3 gap-2 h-44 rounded-xl overflow-hidden">
                           <div
-                            className="col-span-2 relative w-full h-full bg-black/60 border border-white/[0.08] rounded-xl overflow-hidden cursor-zoom-in group/sub"
+                            className="col-span-2 relative w-full h-full bg-black/60 border border-slate-200/60 dark:border-white/[0.08] rounded-xl overflow-hidden cursor-zoom-in group/sub"
                             onClick={(e) => {
                               e.stopPropagation();
                               setLightboxUrl(noteImages[0]);
@@ -414,7 +509,7 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
 
                           <div className="flex flex-col gap-2 h-full">
                             <div
-                              className="relative flex-1 bg-black/60 border border-white/[0.08] rounded-xl overflow-hidden cursor-zoom-in"
+                              className="relative flex-1 bg-black/60 border border-slate-200/60 dark:border-white/[0.08] rounded-xl overflow-hidden cursor-zoom-in"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setLightboxUrl(noteImages[1]);
@@ -427,7 +522,7 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
                               />
                             </div>
                             <div
-                              className="relative flex-1 bg-black/60 border border-white/[0.08] rounded-xl overflow-hidden cursor-zoom-in flex items-center justify-center group/badge"
+                              className="relative flex-1 bg-black/60 border border-slate-200/60 dark:border-white/[0.08] rounded-xl overflow-hidden cursor-zoom-in flex items-center justify-center group/badge"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedNote(note);
@@ -448,26 +543,37 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
                     </div>
                   )}
 
-                  {/* Note Body Text */}
+                  {/* Smart Trade Note Body Text (Parses [Item Name] & trade values) */}
                   {noteText && (
-                    <p className="text-xs sm:text-sm text-slate-800 dark:text-[#cbd5e1] font-sans leading-relaxed line-clamp-4 whitespace-pre-wrap select-text break-words overflow-hidden">
-                      {noteText}
-                    </p>
+                    <div className="text-xs sm:text-[13px] text-slate-700 dark:text-slate-300 font-sans leading-relaxed line-clamp-4 whitespace-pre-wrap select-text break-words overflow-hidden">
+                      {renderTradeNoteContent(noteText)}
+                    </div>
                   )}
                 </div>
 
-                {/* Footer Copied Feedback */}
-                {copiedId === note.id && (
-                  <div className="pt-2 text-[10px] text-emerald-600 dark:text-[#10b981] font-comfortaa font-bold flex items-center gap-1">
-                    <Check className="w-3 h-3" />
-                    <span>
-                      {lang === 'ru'
-                        ? 'Текст скопирован в буфер'
-                        : 'Copied to clipboard'}
-                    </span>
+                {/* Card Bottom Status Strip */}
+                {(isCopied || noteImages.length > 0) && (
+                  <div className="mt-3 pt-2.5 border-t border-slate-200/50 dark:border-white/[0.05] flex items-center justify-between gap-2 text-[11px]">
+                    {noteImages.length > 0 ? (
+                      <span className="inline-flex items-center gap-1.5 text-slate-500 dark:text-slate-400 font-mono tabular-nums">
+                        <Images className="w-3 h-3 text-cyan-600 dark:text-cyan-400/80" />
+                        <span>{noteImages.length}</span>
+                      </span>
+                    ) : (
+                      <span />
+                    )}
+
+                    {isCopied && (
+                      <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-mono font-semibold animate-in fade-in duration-150">
+                        <Check className="w-3 h-3" />
+                        <span>
+                          {lang === 'ru' ? 'Скопировано' : 'Copied'}
+                        </span>
+                      </span>
+                    )}
                   </div>
                 )}
-              </div>
+              </article>
             );
           })}
         </div>
