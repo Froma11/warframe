@@ -226,13 +226,13 @@ export const SednaView: React.FC<SednaViewProps> = ({
               onClick={() => setSelectedCategory(tab.id as MarketCategory)}
               className={`px-4 sm:px-5 py-2.5 rounded-2xl font-comfortaa font-bold text-xs sm:text-sm flex items-center gap-2.5 transition-all cursor-pointer ${
                 isActive
-                  ? 'bg-gradient-to-r from-[#00e5ff]/20 to-emerald-500/20 text-[#0284c7] dark:text-[#00e5ff] border border-[#00e5ff]/60 shadow-[0_0_20px_rgba(0,229,255,0.25)]'
-                  : 'bg-white/80 dark:bg-[#070b12]/80 hover:bg-slate-100 dark:hover:bg-[#0e1624] text-slate-600 dark:text-[#a3a29d] border border-slate-200 dark:border-white/[0.08]'
+                  ? 'bg-white dark:bg-[#24272D] text-teal-700 dark:text-[#5EEAD4] border border-teal-500/40 dark:border-teal-400/45 shadow-sm dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_4px_16px_rgba(0,0,0,0.35)]'
+                  : 'bg-white/80 dark:bg-[#121316]/90 hover:bg-zinc-100 dark:hover:bg-[#1B1D22] text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-white/[0.07]'
               }`}
             >
-              <Icon className={`w-4 h-4 ${isActive ? 'text-[#00e5ff]' : 'text-slate-400 dark:text-[#71717a]'}`} />
+              <Icon className={`w-4 h-4 ${isActive ? 'text-teal-600 dark:text-[#2DD4BF]' : 'text-zinc-400 dark:text-zinc-500'}`} />
               <span>{lang === 'ru' ? tab.labelRu : tab.labelEn}</span>
-              <span className={`px-2 py-0.5 rounded-full text-[11px] font-mono ${isActive ? 'bg-[#00e5ff]/20 text-[#0284c7] dark:text-[#00e5ff]' : 'bg-slate-200 dark:bg-white/[0.06] text-slate-500 dark:text-[#71717a]'}`}>
+              <span className={`px-2 py-0.5 rounded-full text-[11px] font-mono ${isActive ? 'bg-teal-500/15 dark:bg-[#2DD4BF]/15 text-teal-700 dark:text-[#5EEAD4]' : 'bg-zinc-200 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-400'}`}>
                 {tab.count}
               </span>
             </button>
@@ -241,24 +241,24 @@ export const SednaView: React.FC<SednaViewProps> = ({
       </div>
 
       {/* Modern Redesigned Filter & Controls Toolbar */}
-      <div className="relative z-30 bg-white/95 dark:bg-[#0b1019]/90 border border-slate-200 dark:border-white/[0.1] p-4 sm:p-5 rounded-3xl flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 shadow-xl backdrop-blur-md transition-colors">
+      <div className="relative z-30 bg-white/95 dark:bg-[#121316]/95 border border-zinc-200 dark:border-white/[0.08] p-4 sm:p-5 rounded-3xl flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 shadow-xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_12px_32px_rgba(0,0,0,0.45)] backdrop-blur-md transition-colors">
         
         {/* Left: Search Box, Online Counter & Sync Badge */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 flex-1 flex-wrap">
           {/* Search Box */}
           <div className="relative min-w-[260px] sm:min-w-[320px] flex-1 max-w-md">
-            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#71717a]" />
+            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full pl-11 pr-10 h-11 sm:h-12 bg-slate-50 dark:bg-[#060a12]/90 border border-slate-200 dark:border-white/[0.12] focus:border-[#00e5ff] rounded-2xl text-sm font-sans text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-[#71717a] outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#00e5ff]/30"
+              className="w-full pl-11 pr-10 h-11 sm:h-12 bg-zinc-50 dark:bg-[#181A1E] border border-zinc-200 dark:border-white/[0.09] focus:border-[#2DD4BF] rounded-2xl text-sm font-sans text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#2DD4BF]/30"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-900 dark:text-[#a3a29d] dark:hover:text-white transition-colors"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-zinc-400 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors"
               >
                 ✕
               </button>
@@ -266,8 +266,8 @@ export const SednaView: React.FC<SednaViewProps> = ({
           </div>
 
           {/* Realtime Market Count */}
-          <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-[#00e5ff]/10 dark:bg-[#00e5ff]/10 border border-[#00e5ff]/30 text-xs font-comfortaa font-bold text-[#0284c7] dark:text-[#00e5ff]">
-            <Layers className="w-4 h-4 text-[#00e5ff]" />
+          <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-teal-500/10 dark:bg-[#2DD4BF]/10 border border-teal-500/25 dark:border-[#2DD4BF]/25 text-xs font-comfortaa font-bold text-teal-700 dark:text-[#5EEAD4]">
+            <Layers className="w-4 h-4 text-teal-600 dark:text-[#2DD4BF]" />
             <span>
               {filteredArcanes.length}{' '}
               {selectedCategory === 'warframes'
@@ -279,8 +279,8 @@ export const SednaView: React.FC<SednaViewProps> = ({
           </div>
 
           {/* Market Live Sync Telemetry Badge */}
-          <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-slate-100 dark:bg-[#060a12]/90 border border-slate-200 dark:border-white/[0.1] text-xs font-sans text-slate-600 dark:text-[#a3a29d]">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-zinc-100 dark:bg-[#181A1E] border border-zinc-200 dark:border-white/[0.08] text-xs font-sans text-zinc-600 dark:text-zinc-400">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="font-medium">
               {lang === 'ru'
                 ? `Синхронизировано: ${lastUpdatedMinutes} мин назад`
@@ -290,18 +290,18 @@ export const SednaView: React.FC<SednaViewProps> = ({
         </div>
 
         {/* Right: Matches counter, Custom Sort Dropdown, and View Mode Toggle */}
-        <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-200 dark:border-white/[0.06] flex-wrap">
+        <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 lg:pt-0 border-t lg:border-t-0 border-zinc-200 dark:border-white/[0.06] flex-wrap">
           
           {/* Matches & Page Count Pill */}
-          <div className="text-xs text-slate-600 dark:text-[#a3a29d] px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-[#060a12]/90 border border-slate-200 dark:border-white/[0.1] flex items-center gap-2">
+          <div className="text-xs text-zinc-600 dark:text-zinc-400 px-4 py-2.5 rounded-2xl bg-zinc-100 dark:bg-[#181A1E] border border-zinc-200 dark:border-white/[0.08] flex items-center gap-2">
             <span>
               {lang === 'ru' ? 'Найдено:' : 'Matches:'}{' '}
-              <strong className="text-[#0284c7] dark:text-[#00e5ff] font-semibold">{filteredArcanes.length}</strong>
+              <strong className="text-teal-700 dark:text-[#5EEAD4] font-semibold">{filteredArcanes.length}</strong>
             </span>
             {totalPages > 1 && (
               <>
-                <span className="text-slate-300 dark:text-[#52525b]">|</span>
-                <span className="text-slate-900 dark:text-white font-medium">{lang === 'ru' ? 'Стр.' : 'Page'} {safeCurrentPage}/{totalPages}</span>
+                <span className="text-zinc-300 dark:text-zinc-600">|</span>
+                <span className="text-zinc-900 dark:text-zinc-100 font-medium">{lang === 'ru' ? 'Стр.' : 'Page'} {safeCurrentPage}/{totalPages}</span>
               </>
             )}
           </div>
@@ -310,22 +310,22 @@ export const SednaView: React.FC<SednaViewProps> = ({
           <div className="relative" ref={sortDropdownRef}>
             <button
               onClick={() => setIsSortOpen(!isSortOpen)}
-              className="h-11 sm:h-12 px-4 rounded-2xl bg-slate-50 dark:bg-[#060a12]/90 hover:bg-slate-100 dark:hover:bg-[#101726] border border-slate-200 dark:border-white/[0.12] hover:border-[#00e5ff]/50 text-xs font-sans text-slate-900 dark:text-white transition-all shadow-sm flex items-center gap-2.5 cursor-pointer"
+              className="h-11 sm:h-12 px-4 rounded-2xl bg-zinc-50 dark:bg-[#181A1E] hover:bg-zinc-100 dark:hover:bg-[#22252B] border border-zinc-200 dark:border-white/[0.09] hover:border-[#2DD4BF]/40 text-xs font-sans text-zinc-900 dark:text-zinc-100 transition-all shadow-sm flex items-center gap-2.5 cursor-pointer"
             >
-              <ArrowUpDown className="w-4 h-4 text-[#00e5ff]" />
-              <span className="hidden sm:inline text-slate-500 dark:text-[#a3a29d]">
+              <ArrowUpDown className="w-4 h-4 text-teal-600 dark:text-[#2DD4BF]" />
+              <span className="hidden sm:inline text-zinc-500 dark:text-zinc-400">
                 {lang === 'ru' ? 'Сортировка:' : 'Sort:'}
               </span>
-              <span className="font-semibold text-slate-900 dark:text-white max-w-[170px] truncate">
+              <span className="font-semibold text-zinc-900 dark:text-zinc-100 max-w-[170px] truncate">
                 {lang === 'ru' ? currentSortLabel?.labelRu : currentSortLabel?.labelEn}
               </span>
-              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 dark:text-[#a3a29d] transition-transform duration-200 ${isSortOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 dark:text-zinc-400 transition-transform duration-200 ${isSortOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {/* Floating Dropdown Modal / Popover */}
             {isSortOpen && (
-              <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-[#0c121d] border border-slate-200 dark:border-[#00e5ff]/35 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_25px_60px_rgba(0,0,0,0.95)] p-2 z-50 backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150">
-                <div className="px-3.5 py-2 text-[11px] font-comfortaa font-bold uppercase tracking-wider text-slate-400 dark:text-[#a3a29d] border-b border-slate-100 dark:border-white/[0.06] mb-1">
+              <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-[#181A1E] border border-zinc-200 dark:border-white/[0.12] rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_25px_60px_rgba(0,0,0,0.9)] p-2 z-50 backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150">
+                <div className="px-3.5 py-2 text-[11px] font-comfortaa font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-400 border-b border-zinc-100 dark:border-white/[0.06] mb-1">
                   {lang === 'ru' ? 'Сортировать по:' : 'Sort items by:'}
                 </div>
 
@@ -341,12 +341,12 @@ export const SednaView: React.FC<SednaViewProps> = ({
                         }}
                         className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-colors text-left cursor-pointer ${
                           isSelected
-                            ? 'bg-[#00e5ff]/15 text-[#0284c7] dark:text-[#00e5ff] font-semibold'
-                            : 'text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-white/[0.06] hover:text-slate-900 dark:hover:text-white'
+                            ? 'bg-teal-500/15 dark:bg-[#2DD4BF]/15 text-teal-700 dark:text-[#5EEAD4] font-semibold'
+                            : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] hover:text-zinc-900 dark:hover:text-white'
                         }`}
                       >
                         <span>{lang === 'ru' ? opt.labelRu : opt.labelEn}</span>
-                        {isSelected && <Check className="w-4 h-4 text-[#00e5ff] shrink-0" />}
+                        {isSelected && <Check className="w-4 h-4 text-teal-600 dark:text-[#2DD4BF] shrink-0" />}
                       </button>
                     );
                   })}
@@ -356,13 +356,13 @@ export const SednaView: React.FC<SednaViewProps> = ({
           </div>
 
           {/* View Mode Toggle: Grid vs Table */}
-          <div className="flex items-center border border-slate-200 dark:border-white/[0.12] rounded-2xl bg-slate-100 dark:bg-[#060a12]/90 p-1">
+          <div className="flex items-center border border-zinc-200 dark:border-white/[0.09] rounded-2xl bg-zinc-100 dark:bg-[#181A1E] p-1">
             <button
               onClick={() => setViewMode('grid')}
               className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer ${
                 viewMode === 'grid'
-                  ? 'bg-white dark:bg-[#00e5ff]/20 text-[#0284c7] dark:text-[#00e5ff] shadow-sm border border-slate-200 dark:border-[#00e5ff]/30'
-                  : 'text-slate-500 hover:text-slate-900 dark:text-[#a3a29d] dark:hover:text-white'
+                  ? 'bg-white dark:bg-[#262930] text-teal-600 dark:text-[#5EEAD4] shadow-sm border border-zinc-200 dark:border-[#2DD4BF]/35'
+                  : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
               }`}
               title="Grid View"
             >
@@ -372,8 +372,8 @@ export const SednaView: React.FC<SednaViewProps> = ({
               onClick={() => setViewMode('table')}
               className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer ${
                 viewMode === 'table'
-                  ? 'bg-white dark:bg-[#00e5ff]/20 text-[#0284c7] dark:text-[#00e5ff] shadow-sm border border-slate-200 dark:border-[#00e5ff]/30'
-                  : 'text-slate-500 hover:text-slate-900 dark:text-[#a3a29d] dark:hover:text-white'
+                  ? 'bg-white dark:bg-[#262930] text-teal-600 dark:text-[#5EEAD4] shadow-sm border border-zinc-200 dark:border-[#2DD4BF]/35'
+                  : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
               }`}
               title="Table View"
             >
@@ -386,8 +386,8 @@ export const SednaView: React.FC<SednaViewProps> = ({
 
       {/* Main Content: Paginated Grid or Cleaned Table */}
       {filteredArcanes.length === 0 ? (
-        <div className="bg-white dark:bg-[#0b1019]/80 border border-slate-200 dark:border-white/[0.08] rounded-3xl p-16 text-center">
-          <p className="text-base text-slate-500 dark:text-[#a3a29d]">
+        <div className="bg-white dark:bg-[#121316] border border-zinc-200 dark:border-white/[0.08] rounded-3xl p-16 text-center">
+          <p className="text-base text-zinc-500 dark:text-zinc-400">
             {lang === 'ru' ? 'Мистификаторы не найдены. Измените параметры поиска.' : 'No arcanes found matching your query.'}
           </p>
         </div>
@@ -403,10 +403,10 @@ export const SednaView: React.FC<SednaViewProps> = ({
           ))}
         </div>
       ) : (
-        <div className="w-full bg-white dark:bg-[#0b1019] border border-slate-200 dark:border-white/[0.1] rounded-3xl overflow-x-auto shadow-2xl">
+        <div className="w-full bg-white dark:bg-[#121316] border border-zinc-200 dark:border-white/[0.08] rounded-3xl overflow-x-auto shadow-2xl">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-white/[0.08] bg-slate-100/90 dark:bg-[#060a12]/90 text-xs text-slate-500 dark:text-[#a3a29d] uppercase select-none font-comfortaa">
+              <tr className="border-b border-zinc-200 dark:border-white/[0.07] bg-zinc-100/90 dark:bg-[#181A1E] text-xs text-zinc-500 dark:text-zinc-400 uppercase select-none font-comfortaa">
                 <th className="py-4 px-6">{lang === 'ru' ? 'Мистификатор' : 'Arcane'}</th>
                 <th className="py-4 px-6 text-right">{lang === 'ru' ? 'Ранг 0 (Мин / Сред)' : 'Rank 0 (Min / Avg)'}</th>
                 <th className="py-4 px-6 text-right">{lang === 'ru' ? 'Ранг Max (Мин / Сред)' : 'Max Rank (Min / Avg)'}</th>
@@ -414,7 +414,7 @@ export const SednaView: React.FC<SednaViewProps> = ({
                 <th className="py-4 px-6 text-center">{lang === 'ru' ? 'Действия' : 'Actions'}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200/60 dark:divide-white/[0.04]">
+            <tbody className="divide-y divide-zinc-200/60 dark:divide-white/[0.04]">
               {paginatedArcanes.map((arcane) => {
                 const maxRank = (arcane as any).maxRank || 5;
                 const displayName = lang === 'ru' && arcane.nameRu ? arcane.nameRu : arcane.name;
@@ -424,7 +424,7 @@ export const SednaView: React.FC<SednaViewProps> = ({
                     key={arcane.urlName || arcane.id}
                     onClick={() => onOpenDetails(arcane)}
                     onMouseEnter={() => prefetchArcaneDetails(arcane.urlName || (arcane as any).slug || (arcane as any).id)}
-                    className="hover:bg-slate-50 dark:hover:bg-[#00e5ff]/[0.04] cursor-pointer transition-colors group"
+                    className="hover:bg-zinc-50 dark:hover:bg-[#1E2026] cursor-pointer transition-colors group"
                   >
                     <td className="py-3.5 px-6">
                       <div className="flex items-center gap-3.5">
@@ -442,10 +442,10 @@ export const SednaView: React.FC<SednaViewProps> = ({
                           }}
                         />
                         <div className="min-w-0">
-                          <span className="font-comfortaa text-base font-bold text-slate-900 dark:text-white group-hover:text-[#0284c7] dark:group-hover:text-[#00e5ff] transition-colors block truncate">
+                          <span className="font-comfortaa text-base font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-teal-600 dark:group-hover:text-[#5EEAD4] transition-colors block truncate">
                             {displayName}
                           </span>
-                          <span className="text-xs text-emerald-600 dark:text-[#10b981] font-sans font-medium block truncate">
+                          <span className="text-xs text-emerald-600 dark:text-[#4ADE80] font-sans font-medium block truncate">
                             Max R{maxRank}
                           </span>
                         </div>
@@ -454,25 +454,25 @@ export const SednaView: React.FC<SednaViewProps> = ({
 
                     <td className="py-3.5 px-6 text-right">
                       <div className="font-bold text-base font-sans flex items-center justify-end gap-1">
-                        <span className="text-slate-900 dark:text-white font-bold">{arcane.rank0.minPrice}</span>
-                        <PlatinumIcon size={13} className="text-[#00e5ff] inline ml-0.5" />
+                        <span className="text-zinc-900 dark:text-zinc-100 font-bold">{arcane.rank0.minPrice}</span>
+                        <PlatinumIcon size={13} className="text-[#2DD4BF] inline ml-0.5" />
                       </div>
-                      <div className="text-xs text-slate-500 dark:text-[#a3a29d] font-sans">
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400 font-sans">
                         {lang === 'ru' ? 'ср' : 'avg'}: {arcane.rank0.avgPrice}
                       </div>
                     </td>
 
                     <td className="py-3.5 px-6 text-right">
                       <div className="font-bold text-base font-sans flex items-center justify-end gap-1">
-                        <span className="text-[#0284c7] dark:text-[#00e5ff] font-bold drop-shadow-[0_0_8px_rgba(0,229,255,0.4)]">{arcane.rank5.minPrice}</span>
-                        <PlatinumIcon size={13} className="text-[#00e5ff] inline ml-0.5" />
+                        <span className="text-teal-600 dark:text-[#5EEAD4] font-bold drop-shadow-[0_0_8px_rgba(45,212,191,0.3)]">{arcane.rank5.minPrice}</span>
+                        <PlatinumIcon size={13} className="text-[#2DD4BF] inline ml-0.5" />
                       </div>
-                      <div className="text-xs text-slate-500 dark:text-[#a3a29d] font-sans">
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400 font-sans">
                         {lang === 'ru' ? 'ср' : 'avg'}: {arcane.rank5.avgPrice}
                       </div>
                     </td>
 
-                    <td className="py-3.5 px-6 text-right text-sm text-slate-800 dark:text-[#e2e8f0] font-sans font-medium">
+                    <td className="py-3.5 px-6 text-right text-sm text-zinc-800 dark:text-zinc-200 font-sans font-medium">
                       {arcane.trades24h || arcane.volume24h || 0}
                     </td>
 
@@ -482,7 +482,7 @@ export const SednaView: React.FC<SednaViewProps> = ({
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-emerald-50 dark:bg-[#060a12] dark:hover:bg-[#10b981]/20 border border-slate-200 dark:border-[#10b981]/40 hover:border-emerald-500 text-xs font-comfortaa font-bold text-emerald-600 dark:text-[#34d399] transition-all inline-flex items-center gap-1.5"
+                        className="px-3.5 py-1.5 rounded-xl bg-zinc-100 hover:bg-emerald-50 dark:bg-[#181A1E] dark:hover:bg-emerald-500/15 border border-zinc-200 dark:border-emerald-400/30 hover:border-emerald-500 text-xs font-comfortaa font-bold text-emerald-600 dark:text-[#4ADE80] transition-all inline-flex items-center gap-1.5"
                         title="Открыть на warframe.market"
                       >
                         <span>WFM</span>
@@ -499,15 +499,15 @@ export const SednaView: React.FC<SednaViewProps> = ({
 
       {/* High-Performance Pagination Bar */}
       {filteredArcanes.length > 0 && totalPages > 1 && (
-        <div className="bg-white dark:bg-[#0b1019]/90 border border-slate-200 dark:border-white/[0.1] p-4 sm:p-5 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl select-none font-sans mt-8 transition-colors">
+        <div className="bg-white dark:bg-[#121316]/95 border border-zinc-200 dark:border-white/[0.08] p-4 sm:p-5 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl select-none font-sans mt-8 transition-colors">
           
           {/* Left: Range and Item counter */}
-          <div className="text-xs text-slate-600 dark:text-[#a3a29d] flex items-center gap-2">
+          <div className="text-xs text-zinc-600 dark:text-zinc-400 flex items-center gap-2">
             <span>
               {lang === 'ru' ? 'Показано' : 'Showing'}{' '}
-              <strong className="text-slate-900 dark:text-white font-semibold">{startItem}–{endItem}</strong>{' '}
+              <strong className="text-zinc-900 dark:text-zinc-100 font-semibold">{startItem}–{endItem}</strong>{' '}
               {lang === 'ru' ? 'из' : 'of'}{' '}
-              <strong className="text-[#0284c7] dark:text-[#00e5ff] font-semibold">{filteredArcanes.length}</strong>
+              <strong className="text-teal-700 dark:text-[#5EEAD4] font-semibold">{filteredArcanes.length}</strong>
             </span>
           </div>
 
@@ -517,7 +517,7 @@ export const SednaView: React.FC<SednaViewProps> = ({
             <button
               onClick={() => handlePageChange(1)}
               disabled={safeCurrentPage === 1}
-              className="p-2.5 rounded-xl bg-slate-100 dark:bg-[#060a12] border border-slate-200 dark:border-white/[0.08] text-slate-600 dark:text-[#a3a29d] hover:text-slate-900 dark:hover:text-white hover:border-[#00e5ff]/40 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+              className="p-2.5 rounded-xl bg-zinc-100 dark:bg-[#181A1E] border border-zinc-200 dark:border-white/[0.08] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:border-[#2DD4BF]/40 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
               title={lang === 'ru' ? 'Первая страница' : 'First page'}
             >
               <ChevronsLeft className="w-4 h-4" />
@@ -527,7 +527,7 @@ export const SednaView: React.FC<SednaViewProps> = ({
             <button
               onClick={() => handlePageChange(safeCurrentPage - 1)}
               disabled={safeCurrentPage === 1}
-              className="p-2.5 rounded-xl bg-slate-100 dark:bg-[#060a12] border border-slate-200 dark:border-white/[0.08] text-slate-600 dark:text-[#a3a29d] hover:text-slate-900 dark:hover:text-white hover:border-[#00e5ff]/40 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+              className="p-2.5 rounded-xl bg-zinc-100 dark:bg-[#181A1E] border border-zinc-200 dark:border-white/[0.08] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:border-[#2DD4BF]/40 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
               title={lang === 'ru' ? 'Предыдущая страница' : 'Previous page'}
             >
               <ChevronLeft className="w-4 h-4" />
@@ -537,7 +537,7 @@ export const SednaView: React.FC<SednaViewProps> = ({
             {getPageNumbers().map((p, idx) => {
               if (p === '...') {
                 return (
-                  <span key={`ellipsis-${idx}`} className="px-2 py-1 text-xs text-slate-400 dark:text-[#64748b]">
+                  <span key={`ellipsis-${idx}`} className="px-2 py-1 text-xs text-zinc-400 dark:text-zinc-600">
                     ...
                   </span>
                 );
@@ -552,8 +552,8 @@ export const SednaView: React.FC<SednaViewProps> = ({
                   onClick={() => handlePageChange(pageNum)}
                   className={`min-w-[40px] h-10 px-3 rounded-xl text-xs font-comfortaa font-bold transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-[#00e5ff] text-[#070a0e] shadow-[0_0_15px_rgba(0,229,255,0.45)] scale-105'
-                      : 'bg-slate-100 dark:bg-[#060a12] text-slate-600 dark:text-[#a3a29d] hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/[0.06] border border-slate-200 dark:border-white/[0.08]'
+                      ? 'bg-[#2DD4BF] text-[#0B0C0E] shadow-[0_0_15px_rgba(45,212,191,0.35)] scale-105'
+                      : 'bg-zinc-100 dark:bg-[#181A1E] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.08]'
                   }`}
                 >
                   {pageNum}
@@ -565,7 +565,7 @@ export const SednaView: React.FC<SednaViewProps> = ({
             <button
               onClick={() => handlePageChange(safeCurrentPage + 1)}
               disabled={safeCurrentPage === totalPages}
-              className="p-2.5 rounded-xl bg-slate-100 dark:bg-[#060a12] border border-slate-200 dark:border-white/[0.08] text-slate-600 dark:text-[#a3a29d] hover:text-slate-900 dark:hover:text-white hover:border-[#00e5ff]/40 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+              className="p-2.5 rounded-xl bg-zinc-100 dark:bg-[#181A1E] border border-zinc-200 dark:border-white/[0.08] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:border-[#2DD4BF]/40 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
               title={lang === 'ru' ? 'Следующая страница' : 'Next page'}
             >
               <ChevronRight className="w-4 h-4" />
@@ -575,7 +575,7 @@ export const SednaView: React.FC<SednaViewProps> = ({
             <button
               onClick={() => handlePageChange(totalPages)}
               disabled={safeCurrentPage === totalPages}
-              className="p-2.5 rounded-xl bg-slate-100 dark:bg-[#060a12] border border-slate-200 dark:border-white/[0.08] text-slate-600 dark:text-[#a3a29d] hover:text-slate-900 dark:hover:text-white hover:border-[#00e5ff]/40 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+              className="p-2.5 rounded-xl bg-zinc-100 dark:bg-[#181A1E] border border-zinc-200 dark:border-white/[0.08] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:border-[#2DD4BF]/40 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
               title={lang === 'ru' ? 'Последняя страница' : 'Last page'}
             >
               <ChevronsRight className="w-4 h-4" />
@@ -583,9 +583,9 @@ export const SednaView: React.FC<SednaViewProps> = ({
           </div>
 
           {/* Right: Items per page selector */}
-          <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-[#a3a29d]">
+          <div className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
             <span>{lang === 'ru' ? 'На странице:' : 'Per page:'}</span>
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#060a12] p-1 rounded-2xl border border-slate-200 dark:border-white/[0.08]">
+            <div className="flex items-center gap-1 bg-zinc-100 dark:bg-[#181A1E] p-1 rounded-2xl border border-zinc-200 dark:border-white/[0.08]">
               {[24, 48, 96].map((size) => (
                 <button
                   key={size}
@@ -595,8 +595,8 @@ export const SednaView: React.FC<SednaViewProps> = ({
                   }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-sans transition-all cursor-pointer ${
                     pageSize === size
-                      ? 'bg-[#00e5ff]/20 text-[#0284c7] dark:text-[#00e5ff] font-bold border border-[#00e5ff]/40'
-                      : 'text-slate-500 dark:text-[#71717a] hover:text-slate-900 dark:hover:text-white'
+                      ? 'bg-[#2DD4BF]/15 text-teal-700 dark:text-[#5EEAD4] font-bold border border-[#2DD4BF]/40'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
                   }`}
                 >
                   {size}

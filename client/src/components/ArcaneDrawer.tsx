@@ -72,7 +72,7 @@ const getRarityBadge = (rarity: string, lang: 'ru' | 'en') => {
     case 'Uncommon':
       return {
         label: lang === 'ru' ? 'НЕОБЫЧНЫЙ' : 'UNCOMMON',
-        style: 'bg-sky-400/15 border-sky-400/40 text-sky-300',
+        style: 'bg-teal-400/12 border-teal-400/35 text-[#5EEAD4]',
       };
     default:
       return {
@@ -449,12 +449,12 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
 
   // Sub-component: Chart Cockpit
   const renderChartCockpit = () => (
-    <div className="bg-[#04060a] border border-white/[0.08] rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-[inset_0_4px_30px_rgba(0,0,0,0.9)] relative">
+    <div className="bg-[#0E0F12] border border-white/[0.07] rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-[inset_0_4px_28px_rgba(0,0,0,0.85)] relative">
       {/* Scrubbing Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
         <div className="flex items-baseline gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-3xl font-mono font-bold text-white tracking-tight drop-shadow-[0_2px_10px_rgba(0,229,255,0.25)]">
+            <span className="text-3xl font-mono font-bold text-white tracking-tight drop-shadow-[0_2px_10px_rgba(45,212,191,0.22)]">
               {activePrice}
             </span>
             <PlatinumIcon size={22} />
@@ -463,8 +463,8 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
           <div
             className={`flex items-center gap-1 text-xs font-mono font-semibold px-2 py-0.5 rounded-md ${
               isPositive
-                ? 'bg-[#10b981]/20 text-[#34d399] border border-[#10b981]/30'
-                : 'bg-[#ef4444]/20 text-[#f87171] border border-[#ef4444]/30'
+                ? 'bg-emerald-500/15 text-[#4ADE80] border border-emerald-400/25'
+                : 'bg-rose-500/15 text-[#F87171] border border-rose-400/25'
             }`}
           >
             <span>{isPositive ? `+${priceChange}п` : `${priceChange}п`}</span>
@@ -473,9 +473,9 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
         </div>
 
         {/* Sliding Pill Timeframe Selector */}
-        <div className="relative flex items-center bg-[#080b12] p-1 rounded-xl border border-white/[0.08]">
+        <div className="relative flex items-center bg-[#16181C] p-1 rounded-xl border border-white/[0.07]">
           <div
-            className="absolute top-1 bottom-1 rounded-lg bg-[#00e5ff]/20 border border-[#00e5ff]/50 shadow-[0_0_12px_rgba(0,229,255,0.3)] transition-all duration-200 ease-out"
+            className="absolute top-1 bottom-1 rounded-lg bg-[#262930] border border-teal-400/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all duration-200 ease-out"
             style={{
               width: 'calc(25% - 2px)',
               left: `calc(${activeTfIndex * 25}% + 1px)`,
@@ -490,7 +490,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
                 setHoveredPoint(null);
               }}
               className={`relative z-10 w-11 py-1 text-center text-xs uppercase font-mono font-semibold transition-colors duration-150 ${
-                timeframe === tf ? 'text-[#00e5ff]' : 'text-[#71717a] hover:text-white'
+                timeframe === tf ? 'text-[#5EEAD4]' : 'text-zinc-500 hover:text-white'
               }`}
             >
               {tf}
@@ -500,21 +500,21 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
       </div>
 
       {/* Subheader: Hover Status line */}
-      <div className="flex items-center justify-between text-xs font-mono text-[#94a3b8]">
-        <span className="text-[#00e5ff] uppercase tracking-wider font-semibold flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-[#00e5ff]" />
+      <div className="flex items-center justify-between text-xs font-mono text-zinc-400">
+        <span className="text-[#5EEAD4] uppercase tracking-wider font-semibold flex items-center gap-2">
+          <TrendingUp className="w-4 h-4 text-[#2DD4BF]" />
           {lang === 'ru' ? 'МЕДИАНА ЦЕН И ОБЪЕМ ТОРГОВ' : 'MEDIAN PRICE & VOLUME'}
         </span>
 
         {activePoint ? (
           <span className="flex items-center gap-1.5 text-white font-medium bg-white/[0.06] px-2.5 py-0.5 rounded-lg border border-white/[0.1] shadow-sm">
-            <Calendar className="w-3.5 h-3.5 text-[#00e5ff]" />
+            <Calendar className="w-3.5 h-3.5 text-[#2DD4BF]" />
             <span>{activePoint.timeLabel}</span>
-            <span className="text-[#94a3b8]">|</span>
-            <span className="text-[#34d399] font-normal">{activePoint.volume} {lang === 'ru' ? 'сделок' : 'deals'}</span>
+            <span className="text-zinc-400">|</span>
+            <span className="text-[#4ADE80] font-normal">{activePoint.volume} {lang === 'ru' ? 'сделок' : 'deals'}</span>
           </span>
         ) : (
-          <span className="text-[#64748b] text-[11px]">
+          <span className="text-zinc-500 text-[11px]">
             {lang === 'ru' ? 'Наведите на график для телеметрии' : 'Hover over chart for telemetry'}
           </span>
         )}
@@ -538,14 +538,14 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
             </filter>
 
             <linearGradient id="nativeAreaGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#00e5ff" stopOpacity="0.28" />
-              <stop offset="85%" stopColor="#00e5ff" stopOpacity="0.02" />
-              <stop offset="100%" stopColor="#00e5ff" stopOpacity="0" />
+              <stop offset="0%" stopColor="#5EEAD4" stopOpacity="0.26" />
+              <stop offset="85%" stopColor="#2DD4BF" stopOpacity="0.02" />
+              <stop offset="100%" stopColor="#2DD4BF" stopOpacity="0" />
             </linearGradient>
 
             <linearGradient id="volBarGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#10b981" stopOpacity="0.45" />
-              <stop offset="100%" stopColor="#10b981" stopOpacity="0.08" />
+              <stop offset="0%" stopColor="#34D399" stopOpacity="0.42" />
+              <stop offset="100%" stopColor="#34D399" stopOpacity="0.08" />
             </linearGradient>
           </defs>
 
@@ -567,7 +567,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
                 <text
                   x={svgWidth - padRight + 8}
                   y={y + 4}
-                  fill="#94a3b8"
+                  fill="#A1A1AA"
                   fontSize="11"
                   fontFamily="JetBrains Mono"
                 >
@@ -598,21 +598,21 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
           {/* Area Gradient Fill */}
           {areaPath && <path d={areaPath} fill="url(#nativeAreaGrad)" />}
 
-          {/* Multi-Layer Void Beam */}
+          {/* Multi-Layer Mint Beam */}
           {curvePath && (
             <>
               <path
                 d={curvePath}
                 fill="none"
-                stroke="#00e5ff"
+                stroke="#2DD4BF"
                 strokeWidth="6"
-                opacity="0.3"
+                opacity="0.28"
                 filter="url(#voidBeamGlow)"
               />
               <path
                 d={curvePath}
                 fill="none"
-                stroke="#00e5ff"
+                stroke="#2DD4BF"
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -641,8 +641,8 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
                 cx={c.x}
                 cy={c.y}
                 r="3.5"
-                fill="#0c1017"
-                stroke="#00e5ff"
+                fill="#16181C"
+                stroke="#2DD4BF"
                 strokeWidth="2"
               />
             );
@@ -659,7 +659,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
                 x={c.x}
                 y={svgHeight - 10}
                 textAnchor="middle"
-                fill="#94a3b8"
+                fill="#A1A1AA"
                 fontSize="11"
                 fontFamily="JetBrains Mono"
               >
@@ -676,7 +676,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
                 y1={padTop}
                 x2={hoveredPoint.x}
                 y2={padTop + plotHeight}
-                stroke="#00e5ff"
+                stroke="#2DD4BF"
                 strokeWidth="1.5"
                 strokeDasharray="3 3"
                 opacity="0.75"
@@ -685,15 +685,15 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
                 cx={hoveredPoint.x}
                 cy={hoveredPoint.y}
                 r="7"
-                fill="#00e5ff"
-                opacity="0.35"
+                fill="#5EEAD4"
+                opacity="0.32"
               />
               <circle
                 cx={hoveredPoint.x}
                 cy={hoveredPoint.y}
                 r="4.5"
                 fill="#ffffff"
-                stroke="#00e5ff"
+                stroke="#2DD4BF"
                 strokeWidth="2"
               />
             </g>
@@ -702,7 +702,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
 
         {/* Sleek non-blocking top shimmer pulse while fresh history streams in */}
         {isLoadingDetails && (
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#00e5ff] to-transparent animate-pulse z-20 pointer-events-none rounded-t-xl" />
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#2DD4BF] to-transparent animate-pulse z-20 pointer-events-none rounded-t-xl" />
         )}
 
         {/* Floating Tooltip */}
@@ -713,7 +713,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
 
           return (
             <div
-              className="absolute pointer-events-none bg-[#0a101d]/95 backdrop-blur-md border border-[#00e5ff]/60 px-3 py-1.5 rounded-xl shadow-[0_12px_40px_rgba(0,0,0,0.9)] text-xs font-mono z-30 transition-all duration-75"
+              className="absolute pointer-events-none bg-[#181A1E]/95 backdrop-blur-md border border-[#2DD4BF]/50 px-3 py-1.5 rounded-xl shadow-[0_12px_40px_rgba(0,0,0,0.9)] text-xs font-mono z-30 transition-all duration-75"
               style={{
                 left: `${leftPercent}%`,
                 top: `${topPercent}%`,
@@ -722,15 +722,15 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
                   : 'translate(-50%, calc(-100% - 14px))',
               }}
             >
-              <div className="text-[11px] text-[#94a3b8] flex items-center gap-1.5 pb-1 border-b border-white/[0.06]">
-                <Calendar className="w-3 h-3 text-[#00e5ff]" />
+              <div className="text-[11px] text-zinc-400 flex items-center gap-1.5 pb-1 border-b border-white/[0.06]">
+                <Calendar className="w-3 h-3 text-[#2DD4BF]" />
                 <span className="font-medium text-white">{hoveredPoint.point.timeLabel}</span>
               </div>
               <div className="text-white font-bold flex items-center gap-2 mt-1">
-                <span className="text-[#00e5ff] text-sm flex items-center gap-1 font-mono">
+                <span className="text-[#5EEAD4] text-sm flex items-center gap-1 font-mono">
                   {hoveredPoint.point.price} <PlatinumIcon size={14} />
                 </span>
-                <span className="text-[#94a3b8] font-normal text-[11px]">
+                <span className="text-zinc-400 font-normal text-[11px]">
                   ({hoveredPoint.point.volume} {lang === 'ru' ? 'сделок' : 'deals'})
                 </span>
               </div>
@@ -751,44 +751,44 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(0,229,255,0.08)_0%,transparent_70%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(45,212,191,0.06)_0%,transparent_70%)] pointer-events-none" />
 
       {/* High-Tech Glassmorphic Modal Frame */}
       <div
         className={`relative w-full ${
           arcane.isSet ? 'max-w-5xl' : 'max-w-2xl'
-        } max-h-[92vh] overflow-y-auto bg-gradient-to-b from-[#0c1017]/98 via-[#080b11]/98 to-[#04060a]/98 border border-white/[0.12] rounded-3xl p-5 sm:p-7 shadow-[0_30px_100px_rgba(0,0,0,0.95),0_0_60px_rgba(0,229,255,0.12)] font-sans text-left select-none animate-in zoom-in-95 duration-200 cursor-default`}
+        } max-h-[92vh] overflow-y-auto bg-gradient-to-b from-[#16181C]/98 via-[#121316]/98 to-[#0E0F12]/98 border border-white/[0.1] rounded-3xl p-5 sm:p-7 shadow-[0_30px_100px_rgba(0,0,0,0.95),inset_0_1px_0_rgba(255,255,255,0.07)] font-sans text-left select-none animate-in zoom-in-95 duration-200 cursor-default`}
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <div className="absolute top-0 left-8 right-8 h-[1.5px] bg-gradient-to-r from-transparent via-[#00e5ff]/60 to-transparent pointer-events-none" />
+        <div className="absolute top-0 left-8 right-8 h-[1.5px] bg-gradient-to-r from-transparent via-[#2DD4BF]/50 to-transparent pointer-events-none" />
 
-        <div className="absolute top-3.5 left-3.5 w-3.5 h-3.5 border-t border-l border-[#00e5ff]/35 pointer-events-none" />
-        <div className="absolute top-3.5 right-3.5 w-3.5 h-3.5 border-t border-r border-[#00e5ff]/35 pointer-events-none" />
-        <div className="absolute bottom-3.5 left-3.5 w-3.5 h-3.5 border-b border-l border-[#00e5ff]/35 pointer-events-none" />
-        <div className="absolute bottom-3.5 right-3.5 w-3.5 h-3.5 border-b border-r border-[#00e5ff]/35 pointer-events-none" />
+        <div className="absolute top-3.5 left-3.5 w-3.5 h-3.5 border-t border-l border-[#2DD4BF]/30 pointer-events-none" />
+        <div className="absolute top-3.5 right-3.5 w-3.5 h-3.5 border-t border-r border-[#2DD4BF]/30 pointer-events-none" />
+        <div className="absolute bottom-3.5 left-3.5 w-3.5 h-3.5 border-b border-l border-[#2DD4BF]/30 pointer-events-none" />
+        <div className="absolute bottom-3.5 right-3.5 w-3.5 h-3.5 border-b border-r border-[#2DD4BF]/30 pointer-events-none" />
 
-        <div className="absolute inset-0 warframe-grid opacity-15 pointer-events-none" />
+        <div className="absolute inset-0 [background-image:linear-gradient(to_right,rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)] [background-size:40px_40px] opacity-40 pointer-events-none" />
 
         {/* Close Button with ESC */}
         <button
           onClick={onClose}
-          className="group/close absolute top-5 right-5 z-20 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#080b11]/90 hover:bg-[#00e5ff]/10 text-[#a3a29d] hover:text-[#00e5ff] border border-white/[0.1] hover:border-[#00e5ff]/50 transition-all duration-200"
+          className="group/close absolute top-5 right-5 z-20 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#181A1E]/90 hover:bg-[#24272D] text-zinc-400 hover:text-[#5EEAD4] border border-white/[0.09] hover:border-[#2DD4BF]/40 transition-all duration-200"
           title={lang === 'ru' ? 'Закрыть (Esc)' : 'Close (Esc)'}
         >
-          <span className="text-[10px] text-[#64748b] group-hover/close:text-[#00e5ff] font-mono tracking-wider">ESC</span>
+          <span className="text-[10px] text-zinc-500 group-hover/close:text-[#5EEAD4] font-mono tracking-wider">ESC</span>
           <X className="w-4 h-4 group-hover/close:rotate-90 transition-transform duration-300" />
         </button>
 
         {/* Modal Header */}
         <div className="relative z-10 flex items-center gap-4 sm:gap-5 border-b border-white/[0.08] pb-5">
           <div className="relative w-16 h-16 sm:w-18 sm:h-18 shrink-0 flex flex-col items-center justify-center">
-            <div className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_center,rgba(0,229,255,0.3)_0%,rgba(16,185,129,0.15)_50%,transparent_75%)] opacity-90 pointer-events-none" />
-            <div className="absolute inset-0 rounded-2xl bg-[#070b10] border border-[#00e5ff]/40 shadow-inner" />
+            <div className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_center,rgba(45,212,191,0.22)_0%,rgba(52,211,153,0.12)_50%,transparent_75%)] opacity-90 pointer-events-none" />
+            <div className="absolute inset-0 rounded-2xl bg-[#101215] border border-[#2DD4BF]/35 shadow-inner" />
             <img
               src={resolveAssetUrl(arcane.icon)}
               alt={displayName}
-              className="relative z-10 w-13 h-13 sm:w-14 sm:h-14 object-contain drop-shadow-[0_4px_14px_rgba(0,229,255,0.5)]"
+              className="relative z-10 w-13 h-13 sm:w-14 sm:h-14 object-contain drop-shadow-[0_4px_14px_rgba(45,212,191,0.35)]"
               onError={(e) => {
                 if (arcane.icon && !e.currentTarget.dataset.retried) {
                   e.currentTarget.dataset.retried = 'true';
@@ -818,8 +818,8 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
                 </>
               ) : (
                 <>
-                  <span className="inline-flex items-center gap-1 text-[10px] uppercase font-mono font-bold text-[#00e5ff] bg-[#00e5ff]/10 px-2 py-0.5 rounded border border-[#00e5ff]/30 tracking-wider">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#00e5ff] animate-pulse" />
+                  <span className="inline-flex items-center gap-1 text-[10px] uppercase font-mono font-bold text-[#5EEAD4] bg-[#2DD4BF]/10 px-2 py-0.5 rounded border border-[#2DD4BF]/30 tracking-wider">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#2DD4BF] animate-pulse" />
                     {lang === 'ru' ? 'ВОЙД-АРХИВ' : 'VOID CODEX'}
                   </span>
 
@@ -827,7 +827,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
                     {rarityBadge.label}
                   </span>
 
-                  <span className="text-[10px] font-mono text-[#a3a29d] bg-white/[0.05] px-2 py-0.5 rounded border border-white/[0.08]">
+                  <span className="text-[10px] font-mono text-zinc-400 bg-white/[0.05] px-2 py-0.5 rounded border border-white/[0.08]">
                     MAX: R{maxRank}
                   </span>
                 </>
@@ -838,12 +838,12 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
               {displayName}
             </h2>
 
-            <div className="flex items-center gap-2 mt-0.5 text-xs text-[#a3a29d]">
+            <div className="flex items-center gap-2 mt-0.5 text-xs text-zinc-400">
               <span className="font-mono truncate">{arcane.name}</span>
               {arcane.source && arcane.source !== 'Warframe Market' && (
                 <>
                   <span className="text-white/20">•</span>
-                  <span className="text-[11px] text-[#71717a] truncate">{arcane.source}</span>
+                  <span className="text-[11px] text-zinc-500 truncate">{arcane.source}</span>
                 </>
               )}
             </div>
@@ -855,22 +855,22 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
           /* PRIME SET OVERVIEW & ARBITRAGE CALCULATOR */
           <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-3 my-4">
             {/* Set Price Card */}
-            <div className="relative p-4 rounded-2xl border border-[#00e5ff]/40 bg-gradient-to-b from-[#0a1e2c] to-[#050c14] shadow-[0_0_24px_rgba(0,229,255,0.2)]">
-              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#00e5ff] to-transparent" />
+            <div className="relative p-4 rounded-2xl border border-[#2DD4BF]/35 bg-gradient-to-b from-[#172022] to-[#121417] shadow-[0_0_24px_rgba(45,212,191,0.12)]">
+              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#2DD4BF] to-transparent" />
               <div className="flex items-center justify-between text-xs font-medium">
-                <span className="text-[#00e5ff] font-bold flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#00e5ff] animate-pulse" />
+                <span className="text-[#5EEAD4] font-bold flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#2DD4BF] animate-pulse" />
                   {lang === 'ru' ? 'ПОЛНЫЙ КОМПЛЕКТ (СЕТ)' : 'COMPLETE PRIME SET'}
                 </span>
-                <span className="text-[11px] text-[#00e5ff] bg-[#00e5ff]/15 px-2 py-0.5 rounded border border-[#00e5ff]/35 font-mono font-semibold flex items-center gap-1">
-                  <Flame className="w-3 h-3 text-[#00e5ff]" />
+                <span className="text-[11px] text-[#5EEAD4] bg-[#2DD4BF]/12 px-2 py-0.5 rounded border border-[#2DD4BF]/30 font-mono font-semibold flex items-center gap-1">
+                  <Flame className="w-3 h-3 text-[#2DD4BF]" />
                   {arcane.trades24h || 0} {lang === 'ru' ? 'сделок' : 'deals'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between mt-2.5">
                 <div>
-                  <span className="text-[10px] text-[#94a3b8] uppercase font-mono block">
+                  <span className="text-[10px] text-zinc-400 uppercase font-mono block">
                     {lang === 'ru' ? 'Средняя цена продаж 24ч' : '24h Average Sold'}
                   </span>
                   <div className="flex items-center gap-2 mt-0.5">
@@ -882,15 +882,15 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
                 </div>
 
                 <div className="text-right border-l border-white/[0.08] pl-4">
-                  <span className="text-[10px] text-[#94a3b8] uppercase font-mono block">
+                  <span className="text-[10px] text-zinc-400 uppercase font-mono block">
                     {lang === 'ru' ? 'Мин. в стакане' : 'Min Order'}
                   </span>
-                  <div className="flex items-center justify-end gap-1.5 mt-1 font-mono text-base font-bold text-[#00e5ff]">
+                  <div className="flex items-center justify-end gap-1.5 mt-1 font-mono text-base font-bold text-[#5EEAD4]">
                     <span>{arcane.minPrice || activeMinPrice}</span>
                     <PlatinumIcon size={14} />
                   </div>
                   {(arcane.activeSellers ?? 0) > 0 && (
-                    <span className="text-[10px] text-[#64748b] block mt-0.5 font-sans">
+                    <span className="text-[10px] text-zinc-500 block mt-0.5 font-sans">
                       ({arcane.activeSellers} {lang === 'ru' ? 'онлайн' : 'online'})
                     </span>
                   )}
@@ -899,44 +899,44 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
             </div>
 
             {/* Arbitrage Calculator Card */}
-            <div className="relative p-4 rounded-2xl border border-white/[0.1] bg-[#070a0e]/90 flex flex-col justify-between">
+            <div className="relative p-4 rounded-2xl border border-white/[0.08] bg-[#14161A] flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between text-xs font-medium">
                   <span className="text-[#dfcf99] font-bold flex items-center gap-1.5">
                     <Layers className="w-3.5 h-3.5 text-[#dfcf99]" />
                     {lang === 'ru' ? 'АРБИТРАЖ (СЕТ VS ЧАСТИ)' : 'ARBITRAGE (SET VS PARTS)'}
                   </span>
-                  <span className="text-[11px] font-mono text-[#94a3b8]">
+                  <span className="text-[11px] font-mono text-zinc-400">
                     {parts.length} {lang === 'ru' ? 'компонентов' : 'components'}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-white/[0.06] font-mono text-xs">
                   <div>
-                    <span className="text-[10px] text-[#64748b] block">{lang === 'ru' ? 'Сумма частей:' : 'Parts sum:'}</span>
+                    <span className="text-[10px] text-zinc-500 block">{lang === 'ru' ? 'Сумма частей:' : 'Parts sum:'}</span>
                     <span className="text-sm font-bold text-white flex items-center gap-1 mt-0.5">
                       {partsSum > 0 ? partsSum : '...'} <PlatinumIcon size={13} />
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] text-[#64748b] block">{lang === 'ru' ? 'Разница:' : 'Difference:'}</span>
+                    <span className="text-[10px] text-zinc-500 block">{lang === 'ru' ? 'Разница:' : 'Difference:'}</span>
                     {partsSum > 0 ? (
-                      <span className={`text-sm font-bold flex items-center justify-end gap-1 mt-0.5 ${arbitrage.diff >= 0 ? 'text-[#34d399]' : 'text-amber-400'}`}>
+                      <span className={`text-sm font-bold flex items-center justify-end gap-1 mt-0.5 ${arbitrage.diff >= 0 ? 'text-[#4ADE80]' : 'text-amber-400'}`}>
                         {arbitrage.diff >= 0 ? `+${arbitrage.diff}` : arbitrage.diff} <PlatinumIcon size={13} />
                         <span className="text-[10px] opacity-80">({arbitrage.diff >= 0 ? `+${arbitrage.pct}%` : `${arbitrage.pct}%`})</span>
                       </span>
                     ) : (
-                      <span className="text-xs text-[#64748b] mt-0.5 block">—</span>
+                      <span className="text-xs text-zinc-500 mt-0.5 block">—</span>
                     )}
                   </div>
                 </div>
               </div>
 
-              <div className="mt-2 pt-2 border-t border-white/[0.06] text-[11px] text-[#94a3b8]">
+              <div className="mt-2 pt-2 border-t border-white/[0.06] text-[11px] text-zinc-400">
                 {partsSum > 0 ? (
                   arbitrage.diff > 0 ? (
-                    <span className="text-[#34d399] flex items-center gap-1">
-                      <Zap className="w-3 h-3 text-[#34d399]" />
+                    <span className="text-[#4ADE80] flex items-center gap-1">
+                      <Zap className="w-3 h-3 text-[#4ADE80]" />
                       {lang === 'ru' ? `Продажа сетом дает +${arbitrage.diff}п (+${arbitrage.pct}%) прибыли` : `Selling set gives +${arbitrage.diff}p (+${arbitrage.pct}%) profit`}
                     </span>
                   ) : (
@@ -946,7 +946,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
                     </span>
                   )
                 ) : (
-                  <span className="text-[#64748b]">{lang === 'ru' ? 'Загрузка цен компонентов...' : 'Loading part prices...'}</span>
+                  <span className="text-zinc-500">{lang === 'ru' ? 'Загрузка цен компонентов...' : 'Loading part prices...'}</span>
                 )}
               </div>
             </div>
@@ -962,20 +962,20 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
               }}
               className={`group/r0 relative p-3.5 sm:p-4 rounded-2xl border text-left transition-all duration-200 overflow-hidden ${
                 selectedRank === 0
-                  ? 'border-[#10b981] bg-gradient-to-b from-[#0a1b18] to-[#050e0e] shadow-[0_0_24px_rgba(16,185,129,0.25)]'
-                  : 'border-white/[0.08] bg-[#070a0e]/90 hover:border-white/20 hover:bg-[#0a0f16]'
+                  ? 'border-emerald-400/60 bg-gradient-to-b from-[#13201A] to-[#111514] shadow-[0_0_24px_rgba(74,222,128,0.14)]'
+                  : 'border-white/[0.08] bg-[#14161A] hover:border-white/20 hover:bg-[#1C1E24]'
               }`}
             >
               {selectedRank === 0 && (
-                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#10b981] to-transparent" />
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#4ADE80] to-transparent" />
               )}
               <div className="flex items-center justify-between text-xs font-medium">
-                <span className={selectedRank === 0 ? 'text-[#34d399] font-bold flex items-center gap-1.5' : 'text-[#a3a29d]'}>
-                  {selectedRank === 0 && <span className="w-1.5 h-1.5 rounded-full bg-[#34d399] animate-pulse" />}
+                <span className={selectedRank === 0 ? 'text-[#4ADE80] font-bold flex items-center gap-1.5' : 'text-zinc-400'}>
+                  {selectedRank === 0 && <span className="w-1.5 h-1.5 rounded-full bg-[#4ADE80] animate-pulse" />}
                   {lang === 'ru' ? 'РАНГ 0 (БАЗОВЫЙ)' : 'RANK 0 (BASE)'}
                 </span>
-                <span className="text-[11px] text-[#34d399] bg-[#10b981]/15 px-2 py-0.5 rounded border border-[#10b981]/30 font-mono font-medium flex items-center gap-1">
-                  <Flame className="w-3 h-3 text-[#34d399]" />
+                <span className="text-[11px] text-[#4ADE80] bg-emerald-500/12 px-2 py-0.5 rounded border border-emerald-400/25 font-mono font-medium flex items-center gap-1">
+                  <Flame className="w-3 h-3 text-[#4ADE80]" />
                   {arcane.rank0.sold24h ?? 0} {lang === 'ru' ? 'сделок' : 'deals'}
                 </span>
               </div>
@@ -987,14 +987,14 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
                 <PlatinumIcon size={20} />
               </div>
 
-              <div className="flex items-center justify-between text-xs text-[#94a3b8] mt-2 pt-2 border-t border-white/[0.06]">
+              <div className="flex items-center justify-between text-xs text-zinc-400 mt-2 pt-2 border-t border-white/[0.06]">
                 <span className="flex items-center gap-1 text-[11px]">
                   {lang === 'ru' ? 'Мин. в стакане:' : 'Min order:'}
                 </span>
                 <span className="text-white font-medium flex items-center gap-1.5 font-mono text-xs">
                   {arcane.rank0.minPrice} <PlatinumIcon size={12} />
                   {arcane.rank0.activeSellers > 0 && (
-                    <span className="text-[10px] text-slate-400 font-sans font-normal">
+                    <span className="text-[10px] text-zinc-400 font-sans font-normal">
                       ({arcane.rank0.activeSellers} {lang === 'ru' ? 'онлайн' : 'online'})
                     </span>
                   )}
@@ -1010,39 +1010,39 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
               }}
               className={`group/rMax relative p-3.5 sm:p-4 rounded-2xl border text-left transition-all duration-200 overflow-hidden ${
                 selectedRank === maxRank
-                  ? 'border-[#00e5ff] bg-gradient-to-b from-[#0a1e2c] to-[#050c14] shadow-[0_0_24px_rgba(0,229,255,0.25)]'
-                  : 'border-white/[0.08] bg-[#070a0e]/90 hover:border-white/20 hover:bg-[#0a0f16]'
+                  ? 'border-[#2DD4BF]/70 bg-gradient-to-b from-[#172224] to-[#121618] shadow-[0_0_24px_rgba(45,212,191,0.16)]'
+                  : 'border-white/[0.08] bg-[#14161A] hover:border-white/20 hover:bg-[#1C1E24]'
               }`}
             >
               {selectedRank === maxRank && (
-                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#00e5ff] to-transparent" />
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#2DD4BF] to-transparent" />
               )}
               <div className="flex items-center justify-between text-xs font-medium">
-                <span className={selectedRank === maxRank ? 'text-[#00e5ff] font-bold flex items-center gap-1.5' : 'text-[#a3a29d]'}>
-                  {selectedRank === maxRank && <span className="w-1.5 h-1.5 rounded-full bg-[#00e5ff] animate-pulse" />}
+                <span className={selectedRank === maxRank ? 'text-[#5EEAD4] font-bold flex items-center gap-1.5' : 'text-zinc-400'}>
+                  {selectedRank === maxRank && <span className="w-1.5 h-1.5 rounded-full bg-[#2DD4BF] animate-pulse" />}
                   {lang === 'ru' ? `МАКС РАНГ (R${maxRank})` : `MAX RANK (R${maxRank})`}
                 </span>
-                <span className="text-[11px] text-[#00e5ff] bg-[#00e5ff]/15 px-2 py-0.5 rounded border border-[#00e5ff]/35 font-mono font-semibold flex items-center gap-1">
-                  <Flame className="w-3 h-3 text-[#00e5ff]" />
+                <span className="text-[11px] text-[#5EEAD4] bg-[#2DD4BF]/12 px-2 py-0.5 rounded border border-[#2DD4BF]/30 font-mono font-semibold flex items-center gap-1">
+                  <Flame className="w-3 h-3 text-[#2DD4BF]" />
                   {arcane.rank5.sold24h ?? 0} {lang === 'ru' ? 'сделок' : 'deals'}
                 </span>
               </div>
 
               <div className="flex items-center gap-2 mt-2">
-                <span className="text-2xl sm:text-3xl font-bold font-mono text-[#00e5ff] tracking-tight">
+                <span className="text-2xl sm:text-3xl font-bold font-mono text-[#5EEAD4] tracking-tight">
                   {arcane.rank5.avgPrice}
                 </span>
                 <PlatinumIcon size={20} />
               </div>
 
-              <div className="flex items-center justify-between text-xs text-[#94a3b8] mt-2 pt-2 border-t border-white/[0.06]">
+              <div className="flex items-center justify-between text-xs text-zinc-400 mt-2 pt-2 border-t border-white/[0.06]">
                 <span className="flex items-center gap-1 text-[11px]">
                   {lang === 'ru' ? 'Мин. в стакане:' : 'Min order:'}
                 </span>
-                <span className="text-[#00e5ff] font-medium flex items-center gap-1.5 font-mono text-xs">
+                <span className="text-[#5EEAD4] font-medium flex items-center gap-1.5 font-mono text-xs">
                   {arcane.rank5.minPrice} <PlatinumIcon size={12} />
                   {arcane.rank5.activeSellers > 0 && (
-                    <span className="text-[10px] text-[#00e5ff]/70 font-sans font-normal">
+                    <span className="text-[10px] text-[#5EEAD4]/70 font-sans font-normal">
                       ({arcane.rank5.activeSellers} {lang === 'ru' ? 'онлайн' : 'online'})
                     </span>
                   )}
@@ -1061,14 +1061,14 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
             </div>
 
             {/* Right 5 Columns: Crafting Components List */}
-            <div className="lg:col-span-5 bg-[#04060a] border border-white/[0.08] rounded-2xl p-4 flex flex-col justify-between shadow-[inset_0_4px_30px_rgba(0,0,0,0.9)]">
+            <div className="lg:col-span-5 bg-[#0E0F12] border border-white/[0.07] rounded-2xl p-4 flex flex-col justify-between shadow-[inset_0_4px_28px_rgba(0,0,0,0.85)]">
               <div>
                 <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
                   <span className="text-xs font-mono font-bold text-[#dfcf99] uppercase tracking-wider flex items-center gap-1.5">
                     <Layers className="w-3.5 h-3.5 text-[#dfcf99]" />
                     {lang === 'ru' ? 'КОМПОНЕНТЫ ДЛЯ СБОРКИ' : 'CRAFTING COMPONENTS'}
                   </span>
-                  <span className="text-[11px] font-mono text-[#94a3b8]">
+                  <span className="text-[11px] font-mono text-zinc-400">
                     {isLoadingDetails && parts.length === 0 ? '...' : `${parts.length} ${lang === 'ru' ? 'дет.' : 'parts'}`}
                   </span>
                 </div>
@@ -1079,7 +1079,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
                     return (
                       <div key={p.slug || p.id} className="pt-2.5 pb-2.5 flex items-center justify-between gap-3 group/part">
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="relative w-9 h-9 rounded-xl bg-[#080b12] border border-white/[0.08] flex items-center justify-center shrink-0">
+                          <div className="relative w-9 h-9 rounded-xl bg-[#16181C] border border-white/[0.08] flex items-center justify-center shrink-0">
                             <img
                               src={resolveAssetUrl(p.icon)}
                               alt={partDisplayName}
@@ -1094,10 +1094,10 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
                             />
                           </div>
                           <div className="min-w-0">
-                            <div className="text-xs font-medium text-white truncate group-hover/part:text-[#00e5ff] transition-colors" title={partDisplayName}>
+                            <div className="text-xs font-medium text-white truncate group-hover/part:text-[#5EEAD4] transition-colors" title={partDisplayName}>
                               {partDisplayName}
                             </div>
-                            <div className="flex items-center gap-2 text-[10px] text-[#94a3b8] font-mono mt-0.5">
+                            <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-mono mt-0.5">
                               <span>{p.trades24h || 0} {lang === 'ru' ? 'сделок' : 'deals'}</span>
                               {p.ducats && p.ducats > 0 ? (
                                 <>
@@ -1114,7 +1114,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
                             <span>{p.avgPrice || p.minPrice}</span>
                             <PlatinumIcon size={14} />
                           </div>
-                          <div className="text-[10px] text-[#64748b]">
+                          <div className="text-[10px] text-zinc-500">
                             {lang === 'ru' ? 'мин:' : 'min:'} {p.minPrice || p.avgPrice}п
                             {(p.activeSellers ?? 0) > 0 && <span className="ml-1">({p.activeSellers})</span>}
                           </div>
@@ -1139,7 +1139,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
                   )}
 
                   {parts.length === 0 && !isLoadingDetails && (
-                    <div className="py-8 text-center text-xs text-[#64748b] font-mono">
+                    <div className="py-8 text-center text-xs text-zinc-500 font-mono">
                       {lang === 'ru' ? 'Нет данных о компонентах' : 'No components data'}
                     </div>
                   )}
@@ -1148,7 +1148,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
 
               {/* Parts Footer Total */}
               <div className="pt-3 mt-2 border-t border-white/[0.08] flex items-center justify-between text-xs font-mono">
-                <span className="text-[#94a3b8]">
+                <span className="text-zinc-400">
                   {lang === 'ru' ? 'Итого по частям:' : 'Total parts sum:'}
                 </span>
                 <span className="text-sm font-bold text-[#dfcf99] flex items-center gap-1">
@@ -1160,18 +1160,18 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
         ) : (
           /* REGULAR ARCANES BODY: Ribbon + Chart */
           <>
-            <div className="relative z-10 grid grid-cols-3 gap-2.5 mb-4 p-2.5 sm:p-3 rounded-xl bg-[#06090e]/95 border border-white/[0.08] text-xs font-mono">
+            <div className="relative z-10 grid grid-cols-3 gap-2.5 mb-4 p-2.5 sm:p-3 rounded-xl bg-[#101215] border border-white/[0.07] text-xs font-mono">
               <div className="flex flex-col">
-                <span className="text-[10px] text-[#64748b] uppercase tracking-wider flex items-center gap-1">
-                  <Activity className="w-3 h-3 text-[#00e5ff]" />
+                <span className="text-[10px] text-zinc-500 uppercase tracking-wider flex items-center gap-1">
+                  <Activity className="w-3 h-3 text-[#2DD4BF]" />
                   {lang === 'ru' ? 'СКОРОСТЬ СБЫТА' : 'VELOCITY'}
                 </span>
                 <div className="flex items-center gap-1.5 mt-1">
                   <span className="font-bold text-white text-xs sm:text-sm">~{salesPerHour}</span>
-                  <span className="text-[11px] text-[#94a3b8]">{lang === 'ru' ? 'сдел./ч' : 'deals/h'}</span>
+                  <span className="text-[11px] text-zinc-400">{lang === 'ru' ? 'сдел./ч' : 'deals/h'}</span>
                 </div>
                 <span className={`text-[10px] mt-0.5 truncate ${
-                  Number(salesPerHour) >= 4 ? 'text-[#34d399]' : Number(salesPerHour) >= 1 ? 'text-[#00e5ff]' : 'text-[#94a3b8]'
+                  Number(salesPerHour) >= 4 ? 'text-[#4ADE80]' : Number(salesPerHour) >= 1 ? 'text-[#5EEAD4]' : 'text-zinc-400'
                 }`}>
                   {Number(salesPerHour) >= 4
                     ? (lang === 'ru' ? '🔥 Высокий спрос' : '🔥 High Demand')
@@ -1182,21 +1182,21 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
               </div>
 
               <div className="flex flex-col border-x border-white/[0.06] px-2.5 sm:px-3">
-                <span className="text-[10px] text-[#64748b] uppercase tracking-wider flex items-center gap-1">
-                  <Zap className="w-3 h-3 text-[#10b981]" />
+                <span className="text-[10px] text-zinc-500 uppercase tracking-wider flex items-center gap-1">
+                  <Zap className="w-3 h-3 text-[#4ADE80]" />
                   {lang === 'ru' ? 'ДИСКОНТ СТАКАНА' : 'ORDER SPREAD'}
                 </span>
                 <div className="flex items-center gap-1 mt-1">
                   {orderSpread.hasDiscount ? (
                     <>
-                      <span className="font-bold text-[#34d399] text-xs sm:text-sm">-{orderSpread.diff}п</span>
-                      <span className="text-[11px] text-[#34d399]/80">(-{orderSpread.discountPct}%)</span>
+                      <span className="font-bold text-[#4ADE80] text-xs sm:text-sm">-{orderSpread.diff}п</span>
+                      <span className="text-[11px] text-[#4ADE80]/80">(-{orderSpread.discountPct}%)</span>
                     </>
                   ) : (
                     <span className="font-bold text-white text-xs sm:text-sm">0п (паритет)</span>
                   )}
                 </div>
-                <span className="text-[10px] text-[#94a3b8] mt-0.5 truncate">
+                <span className="text-[10px] text-zinc-400 mt-0.5 truncate">
                   {orderSpread.hasDiscount
                     ? (lang === 'ru' ? 'Ниже медианы' : 'Below median')
                     : (lang === 'ru' ? 'По медиане' : 'At median')}
@@ -1204,14 +1204,14 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
               </div>
 
               <div className="flex flex-col">
-                <span className="text-[10px] text-[#64748b] uppercase tracking-wider flex items-center gap-1">
+                <span className="text-[10px] text-zinc-500 uppercase tracking-wider flex items-center gap-1">
                   <TrendingUp className="w-3 h-3 text-[#dfcf99]" />
                   {lang === 'ru' ? 'ДИАПАЗОН ЦЕН' : 'PRICE RANGE'}
                 </span>
                 <div className="flex items-center gap-1 mt-1">
                   <span className="font-bold text-white text-xs sm:text-sm">{minPrice}–{maxPrice}п</span>
                 </div>
-                <span className="text-[10px] text-[#94a3b8] mt-0.5 truncate">
+                <span className="text-[10px] text-zinc-400 mt-0.5 truncate">
                   {lang === 'ru' ? `Размах: ${maxPrice - minPrice}п` : `Spread: ${maxPrice - minPrice}p`}
                 </span>
               </div>
@@ -1223,8 +1223,8 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
 
         {/* Modal Footer */}
         <div className="relative z-10 mt-5 pt-4 border-t border-white/[0.08] flex items-center justify-between text-xs font-mono">
-          <div className="flex items-center gap-2 text-[#64748b]">
-            <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
+          <div className="flex items-center gap-2 text-zinc-500">
+            <span className="w-2 h-2 rounded-full bg-[#4ADE80] animate-pulse" />
             <span className="tracking-wider uppercase font-medium">
               {lang === 'ru' ? 'СИНХРОНИЗИРОВАНО В РЕАЛЬНОМ ВРЕМЕНИ' : 'REAL-TIME MARKET TELEMETRY'}
             </span>
@@ -1234,7 +1234,7 @@ export const ArcaneDrawer: React.FC<ArcaneDrawerProps> = ({ arcane, onClose, lan
             href={`https://warframe.market/items/${arcane.urlName}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="group/link inline-flex items-center gap-1.5 py-1.5 px-3 rounded-lg text-[#71717a] hover:text-[#00e5ff] hover:bg-[#00e5ff]/10 border border-transparent hover:border-[#00e5ff]/30 transition-all duration-200 text-xs font-mono font-medium"
+            className="group/link inline-flex items-center gap-1.5 py-1.5 px-3 rounded-lg text-zinc-400 hover:text-[#5EEAD4] hover:bg-[#2DD4BF]/10 border border-transparent hover:border-[#2DD4BF]/30 transition-all duration-200 text-xs font-mono font-medium"
             title={lang === 'ru' ? 'Открыть страницу на warframe.market' : 'Open on warframe.market'}
           >
             <span className="tracking-wide">warframe.market</span>

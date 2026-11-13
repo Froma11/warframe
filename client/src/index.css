@@ -99,33 +99,33 @@
 }
 
 :root {
-  --bg: #04060a;
-  --surface-1: #090e17;
-  --surface-2: #0e1422;
-  --surface-3: #141c2e;
-  --line: rgba(255, 255, 255, 0.08);
-  --line-strong: rgba(255, 255, 255, 0.18);
-  --text: #e9e8e4;
-  --text-2: #a3a29d;
-  --text-3: #6b6a66;
-  --accent: #00e5ff;
-  --gain: #10b981;
-  --loss: #f43f5e;
+  --bg: #0B0C0E;
+  --surface-1: #121316;
+  --surface-2: #181A1E;
+  --surface-3: #24272D;
+  --line: rgba(255, 255, 255, 0.06);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --text: #F4F4F5;
+  --text-2: #A1A1AA;
+  --text-3: #63666E;
+  --accent: #2DD4BF;
+  --gain: #4ADE80;
+  --loss: #F87171;
 }
 
 :root.light {
-  --bg: #f8fafc;
+  --bg: #f4f4f5;
   --surface-1: #ffffff;
-  --surface-2: #f1f5f9;
-  --surface-3: #e2e8f0;
-  --line: rgba(15, 23, 42, 0.09);
-  --line-strong: rgba(15, 23, 42, 0.18);
-  --text: #0f172a;
-  --text-2: #475569;
-  --text-3: #94a3b8;
-  --accent: #0284c7;
-  --gain: #059669;
-  --loss: #e11d48;
+  --surface-2: #f4f4f5;
+  --surface-3: #e4e4e7;
+  --line: rgba(24, 24, 27, 0.09);
+  --line-strong: rgba(24, 24, 27, 0.18);
+  --text: #18181b;
+  --text-2: #52525b;
+  --text-3: #a1a1aa;
+  --accent: #0d9488;
+  --gain: #16a34a;
+  --loss: #dc2626;
 }
 
 @layer base {
@@ -287,11 +287,11 @@
 }
 
 :root.light ::-webkit-scrollbar-thumb {
-  background: rgba(15, 23, 42, 0.18);
+  background: rgba(24, 24, 27, 0.18);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 229, 255, 0.5);
+  background: rgba(45, 212, 191, 0.45);
 }
 
 * {

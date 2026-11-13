@@ -59,13 +59,13 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = React.memo(({ arcane, onOpe
       onClick={() => onOpenDetails(arcane)}
       onMouseEnter={() => prefetchArcaneDetails(arcane.urlName || (arcane as any).slug || (arcane as any).id)}
       onMouseMove={handleMouseMove}
-      className="group relative cursor-pointer bg-white dark:bg-[#080d16] hover:bg-slate-50 dark:hover:bg-[#0c121e] border border-slate-200 dark:border-white/[0.08] hover:border-transparent p-5 rounded-2xl transition-all duration-200 ease-out flex flex-col justify-between shadow-sm dark:shadow-[0_8px_24px_rgba(0,0,0,0.4)] hover:shadow-xl dark:hover:shadow-[0_16px_36px_rgba(0,0,0,0.7),0_0_24px_rgba(0,229,255,0.12)] hover:-translate-y-1 overflow-hidden select-none font-sans"
+      className="group relative cursor-pointer bg-white dark:bg-[#16181C] hover:bg-zinc-50 dark:hover:bg-[#1D1F25] border border-zinc-200 dark:border-white/[0.07] hover:border-transparent p-5 rounded-2xl transition-all duration-200 ease-out flex flex-col justify-between shadow-sm dark:shadow-[0_8px_24px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.05)] hover:shadow-xl dark:hover:shadow-[0_16px_36px_rgba(0,0,0,0.75),0_0_24px_rgba(45,212,191,0.10)] hover:-translate-y-1 overflow-hidden select-none font-sans"
     >
       {/* 1. INTERACTIVE SPOTLIGHT: Dynamic radial beam follows cursor along border */}
       <div
         className="pointer-events-none absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
         style={{
-          background: 'radial-gradient(320px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0, 229, 255, 0.45), rgba(16, 185, 129, 0.25) 40%, transparent 80%)',
+          background: 'radial-gradient(320px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(94, 234, 212, 0.42), rgba(52, 211, 153, 0.22) 40%, transparent 80%)',
           mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
           WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
           maskComposite: 'exclude',
@@ -78,7 +78,7 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = React.memo(({ arcane, onOpe
       <div
         className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
         style={{
-          background: 'radial-gradient(260px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0, 229, 255, 0.05), transparent 80%)',
+          background: 'radial-gradient(260px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(45, 212, 191, 0.05), transparent 80%)',
         }}
       />
 
@@ -88,16 +88,16 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = React.memo(({ arcane, onOpe
           {/* Holographic Energy Podium */}
           <div className="relative w-14 h-14 shrink-0 flex items-center justify-center">
             {/* Ambient Void Aura Bloom */}
-            <div className="absolute inset-0 rounded-xl bg-[radial-gradient(circle_at_center,rgba(0,229,255,0.22)_0%,rgba(16,185,129,0.12)_45%,transparent_75%)] opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300 pointer-events-none" />
+            <div className="absolute inset-0 rounded-xl bg-[radial-gradient(circle_at_center,rgba(45,212,191,0.18)_0%,rgba(52,211,153,0.10)_45%,transparent_75%)] opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300 pointer-events-none" />
             
             {/* Translucent Base Plate */}
-            <div className="absolute inset-0 rounded-xl bg-slate-100 dark:bg-[#05080f] border border-slate-200 dark:border-white/[0.08] group-hover:border-[#00e5ff]/40 shadow-inner transition-colors duration-200" />
+            <div className="absolute inset-0 rounded-xl bg-zinc-100 dark:bg-[#101215] border border-zinc-200 dark:border-white/[0.07] group-hover:border-[#2DD4BF]/40 shadow-inner transition-colors duration-200" />
             
             {/* Floating Artifact with spring levitation on hover */}
             <img
               src={resolveAssetUrl(arcane.icon)}
               alt={displayName}
-              className="relative z-10 w-11 h-11 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.15)] dark:drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)] group-hover:drop-shadow-[0_6px_14px_rgba(0,229,255,0.5)] group-hover:-translate-y-0.5 group-hover:scale-105 transition-all duration-200 ease-out select-none"
+              className="relative z-10 w-11 h-11 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.15)] dark:drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)] group-hover:drop-shadow-[0_6px_14px_rgba(45,212,191,0.35)] group-hover:-translate-y-0.5 group-hover:scale-105 transition-all duration-200 ease-out select-none"
               loading="lazy"
               decoding="async"
               onError={(e) => {
@@ -114,43 +114,43 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = React.memo(({ arcane, onOpe
             {/* Category / Rank badge */}
             <div className="flex items-center gap-2 mb-1">
               {arcane.isSet ? (
-                <span className="text-[10px] font-comfortaa font-bold text-amber-500 dark:text-[#fbbf24] bg-amber-500/10 dark:bg-[#fbbf24]/15 px-2 py-0.5 rounded-full border border-amber-500/30 dark:border-[#fbbf24]/35 uppercase tracking-wider">
+                <span className="text-[10px] font-comfortaa font-bold text-amber-600 dark:text-[#FB923C] bg-amber-500/10 dark:bg-orange-500/12 px-2 py-0.5 rounded-full border border-amber-500/30 dark:border-orange-400/25 uppercase tracking-wider">
                   PRIME SET
                 </span>
               ) : (
-                <span className="text-[10px] font-comfortaa font-bold text-emerald-600 dark:text-[#34d399] bg-emerald-500/10 dark:bg-[#10b981]/15 px-2 py-0.5 rounded-full border border-emerald-500/30 dark:border-[#10b981]/35 uppercase tracking-wider">
+                <span className="text-[10px] font-comfortaa font-bold text-emerald-600 dark:text-[#4ADE80] bg-emerald-500/10 dark:bg-emerald-500/12 px-2 py-0.5 rounded-full border border-emerald-500/25 dark:border-emerald-400/25 uppercase tracking-wider">
                   MAX: R{maxRank}
                 </span>
               )}
             </div>
 
-            <h3 className="font-comfortaa text-sm sm:text-base font-bold text-slate-900 dark:text-white group-hover:text-[#00e5ff] transition-colors truncate">
+            <h3 className="font-comfortaa text-sm sm:text-base font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-teal-700 dark:group-hover:text-[#5EEAD4] transition-colors truncate">
               {displayName}
             </h3>
 
             {/* Sparkline & Trade volume */}
-            <div className="flex items-center justify-between mt-1 text-xs text-slate-500 dark:text-slate-400">
+            <div className="flex items-center justify-between mt-1 text-xs text-zinc-500 dark:text-zinc-400">
               <span className="font-onest text-[11px]">{arcane.trades24h} {lang === 'ru' ? 'сделок / 24ч' : 'trades / 24h'}</span>
               
               <svg width={w} height={h} className="overflow-visible opacity-85 group-hover:opacity-100 transition-opacity">
                 <defs>
                   <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#00e5ff" stopOpacity="0.35" />
-                    <stop offset="100%" stopColor="#00e5ff" stopOpacity="0.0" />
+                    <stop offset="0%" stopColor="#5EEAD4" stopOpacity="0.32" />
+                    <stop offset="100%" stopColor="#34D399" stopOpacity="0.0" />
                   </linearGradient>
                 </defs>
 
                 <polygon fill={`url(#${gradId})`} points={areaPolyStr} />
                 <polyline
                   fill="none"
-                  stroke="#00e5ff"
+                  stroke="#2DD4BF"
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   points={polylineStr}
                 />
-                <circle cx={lastPoint.x} cy={lastPoint.y} r="3" fill="#00e5ff" className="animate-ping opacity-60" />
-                <circle cx={lastPoint.x} cy={lastPoint.y} r="2" fill="#ffffff" stroke="#00e5ff" strokeWidth="1.5" />
+                <circle cx={lastPoint.x} cy={lastPoint.y} r="3" fill="#5EEAD4" className="animate-ping opacity-60" />
+                <circle cx={lastPoint.x} cy={lastPoint.y} r="2" fill="#ffffff" stroke="#2DD4BF" strokeWidth="1.5" />
               </svg>
             </div>
           </div>
@@ -158,49 +158,49 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = React.memo(({ arcane, onOpe
 
         {/* REFINED PRICING HUD (No nested boxes) */}
         {arcane.isSet ? (
-          <div className="my-2.5 p-3 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/[0.06] flex items-center justify-between">
+          <div className="my-2.5 p-3 rounded-xl bg-zinc-50 dark:bg-[#111317] border border-zinc-200/80 dark:border-white/[0.06] flex items-center justify-between">
             <div className="flex flex-col">
-              <span className="text-[11px] font-comfortaa font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <span className="text-[11px] font-comfortaa font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                 {lang === 'ru' ? 'Средняя цена' : '24h Average'}
               </span>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-2xl font-jetbrains font-extrabold text-[#00e5ff] tabular-nums tracking-tight">
+                <span className="text-2xl font-jetbrains font-extrabold text-teal-600 dark:text-[#5EEAD4] tabular-nums tracking-tight">
                   {arcane.avgPrice || arcane.minPrice}
                 </span>
                 <PlatinumIcon size={18} />
               </div>
             </div>
 
-            <div className="flex flex-col items-end text-right border-l border-slate-200 dark:border-white/[0.06] pl-4">
-              <span className="text-[11px] text-slate-400 font-medium">
+            <div className="flex flex-col items-end text-right border-l border-zinc-200 dark:border-white/[0.06] pl-4">
+              <span className="text-[11px] text-zinc-400 font-medium">
                 {lang === 'ru' ? 'лучшая:' : 'min:'}
               </span>
-              <span className="text-sm font-jetbrains font-bold text-slate-800 dark:text-white tabular-nums flex items-center gap-1 mt-0.5">
+              <span className="text-sm font-jetbrains font-bold text-zinc-800 dark:text-zinc-100 tabular-nums flex items-center gap-1 mt-0.5">
                 {arcane.minPrice || arcane.avgPrice} <PlatinumIcon size={12} />
               </span>
               {(arcane.activeSellers ?? 0) > 0 && (
-                <span className="text-[10px] text-slate-400 font-mono mt-0.5">
+                <span className="text-[10px] text-zinc-400 font-mono mt-0.5">
                   ({arcane.activeSellers} {lang === 'ru' ? 'онлайн' : 'online'})
                 </span>
               )}
             </div>
           </div>
         ) : (
-          <div className="my-2.5 p-3 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/[0.06] grid grid-cols-2 gap-3 divide-x divide-slate-200 dark:divide-white/[0.06]">
+          <div className="my-2.5 p-3 rounded-xl bg-zinc-50 dark:bg-[#111317] border border-zinc-200/80 dark:border-white/[0.06] grid grid-cols-2 gap-3 divide-x divide-zinc-200 dark:divide-white/[0.06]">
             {/* Rank 0 Base Column */}
             <div className="flex flex-col justify-between pr-2">
-              <div className="text-[11px] font-comfortaa font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+              <div className="text-[11px] font-comfortaa font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
                 {lang === 'ru' ? 'Ранг 0 (база)' : 'Rank 0 (base)'}
               </div>
               <div className="flex items-center gap-1.5 my-0.5">
-                <span className="text-2xl font-jetbrains font-bold text-slate-900 dark:text-white tabular-nums tracking-tight">
+                <span className="text-2xl font-jetbrains font-bold text-zinc-900 dark:text-zinc-100 tabular-nums tracking-tight">
                   {arcane.rank0.avgPrice}
                 </span>
                 <PlatinumIcon size={18} />
               </div>
-              <div className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5">
+              <div className="text-[11px] text-zinc-400 dark:text-zinc-500 flex items-center gap-1 mt-0.5">
                 <span>{lang === 'ru' ? 'лучшая:' : 'min:'}</span>
-                <span className="font-jetbrains font-semibold text-slate-700 dark:text-slate-300 tabular-nums">
+                <span className="font-jetbrains font-semibold text-zinc-700 dark:text-zinc-300 tabular-nums">
                   {arcane.rank0.minPrice}
                 </span>
                 <PlatinumIcon size={11} />
@@ -209,18 +209,18 @@ export const ArcaneCard: React.FC<ArcaneCardProps> = React.memo(({ arcane, onOpe
 
             {/* Rank 5 Max Column */}
             <div className="flex flex-col justify-between pl-3.5">
-              <div className="text-[11px] font-comfortaa font-bold text-cyan-600 dark:text-[#00e5ff] uppercase tracking-wider mb-1 flex items-center justify-between">
+              <div className="text-[11px] font-comfortaa font-bold text-teal-600 dark:text-[#2DD4BF] uppercase tracking-wider mb-1 flex items-center justify-between">
                 <span>{lang === 'ru' ? `Макс (R${maxRank})` : `Max (R${maxRank})`}</span>
               </div>
               <div className="flex items-center gap-1.5 my-0.5">
-                <span className="text-2xl font-jetbrains font-extrabold text-cyan-600 dark:text-[#00e5ff] tabular-nums tracking-tight drop-shadow-[0_0_8px_rgba(0,229,255,0.25)]">
+                <span className="text-2xl font-jetbrains font-extrabold text-teal-600 dark:text-[#5EEAD4] tabular-nums tracking-tight drop-shadow-[0_0_8px_rgba(45,212,191,0.22)]">
                   {arcane.rank5.avgPrice}
                 </span>
                 <PlatinumIcon size={18} />
               </div>
-              <div className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5">
+              <div className="text-[11px] text-zinc-400 dark:text-zinc-500 flex items-center gap-1 mt-0.5">
                 <span>{lang === 'ru' ? 'лучшая:' : 'min:'}</span>
-                <span className="font-jetbrains font-semibold text-slate-700 dark:text-slate-300 tabular-nums">
+                <span className="font-jetbrains font-semibold text-zinc-700 dark:text-zinc-300 tabular-nums">
                   {arcane.rank5.minPrice}
                 </span>
                 <PlatinumIcon size={11} />

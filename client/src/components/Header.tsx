@@ -33,7 +33,7 @@ export const Header: React.FC<HeaderProps> = ({
       className={`fixed top-0 left-0 right-0 h-[58px] backdrop-blur-xl px-4 sm:px-6 z-50 select-none transition-colors border-b ${
         isStarChart
           ? 'bg-[#03060b]/90 border-white/[0.08] text-white'
-          : 'bg-white/95 dark:bg-[#05080f]/95 border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-white'
+          : 'bg-white/95 dark:bg-[#0E0F12]/95 border-zinc-200 dark:border-white/[0.07] text-zinc-900 dark:text-zinc-100'
       }`}
     >
       <div className="max-w-[1920px] mx-auto h-full flex items-center justify-between gap-4 relative">
@@ -48,19 +48,19 @@ export const Header: React.FC<HeaderProps> = ({
             {onGoToStarChart && (
               <button
                 onClick={onGoToStarChart}
-                className="group relative flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-gradient-to-r from-cyan-500/10 via-sky-500/10 to-transparent hover:from-cyan-500/20 hover:to-sky-500/20 border border-cyan-500/30 hover:border-cyan-400 text-cyan-300 hover:text-white text-xs font-comfortaa font-bold transition-all duration-200 cursor-pointer shadow-[0_0_12px_rgba(0,229,255,0.15)] hover:shadow-[0_0_22px_rgba(0,229,255,0.35)] active:scale-95"
+                className="group relative flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-zinc-100 hover:bg-zinc-200/80 dark:bg-[#181A1E] dark:hover:bg-[#22252B] border border-zinc-300/80 dark:border-white/[0.08] dark:hover:border-teal-400/35 text-zinc-700 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-white text-xs font-comfortaa font-bold transition-all duration-200 cursor-pointer shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] active:scale-95"
                 title={lang === 'ru' ? 'Вернуться к Звездной карте' : 'Return to Star Chart'}
               >
-                <Compass className="w-3.5 h-3.5 text-[#00e5ff] group-hover:rotate-90 transition-transform duration-500 ease-out" />
+                <Compass className="w-3.5 h-3.5 text-teal-600 dark:text-[#2DD4BF] group-hover:rotate-90 transition-transform duration-500 ease-out" />
                 <span>{lang === 'ru' ? 'Звездная карта' : 'Star Chart'}</span>
               </button>
             )}
 
             {/* Subtle Divider */}
-            <div className="w-[1px] h-4 bg-slate-300 dark:bg-white/[0.1] mx-0.5" />
+            <div className="w-[1px] h-4 bg-zinc-300 dark:bg-white/[0.08] mx-0.5" />
 
             {/* 2. Frosted Floating Command Dock for Tabs */}
-            <div className="flex items-center gap-1 p-1 rounded-2xl bg-slate-100/90 dark:bg-[#070c18]/90 backdrop-blur-2xl border border-slate-200/90 dark:border-white/[0.08] shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
+            <div className="flex items-center gap-1 p-1 rounded-2xl bg-zinc-100/90 dark:bg-[#121316]/95 backdrop-blur-2xl border border-zinc-200/90 dark:border-white/[0.07] shadow-[0_4px_24px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.05)]">
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
                 const Icon = tab.icon;
@@ -70,18 +70,18 @@ export const Header: React.FC<HeaderProps> = ({
                     onClick={() => onSelectTab && onSelectTab(tab.id)}
                     className={`group relative flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-comfortaa font-bold transition-all duration-200 cursor-pointer active:scale-95 ${
                       isActive
-                        ? 'bg-gradient-to-r from-cyan-500/25 via-sky-500/20 to-cyan-500/25 border border-cyan-400/60 text-cyan-200 dark:text-white shadow-[0_0_18px_rgba(0,229,255,0.35)] scale-[1.02]'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/[0.06] border border-transparent'
+                        ? 'bg-white dark:bg-[#262930] border border-zinc-300/90 dark:border-white/[0.12] text-zinc-950 dark:text-white shadow-sm dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_4px_14px_rgba(0,0,0,0.35)] scale-[1.02]'
+                        : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-white/[0.05] border border-transparent'
                     }`}
                   >
                     <Icon className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${
-                      isActive ? 'text-cyan-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-cyan-400 group-hover:-translate-y-0.5'
+                      isActive ? 'text-teal-600 dark:text-[#2DD4BF]' : 'text-zinc-400 dark:text-zinc-500 group-hover:text-teal-600 dark:group-hover:text-[#5EEAD4] group-hover:-translate-y-0.5'
                     }`} />
                     <span>{lang === 'ru' ? tab.labelRu : tab.labelEn}</span>
 
-                    {/* Active Pulsing Indicator Pip */}
+                    {/* Active Indicator Pip */}
                     {isActive && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#00e5ff]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-teal-500 dark:bg-[#2DD4BF] shadow-[0_0_8px_rgba(45,212,191,0.75)]" />
                     )}
                   </button>
                 );
@@ -96,7 +96,7 @@ export const Header: React.FC<HeaderProps> = ({
           {!isStarChart && onGoToStarChart && (
             <button
               onClick={onGoToStarChart}
-              className="md:hidden p-2 rounded-xl bg-slate-100 dark:bg-white/[0.05] border border-slate-200 dark:border-white/[0.08] text-[#00e5ff]"
+              className="md:hidden p-2 rounded-xl bg-zinc-100 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.08] text-teal-600 dark:text-[#2DD4BF]"
               title={lang === 'ru' ? 'Звездная карта' : 'Star Chart'}
             >
               <Compass className="w-4 h-4" />
@@ -104,10 +104,10 @@ export const Header: React.FC<HeaderProps> = ({
           )}
 
           {/* Language Animated Segmented Slider */}
-          <div className="relative flex items-center p-0.5 rounded-full bg-slate-100 dark:bg-[#070b14] border border-slate-200 dark:border-white/[0.08] shadow-inner select-none">
+          <div className="relative flex items-center p-0.5 rounded-full bg-zinc-100 dark:bg-[#14161A] border border-zinc-200 dark:border-white/[0.07] shadow-inner select-none">
             {/* Sliding Thumb */}
             <div
-              className={`absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-full bg-gradient-to-r from-cyan-500 to-sky-500 shadow-[0_0_12px_rgba(0,229,255,0.4)] transition-transform duration-200 ease-out pointer-events-none ${
+              className={`absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-full bg-gradient-to-r from-[#5EEAD4] to-[#34D399] shadow-[0_0_10px_rgba(45,212,191,0.35)] transition-transform duration-200 ease-out pointer-events-none ${
                 lang === 'ru' ? 'left-0.5 translate-x-0' : 'left-0.5 translate-x-full'
               }`}
             />
@@ -116,8 +116,8 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => lang !== 'ru' && onToggleLang()}
               className={`relative z-10 px-2.5 py-1 text-[11px] font-comfortaa font-bold transition-colors cursor-pointer ${
                 lang === 'ru'
-                  ? 'text-slate-950'
-                  : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
+                  ? 'text-zinc-950'
+                  : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-white'
               }`}
             >
               RU
@@ -127,8 +127,8 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => lang !== 'en' && onToggleLang()}
               className={`relative z-10 px-2.5 py-1 text-[11px] font-comfortaa font-bold transition-colors cursor-pointer ${
                 lang === 'en'
-                  ? 'text-slate-950'
-                  : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
+                  ? 'text-zinc-950'
+                  : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-white'
               }`}
             >
               EN

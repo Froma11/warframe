@@ -133,7 +133,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ lang }) => {
           <div
             role="tablist"
             aria-label={lang === 'ru' ? 'Разделы профиля' : 'Profile sections'}
-            className="inline-flex items-center p-1 rounded-2xl bg-slate-200/75 dark:bg-[#070B13] border border-slate-300/80 dark:border-white/[0.08] shadow-[inset_0_2px_4px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_2px_6px_rgba(0,0,0,0.6)] w-full sm:w-auto"
+            className="inline-flex items-center p-1 rounded-2xl bg-zinc-200/75 dark:bg-[#0E0F12] border border-zinc-300/80 dark:border-white/[0.08] shadow-[inset_0_2px_4px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_2px_6px_rgba(0,0,0,0.6)] w-full sm:w-auto"
           >
             <button
               type="button"
@@ -142,21 +142,21 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ lang }) => {
               onClick={() => setActiveSubTab('notes')}
               className={`relative flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-comfortaa font-bold transition-all duration-200 cursor-pointer active:scale-[0.98] ${
                 activeSubTab === 'notes'
-                  ? 'bg-white dark:bg-[#101829] text-slate-900 dark:text-white border border-slate-200/90 dark:border-cyan-400/30 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12),0_4px_12px_rgba(0,0,0,0.45)]'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-transparent hover:bg-white/40 dark:hover:bg-white/[0.03]'
+                  ? 'bg-white dark:bg-[#24272D] text-zinc-900 dark:text-white border border-zinc-200/90 dark:border-[#2DD4BF]/35 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.10),0_4px_12px_rgba(0,0,0,0.45)]'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 border border-transparent hover:bg-white/40 dark:hover:bg-white/[0.03]'
               }`}
             >
               <FileText
                 className={`w-3.5 h-3.5 transition-colors ${
-                  activeSubTab === 'notes' ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400 dark:text-slate-500'
+                  activeSubTab === 'notes' ? 'text-teal-600 dark:text-[#2DD4BF]' : 'text-zinc-400 dark:text-zinc-500'
                 }`}
               />
               <span className="truncate">{lang === 'ru' ? 'Торговый блокнот & Скриншоты' : 'Trade Notes & Screenshots'}</span>
               <span
                 className={`px-1.5 py-0.5 rounded-md font-mono text-[10px] tabular-nums transition-colors ${
                   activeSubTab === 'notes'
-                    ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/25'
-                    : 'bg-slate-300/60 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400'
+                    ? 'bg-[#2DD4BF]/15 text-teal-700 dark:text-[#5EEAD4] border border-[#2DD4BF]/25'
+                    : 'bg-zinc-300/60 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-400'
                 }`}
               >
                 {notes.length}
@@ -170,13 +170,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ lang }) => {
               onClick={() => setActiveSubTab('guide')}
               className={`relative flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-comfortaa font-bold transition-all duration-200 cursor-pointer active:scale-[0.98] ${
                 activeSubTab === 'guide'
-                  ? 'bg-white dark:bg-[#101829] text-slate-900 dark:text-white border border-slate-200/90 dark:border-cyan-400/30 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12),0_4px_12px_rgba(0,0,0,0.45)]'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-transparent hover:bg-white/40 dark:hover:bg-white/[0.03]'
+                  ? 'bg-white dark:bg-[#24272D] text-zinc-900 dark:text-white border border-zinc-200/90 dark:border-[#2DD4BF]/35 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.10),0_4px_12px_rgba(0,0,0,0.45)]'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 border border-transparent hover:bg-white/40 dark:hover:bg-white/[0.03]'
               }`}
             >
               <Layers
                 className={`w-3.5 h-3.5 transition-colors ${
-                  activeSubTab === 'guide' ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400 dark:text-slate-500'
+                  activeSubTab === 'guide' ? 'text-teal-600 dark:text-[#2DD4BF]' : 'text-zinc-400 dark:text-zinc-500'
                 }`}
               />
               <span className="truncate">{lang === 'ru' ? 'Справочник слияния мистификаторов' : 'Arcane Fusion Codex'}</span>

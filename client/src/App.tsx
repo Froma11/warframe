@@ -126,7 +126,7 @@ export const App: React.FC = () => {
       className={`w-full flex flex-col font-sans antialiased select-none transition-colors duration-200 ${
         isStarChart
           ? 'h-screen overflow-hidden pt-[57px] bg-[#020509] text-[#e9e8e4]'
-          : 'min-h-screen pt-[57px] bg-slate-100 dark:bg-[#04060a] text-slate-900 dark:text-[#e9e8e4]'
+          : 'min-h-screen pt-[57px] bg-zinc-100 dark:bg-[#0B0C0E] text-zinc-900 dark:text-[#F4F4F5] dark:[background-image:radial-gradient(ellipse_75%_35%_at_50%_0%,rgba(45,212,191,0.045),transparent_70%)]'
       }`}
     >
       {/* 1. TOP STATUS BAR (Sticky / Fixed at top across all scroll positions) */}
@@ -155,7 +155,7 @@ export const App: React.FC = () => {
             <Suspense
               fallback={
                 <div className="flex-1 min-h-[50vh] flex items-center justify-center">
-                  <div className="w-8 h-8 rounded-full border-2 border-cyan-500/20 border-t-cyan-500 animate-spin" />
+                  <div className="w-8 h-8 rounded-full border-2 border-teal-400/20 border-t-teal-400 animate-spin" />
                 </div>
               }
             >

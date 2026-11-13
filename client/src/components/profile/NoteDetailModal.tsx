@@ -102,31 +102,31 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
       onMouseDown={handleBackdropClick}
     >
       <div
-        className="relative w-full max-w-2xl max-h-[92vh] bg-white dark:bg-[#090D16] border border-slate-200 dark:border-white/[0.09] rounded-3xl shadow-2xl dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_28px_70px_rgba(0,0,0,0.85)] text-left cursor-default flex flex-col overflow-hidden my-auto"
+        className="relative w-full max-w-2xl max-h-[92vh] bg-white dark:bg-[#121316] border border-zinc-200 dark:border-white/[0.09] rounded-3xl shadow-2xl dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_28px_70px_rgba(0,0,0,0.85)] text-left cursor-default flex flex-col overflow-hidden my-auto"
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Subtle Ambient Corner Gradient */}
         <div
           aria-hidden="true"
-          className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_0%_0%,rgba(6,182,212,0.07),transparent_48%)]"
+          className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_0%_0%,rgba(45,212,191,0.06),transparent_48%)]"
         />
 
         {/* Pinned Modal Header */}
-        <div className="relative z-10 flex items-center justify-between gap-3 px-5 sm:px-6 py-4 border-b border-slate-200/80 dark:border-white/[0.07] shrink-0">
+        <div className="relative z-10 flex items-center justify-between gap-3 px-5 sm:px-6 py-4 border-b border-zinc-200/80 dark:border-white/[0.07] shrink-0">
           <div className="flex items-center gap-2.5 flex-wrap min-w-0">
             {note.tag ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/25 text-xs font-mono font-bold tracking-wide">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#2DD4BF]/10 text-teal-700 dark:text-[#5EEAD4] border border-[#2DD4BF]/25 text-xs font-mono font-bold tracking-wide">
                 <Tag className="w-3 h-3 opacity-85" />
                 <span>{note.tag}</span>
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-white/[0.05] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] text-[11px] font-mono font-semibold tracking-wider uppercase">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-white/[0.05] text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-white/[0.08] text-[11px] font-mono font-semibold tracking-wider uppercase">
                 {lang === 'ru' ? 'Заметка' : 'Note'}
               </span>
             )}
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono tabular-nums flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400/80" />
+            <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono tabular-nums flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-teal-600 dark:text-[#2DD4BF]" />
               <span>{formattedDate}</span>
             </span>
           </div>
@@ -135,7 +135,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label={lang === 'ru' ? 'Закрыть' : 'Close'}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.07] border border-transparent hover:border-slate-200 dark:hover:border-white/[0.08] active:scale-95 transition-all cursor-pointer shrink-0"
+            className="p-2 rounded-xl text-zinc-400 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.07] border border-transparent hover:border-zinc-200 dark:hover:border-white/[0.08] active:scale-95 transition-all cursor-pointer shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
@@ -146,7 +146,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
           {/* Multi-Image Hero Carousel / Viewer */}
           {allImages.length > 0 && (
             <div className="space-y-2.5">
-              <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-white/[0.08] bg-slate-950/90 dark:bg-[#060911] group/img flex items-center justify-center max-h-80 shadow-inner">
+              <div className="relative rounded-2xl overflow-hidden border border-zinc-200 dark:border-white/[0.08] bg-zinc-950/90 dark:bg-[#0B0C0E] group/img flex items-center justify-center max-h-80 shadow-inner">
                 <img
                   src={allImages[activeImgIndex] || allImages[0]}
                   alt="Attachment"
@@ -199,7 +199,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
                   <button
                     type="button"
                     onClick={handleDownloadActiveImage}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/80 hover:bg-cyan-500 hover:text-slate-950 text-white border border-white/10 text-xs font-comfortaa font-bold backdrop-blur-md transition-all cursor-pointer shadow-lg active:scale-95 whitespace-nowrap"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/80 hover:bg-[#2DD4BF] hover:text-zinc-950 text-white border border-white/10 text-xs font-comfortaa font-bold backdrop-blur-md transition-all cursor-pointer shadow-lg active:scale-95 whitespace-nowrap"
                     title={lang === 'ru' ? 'Скачать это фото' : 'Download photo'}
                   >
                     <Download className="w-3.5 h-3.5" />
@@ -230,8 +230,8 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
                       onClick={() => setActiveImgIndex(i)}
                       className={`relative w-14 h-14 rounded-xl overflow-hidden border transition-all shrink-0 cursor-pointer ${
                         activeImgIndex === i
-                          ? 'border-cyan-400 ring-2 ring-cyan-400/25'
-                          : 'border-slate-200 dark:border-white/[0.08] opacity-60 hover:opacity-100'
+                          ? 'border-[#2DD4BF] ring-2 ring-[#2DD4BF]/25'
+                          : 'border-zinc-200 dark:border-white/[0.08] opacity-60 hover:opacity-100'
                       }`}
                     >
                       <img src={img} alt="Thumb" className="w-full h-full object-cover" />
@@ -244,21 +244,21 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
 
           {/* Note Content Card */}
           {noteText && (
-            <div className="rounded-2xl bg-slate-50/90 dark:bg-[#0B101B] border border-slate-200/90 dark:border-white/[0.08] shadow-inner dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] overflow-hidden">
+            <div className="rounded-2xl bg-zinc-50/90 dark:bg-[#16181C] border border-zinc-200/90 dark:border-white/[0.08] shadow-inner dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] overflow-hidden">
               <div className="p-4 sm:p-5 break-words">
-                <div className="text-sm font-sans text-slate-800 dark:text-slate-200 leading-7 whitespace-pre-wrap select-text">
+                <div className="text-sm font-sans text-zinc-800 dark:text-zinc-200 leading-7 whitespace-pre-wrap select-text">
                   {renderTradeNoteContent(noteText)}
                 </div>
               </div>
 
               {/* Subtle Telemetry Footer inside text card */}
-              <div className="px-4 sm:px-5 py-2.5 border-t border-slate-200/70 dark:border-white/[0.05] bg-slate-100/60 dark:bg-[#070B13]/60 flex items-center justify-between gap-3 text-[11px] font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+              <div className="px-4 sm:px-5 py-2.5 border-t border-zinc-200/70 dark:border-white/[0.05] bg-zinc-100/60 dark:bg-[#141519] flex items-center justify-between gap-3 text-[11px] font-mono text-zinc-500 dark:text-zinc-400 tabular-nums">
                 <span>
                   {noteText.length} {lang === 'ru' ? 'симв.' : 'chars'}
                 </span>
                 {allImages.length > 0 && (
                   <span className="inline-flex items-center gap-1.5">
-                    <Images className="w-3 h-3 text-cyan-600 dark:text-cyan-400/80" />
+                    <Images className="w-3 h-3 text-teal-600 dark:text-[#2DD4BF]" />
                     <span>
                       {allImages.length} {lang === 'ru' ? 'скринш.' : 'img'}
                     </span>
@@ -270,7 +270,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
         </div>
 
         {/* Pinned Modal Action Footer */}
-        <div className="relative z-10 flex items-center justify-between gap-3 px-5 sm:px-6 py-4 border-t border-slate-200/80 dark:border-white/[0.07] bg-slate-50/60 dark:bg-[#070B13]/80 shrink-0">
+        <div className="relative z-10 flex items-center justify-between gap-3 px-5 sm:px-6 py-4 border-t border-zinc-200/80 dark:border-white/[0.07] bg-zinc-50/60 dark:bg-[#141519] shrink-0">
           {/* Primary Copy Action */}
           <button
             type="button"
@@ -278,7 +278,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
             className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-comfortaa font-bold whitespace-nowrap shrink-0 active:scale-[0.98] transition-all duration-150 cursor-pointer ${
               copied
                 ? 'bg-emerald-500/15 border border-emerald-500/40 text-emerald-700 dark:text-emerald-300 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]'
-                : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 border border-cyan-400/40 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.4),0_4px_14px_rgba(6,182,212,0.25)] hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.5),0_6px_18px_rgba(6,182,212,0.4)]'
+                : 'bg-[#2DD4BF] hover:bg-[#5EEAD4] text-zinc-950 border border-[#5EEAD4]/40 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.4),0_4px_14px_rgba(45,212,191,0.28)] hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.5),0_6px_18px_rgba(45,212,191,0.42)]'
             }`}
           >
             {copied ? (
@@ -302,7 +302,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
                 onClose();
                 onEdit(note);
               }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white hover:bg-cyan-50 dark:bg-white/[0.04] dark:hover:bg-cyan-500/10 border border-slate-200 hover:border-cyan-300 dark:border-white/[0.08] dark:hover:border-cyan-400/35 text-xs font-comfortaa font-bold text-slate-600 hover:text-cyan-700 dark:text-slate-300 dark:hover:text-cyan-300 whitespace-nowrap active:scale-[0.98] transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white hover:bg-teal-50 dark:bg-white/[0.04] dark:hover:bg-[#2DD4BF]/10 border border-zinc-200 hover:border-teal-300 dark:border-white/[0.08] dark:hover:border-[#2DD4BF]/35 text-xs font-comfortaa font-bold text-zinc-600 hover:text-teal-700 dark:text-zinc-300 dark:hover:text-[#5EEAD4] whitespace-nowrap active:scale-[0.98] transition-all cursor-pointer"
             >
               <Edit3 className="w-3.5 h-3.5" />
               <span>{lang === 'ru' ? 'Изменить' : 'Edit'}</span>
@@ -313,7 +313,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
                 await onDelete(note.id);
                 onClose();
               }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white hover:bg-rose-50 dark:bg-white/[0.04] dark:hover:bg-rose-500/10 border border-slate-200 hover:border-rose-300 dark:border-white/[0.08] dark:hover:border-rose-500/35 text-xs font-comfortaa font-bold text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-300 whitespace-nowrap active:scale-[0.98] transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white hover:bg-rose-50 dark:bg-white/[0.04] dark:hover:bg-rose-500/10 border border-zinc-200 hover:border-rose-300 dark:border-white/[0.08] dark:hover:border-rose-500/35 text-xs font-comfortaa font-bold text-zinc-500 hover:text-rose-600 dark:text-zinc-400 dark:hover:text-rose-300 whitespace-nowrap active:scale-[0.98] transition-all cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>{lang === 'ru' ? 'Удалить' : 'Delete'}</span>

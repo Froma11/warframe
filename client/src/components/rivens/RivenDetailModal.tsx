@@ -100,21 +100,21 @@ export const RivenDetailModal: React.FC<RivenDetailModalProps> = ({
       onMouseDown={handleBackdropClick}
     >
       <div
-        className="relative w-full max-w-2xl bg-white dark:bg-[#080d14] border border-slate-200 dark:border-white/[0.1] rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200 cursor-default"
+        className="relative w-full max-w-2xl bg-white dark:bg-[#14161A] border border-zinc-200 dark:border-white/[0.09] rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200 cursor-default"
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Modal Top Bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-[#0c121c]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-[#181A1E]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center text-[#00e5ff]">
+            <div className="w-8 h-8 rounded-xl bg-[#2DD4BF]/12 border border-[#2DD4BF]/30 flex items-center justify-center text-[#2DD4BF]">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <span className="font-comfortaa font-bold text-sm text-slate-900 dark:text-white">
+              <span className="font-comfortaa font-bold text-sm text-zinc-900 dark:text-zinc-100">
                 {lang === 'ru' ? 'Аналитика Мода Разлома' : 'Riven Mod Breakdown'}
               </span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 ml-2 font-mono">
+              <span className="text-[11px] text-zinc-500 dark:text-zinc-400 ml-2 font-mono">
                 {weaponName} {lot.mod_name}
               </span>
             </div>
@@ -122,7 +122,7 @@ export const RivenDetailModal: React.FC<RivenDetailModalProps> = ({
 
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -132,35 +132,35 @@ export const RivenDetailModal: React.FC<RivenDetailModalProps> = ({
         <div className="p-6 overflow-y-auto flex flex-col gap-5 scrollbar-thin">
           
           {/* 1. Riven Card Header */}
-          <div className="p-5 rounded-2xl bg-slate-100 dark:bg-[#0e1624] border border-slate-200 dark:border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="p-5 rounded-2xl bg-zinc-100 dark:bg-[#1B1D22] border border-zinc-200 dark:border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               {weapon?.thumb_url ? (
                 <img
                   src={resolveAssetUrl(weapon.thumb_url)}
                   alt={weaponName}
-                  className="w-14 h-14 object-contain drop-shadow-[0_0_12px_rgba(0,229,255,0.4)]"
+                  className="w-14 h-14 object-contain drop-shadow-[0_0_12px_rgba(45,212,191,0.3)]"
                 />
               ) : (
-                <div className="w-14 h-14 rounded-xl bg-[#00e5ff]/10 flex items-center justify-center text-[#00e5ff]">
+                <div className="w-14 h-14 rounded-xl bg-[#2DD4BF]/10 flex items-center justify-center text-[#2DD4BF]">
                   <Layers className="w-7 h-7" />
                 </div>
               )}
               <div>
-                <h3 className="font-comfortaa font-bold text-lg text-slate-900 dark:text-white">
-                  {weaponName} <span className="text-[#00e5ff]">{lot.mod_name}</span>
+                <h3 className="font-comfortaa font-bold text-lg text-zinc-900 dark:text-zinc-100">
+                  {weaponName} <span className="text-[#5EEAD4]">{lot.mod_name}</span>
                 </h3>
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap text-xs font-mono">
-                  <span className="px-2 py-0.5 rounded-lg bg-slate-200 dark:bg-white/[0.08] font-bold text-slate-800 dark:text-slate-200">
+                  <span className="px-2 py-0.5 rounded-lg bg-zinc-200 dark:bg-white/[0.08] font-bold text-zinc-800 dark:text-zinc-200">
                     MR {lot.mastery_level}
                   </span>
-                  <span className="px-2 py-0.5 rounded-lg bg-slate-200 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300">
+                  <span className="px-2 py-0.5 rounded-lg bg-zinc-200 dark:bg-white/[0.08] text-zinc-700 dark:text-zinc-300">
                     {lang === 'ru' ? `Ранг ${lot.mod_rank}/8` : `Rank ${lot.mod_rank}/8`}
                   </span>
-                  <span className="px-2 py-0.5 rounded-lg bg-[#a855f7]/15 text-[#c084fc] font-bold border border-[#a855f7]/30">
+                  <span className="px-2 py-0.5 rounded-lg bg-orange-500/12 text-orange-600 dark:text-[#FB923C] font-bold border border-orange-400/25">
                     {lot.re_rolls} {lang === 'ru' ? 'рероллов' : 'rolls'}
                   </span>
                   {lot.polarity && (
-                    <span className="px-2 py-0.5 rounded-lg bg-slate-200 dark:bg-white/[0.08] uppercase text-slate-700 dark:text-slate-300">
+                    <span className="px-2 py-0.5 rounded-lg bg-zinc-200 dark:bg-white/[0.08] uppercase text-zinc-700 dark:text-zinc-300">
                       {lot.polarity}
                     </span>
                   )}
@@ -170,10 +170,10 @@ export const RivenDetailModal: React.FC<RivenDetailModalProps> = ({
 
             {/* Price Badge */}
             <div className="flex flex-col sm:items-end">
-              <span className="text-[11px] font-comfortaa uppercase text-slate-500 dark:text-slate-400">
+              <span className="text-[11px] font-comfortaa uppercase text-zinc-500 dark:text-zinc-400">
                 {lot.is_direct_sell ? (lang === 'ru' ? 'Фиксированная цена' : 'Direct Buyout') : (lang === 'ru' ? 'Аукцион' : 'Auction')}
               </span>
-              <div className="flex items-center gap-1.5 text-xl font-bold font-mono text-slate-900 dark:text-white mt-0.5">
+              <div className="flex items-center gap-1.5 text-xl font-bold font-mono text-zinc-900 dark:text-zinc-100 mt-0.5">
                 <span>{price}</span>
                 <PlatinumIcon className="w-5 h-5" />
               </div>
@@ -182,7 +182,7 @@ export const RivenDetailModal: React.FC<RivenDetailModalProps> = ({
 
           {/* 2. Mod Stats & Attributes (Localized in Russian and English) */}
           <div className="flex flex-col gap-2">
-            <span className="text-xs font-comfortaa font-bold text-slate-700 dark:text-slate-300">
+            <span className="text-xs font-comfortaa font-bold text-zinc-700 dark:text-zinc-300">
               {lang === 'ru' ? 'Характеристики Мода Разлома' : 'Riven Mod Attributes'}:
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -191,8 +191,8 @@ export const RivenDetailModal: React.FC<RivenDetailModalProps> = ({
                   key={idx}
                   className={`flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-mono ${
                     attr.positive
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25'
-                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25'
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-[#4ADE80] border border-emerald-400/25'
+                      : 'bg-rose-500/10 text-rose-600 dark:text-[#F87171] border border-rose-400/25'
                   }`}
                 >
                   <span className="font-sans font-medium">{formatRivenStatName(attr.url_name, lang)}</span>
@@ -205,24 +205,24 @@ export const RivenDetailModal: React.FC<RivenDetailModalProps> = ({
           </div>
 
           {/* 3. ENDO SCRAP & EFFICIENCY (Clean display without formula clutter) */}
-          <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-[#00e5ff]/5 to-transparent border border-emerald-500/30 flex flex-col gap-3">
+          <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-[#2DD4BF]/5 to-transparent border border-emerald-400/25 flex flex-col gap-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2 text-emerald-500 dark:text-emerald-400">
+              <div className="flex items-center gap-2 text-emerald-600 dark:text-[#4ADE80]">
                 <Gem className="w-5 h-5" />
                 <span className="font-comfortaa font-bold text-sm">
                   {lang === 'ru' ? 'Выход Эндо при разборе' : 'Endo Dissolve Yield'}
                 </span>
               </div>
-              <span className="text-2xl font-mono font-bold text-emerald-500 dark:text-emerald-400 drop-shadow-[0_0_12px_rgba(16,185,129,0.4)]">
+              <span className="text-2xl font-mono font-bold text-emerald-600 dark:text-[#4ADE80] drop-shadow-[0_0_12px_rgba(74,222,128,0.25)]">
                 {lot.endo_value.toLocaleString()} {lang === 'ru' ? 'Эндо' : 'Endo'}
               </span>
             </div>
 
             {/* Efficiency Highlight */}
             {lot.efficiency > 0 && (
-              <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-xs">
+              <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-500/12 border border-emerald-400/25 text-xs">
                 <span className="font-comfortaa text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-1.5">
-                  <Zap className="w-4 h-4 text-emerald-400" />
+                  <Zap className="w-4 h-4 text-[#4ADE80]" />
                   {lang === 'ru' ? 'Коэффициент выгодности покупки' : 'Profit Efficiency Ratio'}:
                 </span>
                 <span className="font-mono font-bold text-emerald-700 dark:text-emerald-300 text-sm">
@@ -233,37 +233,37 @@ export const RivenDetailModal: React.FC<RivenDetailModalProps> = ({
           </div>
 
           {/* 4. Seller & In-Game Whisper Action */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-[#0c121c] border border-slate-200 dark:border-white/[0.08]">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-zinc-50 dark:bg-[#181A1E] border border-zinc-200 dark:border-white/[0.07]">
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <span className={`w-3 h-3 rounded-full shrink-0 ${
                 lot.seller_status === 'ingame'
-                  ? 'bg-emerald-400 animate-pulse'
+                  ? 'bg-[#4ADE80] animate-pulse'
                   : lot.seller_status === 'online'
-                  ? 'bg-cyan-400'
-                  : 'bg-slate-400'
+                  ? 'bg-[#2DD4BF]'
+                  : 'bg-zinc-500'
               }`} />
               <div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 font-sans">
+                <div className="text-xs text-zinc-500 dark:text-zinc-400 font-sans">
                   {lang === 'ru' ? 'Продавец на warframe.market' : 'Seller on warframe.market'}
                 </div>
-                <div className="font-bold text-sm text-slate-900 dark:text-white font-mono">
-                  {lot.seller_name} <span className="text-xs text-[#00e5ff]">({lot.seller_reputation}★)</span>
+                <div className="font-bold text-sm text-zinc-900 dark:text-zinc-100 font-mono">
+                  {lot.seller_name} <span className="text-xs text-[#5EEAD4]">({lot.seller_reputation}★)</span>
                 </div>
               </div>
             </div>
 
             <button
               onClick={handleCopyWhisper}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#00e5ff] hover:bg-[#00c8e0] active:scale-95 text-slate-950 font-bold font-comfortaa text-xs transition-all shadow-[0_0_20px_rgba(0,229,255,0.35)] cursor-pointer"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#2DD4BF] hover:bg-[#5EEAD4] active:scale-95 text-zinc-950 font-bold font-comfortaa text-xs transition-all shadow-[0_0_18px_rgba(45,212,191,0.3)] cursor-pointer"
             >
               {isCopied ? (
                 <>
-                  <Check className="w-4 h-4 text-slate-950" />
+                  <Check className="w-4 h-4 text-zinc-950" />
                   <span>{lang === 'ru' ? 'Шепот скопирован в буфер!' : 'Whisper Copied!'}</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-4 h-4 text-slate-950" />
+                  <Copy className="w-4 h-4 text-zinc-950" />
                   <span>{lang === 'ru' ? 'Скопировать шепот (/w)' : 'Copy in-game /w'}</span>
                 </>
               )}

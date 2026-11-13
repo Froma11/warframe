@@ -56,7 +56,7 @@ export const downloadImage = (dataUrl: string, filename = 'warframe-note.png') =
   document.body.removeChild(link);
 };
 
-// Render trade note text with [Item Name] cyan pill badges and crisp monospace numbers/ratios
+// Render trade note text with [Item Name] aqua-mint pill badges and crisp monospace numbers/ratios
 export const renderTradeNoteContent = (text: string): React.ReactNode => {
   if (!text) return null;
 
@@ -72,9 +72,9 @@ export const renderTradeNoteContent = (text: string): React.ReactNode => {
       return (
         <span
           key={`tag-${segIdx}`}
-          className="inline-flex items-center gap-1 px-1.5 py-[1px] mx-0.5 my-[1px] rounded-md bg-cyan-500/10 dark:bg-cyan-400/10 border border-cyan-500/30 dark:border-cyan-400/25 text-cyan-700 dark:text-cyan-300 font-medium text-[0.9em] leading-snug align-baseline shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+          className="inline-flex items-center gap-1 px-1.5 py-[1px] mx-0.5 my-[1px] rounded-md bg-[#2DD4BF]/10 border border-[#2DD4BF]/30 dark:border-[#2DD4BF]/25 text-teal-700 dark:text-[#5EEAD4] font-medium text-[0.9em] leading-snug align-baseline shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
         >
-          <Tag className="w-2.5 h-2.5 text-cyan-600 dark:text-cyan-400 shrink-0 opacity-85" />
+          <Tag className="w-2.5 h-2.5 text-teal-600 dark:text-[#2DD4BF] shrink-0 opacity-85" />
           <span>{bracketMatch[1]}</span>
         </span>
       );
@@ -89,7 +89,7 @@ export const renderTradeNoteContent = (text: string): React.ReactNode => {
             return (
               <span
                 key={`num-${segIdx}-${partIdx}`}
-                className="font-mono font-semibold text-slate-900 dark:text-white bg-slate-200/70 dark:bg-white/[0.07] border border-slate-300/60 dark:border-white/[0.08] px-1.5 py-[0.5px] mx-[1px] rounded text-[0.88em] tabular-nums"
+                className="font-mono font-semibold text-zinc-900 dark:text-white bg-zinc-200/70 dark:bg-white/[0.07] border border-zinc-300/60 dark:border-white/[0.08] px-1.5 py-[0.5px] mx-[1px] rounded text-[0.88em] tabular-nums"
               >
                 {part}
               </span>
@@ -179,27 +179,27 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
   }, [notes, activeCategory, searchQuery, sortOrder]);
 
   return (
-    <div className="w-full relative overflow-hidden bg-white dark:bg-[#090D16] border border-slate-200/90 dark:border-white/[0.08] rounded-3xl p-5 sm:p-6 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_20px_50px_rgba(0,0,0,0.45)] font-sans transition-colors">
+    <div className="w-full relative overflow-hidden bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-white/[0.08] rounded-3xl p-5 sm:p-6 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_20px_50px_rgba(0,0,0,0.45)] font-sans transition-colors">
       {/* Subtle Ambient Corner Gradient */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_100%_0%,rgba(6,182,212,0.06),transparent_45%)]"
+        className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_100%_0%,rgba(45,212,191,0.06),transparent_45%)]"
       />
 
       {/* Section Header */}
-      <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-slate-200/80 dark:border-white/[0.07]">
+      <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-zinc-200/80 dark:border-white/[0.07]">
         <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 dark:border-cyan-400/25 flex items-center justify-center shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] shrink-0">
-            <FileText className="w-4.5 h-4.5 text-cyan-600 dark:text-cyan-400" />
+          <div className="w-10 h-10 rounded-2xl bg-[#2DD4BF]/10 border border-[#2DD4BF]/30 dark:border-[#2DD4BF]/25 flex items-center justify-center shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] shrink-0">
+            <FileText className="w-4.5 h-4.5 text-teal-600 dark:text-[#2DD4BF]" />
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-comfortaa font-bold text-slate-900 dark:text-white tracking-wide flex items-center gap-2">
+            <h2 className="text-base sm:text-lg font-comfortaa font-bold text-zinc-900 dark:text-white tracking-wide flex items-center gap-2">
               {lang === 'ru' ? 'Заметки & Скриншоты' : 'Notes & Screenshots'}
-              <span className="text-xs px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/25 font-mono font-bold tabular-nums">
+              <span className="text-xs px-2 py-0.5 rounded-md bg-[#2DD4BF]/10 text-teal-700 dark:text-[#5EEAD4] border border-[#2DD4BF]/25 font-mono font-bold tabular-nums">
                 {notes.length}
               </span>
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-sans mt-0.5">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 font-sans mt-0.5">
               {lang === 'ru'
                 ? 'Приватные записи с фото и скриншотами (поддерживает несколько фото и Ctrl+V)'
                 : 'Private trade notes with photo attachments & multi-screenshot support'}
@@ -214,7 +214,7 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
             setEditingNote(null);
             setIsCreateModalOpen(true);
           }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-comfortaa font-bold shadow-[inset_0_1px_0_0_rgba(255,255,255,0.4),0_4px_16px_rgba(6,182,212,0.3)] hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.5),0_6px_22px_rgba(6,182,212,0.45)] active:scale-[0.98] transition-all duration-150 cursor-pointer shrink-0"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2DD4BF] hover:bg-[#5EEAD4] text-zinc-950 text-xs font-comfortaa font-bold shadow-[inset_0_1px_0_0_rgba(255,255,255,0.4),0_4px_16px_rgba(45,212,191,0.28)] hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.5),0_6px_22px_rgba(45,212,191,0.42)] active:scale-[0.98] transition-all duration-150 cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>{lang === 'ru' ? 'Новая заметка' : 'New Note'}</span>
@@ -222,7 +222,7 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
       </div>
 
       {/* Unified Compact Toolbar: Topic Filters + Constrained Search & Sort */}
-      <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-3 py-4 border-b border-slate-200/60 dark:border-white/[0.05]">
+      <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-3 py-4 border-b border-zinc-200/60 dark:border-white/[0.05]">
         {/* Left: User Topics Filter Bar (or subtle count indicator if none) */}
         <div className="flex flex-wrap items-center gap-1.5 min-w-0">
           {userCategories.length > 0 ? (
@@ -232,8 +232,8 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
                 onClick={() => setActiveCategory('ВСЕ')}
                 className={`px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all duration-150 cursor-pointer active:scale-[0.97] ${
                   activeCategory === 'ВСЕ'
-                    ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/40 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]'
-                    : 'bg-slate-100 dark:bg-white/[0.03] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/[0.07] hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-white/[0.15]'
+                    ? 'bg-[#24272D] text-[#5EEAD4] border border-[#2DD4BF]/40 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]'
+                    : 'bg-zinc-100 dark:bg-white/[0.03] text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-white/[0.07] hover:text-zinc-900 dark:hover:text-white hover:border-zinc-300 dark:hover:border-white/[0.15]'
                 }`}
               >
                 {lang === 'ru' ? 'ВСЕ' : 'ALL'}
@@ -245,8 +245,8 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
                   onClick={() => setActiveCategory(cat)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all duration-150 cursor-pointer active:scale-[0.97] ${
                     activeCategory === cat
-                      ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/40 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]'
-                      : 'bg-slate-100 dark:bg-white/[0.03] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/[0.07] hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-white/[0.15]'
+                      ? 'bg-[#24272D] text-[#5EEAD4] border border-[#2DD4BF]/40 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]'
+                      : 'bg-zinc-100 dark:bg-white/[0.03] text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-white/[0.07] hover:text-zinc-900 dark:hover:text-white hover:border-zinc-300 dark:hover:border-white/[0.15]'
                   }`}
                 >
                   {cat}
@@ -254,7 +254,7 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
               ))}
             </>
           ) : (
-            <span className="text-xs font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+            <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400 tabular-nums">
               {lang === 'ru'
                 ? `Показано: ${filteredNotes.length}`
                 : `Showing: ${filteredNotes.length}`}
@@ -264,8 +264,8 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
 
         {/* Right: Constrained Search Input + Sort Toggle */}
         <div className="flex items-center gap-2 w-full lg:w-auto justify-end shrink-0">
-          <div className="group/search relative flex-1 sm:flex-initial sm:w-72 lg:w-80 flex items-center bg-slate-50 dark:bg-[#060911] border border-slate-200 dark:border-white/[0.08] focus-within:border-cyan-500/60 dark:focus-within:border-cyan-400/50 focus-within:ring-2 focus-within:ring-cyan-500/15 dark:focus-within:ring-cyan-400/15 rounded-xl transition-all duration-150 shadow-[inset_0_2px_4px_rgba(0,0,0,0.04)] dark:shadow-[inset_0_2px_6px_rgba(0,0,0,0.5)]">
-            <Search className="w-3.5 h-3.5 ml-3 text-slate-400 dark:text-slate-500 group-focus-within/search:text-cyan-600 dark:group-focus-within/search:text-cyan-400 transition-colors shrink-0" />
+          <div className="group/search relative flex-1 sm:flex-initial sm:w-72 lg:w-80 flex items-center bg-zinc-50 dark:bg-[#181A1E] border border-zinc-200 dark:border-white/[0.08] focus-within:border-teal-500/60 dark:focus-within:border-[#2DD4BF]/55 focus-within:ring-2 focus-within:ring-teal-500/15 dark:focus-within:ring-[#2DD4BF]/15 rounded-xl transition-all duration-150 shadow-[inset_0_2px_4px_rgba(0,0,0,0.04)] dark:shadow-[inset_0_2px_6px_rgba(0,0,0,0.5)]">
+            <Search className="w-3.5 h-3.5 ml-3 text-zinc-400 dark:text-zinc-500 group-focus-within/search:text-teal-600 dark:group-focus-within/search:text-[#2DD4BF] transition-colors shrink-0" />
             <input
               type="text"
               value={searchQuery}
@@ -275,14 +275,14 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
                   ? 'Поиск по тексту или тегу...'
                   : 'Search by text or tag...'
               }
-              className="w-full pl-2.5 pr-8 py-2 bg-transparent text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none"
+              className="w-full pl-2.5 pr-8 py-2 bg-transparent text-xs text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 outline-none"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
                 aria-label={lang === 'ru' ? 'Очистить поиск' : 'Clear search'}
-                className="absolute right-2 p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
+                className="absolute right-2 p-1 rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -292,7 +292,7 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
           <button
             type="button"
             onClick={() => setSortOrder(sortOrder === 'newest' ? 'oldest' : 'newest')}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200/70 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.16] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-xs font-comfortaa font-bold shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] active:scale-[0.97] transition-all duration-150 cursor-pointer shrink-0"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200/70 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-zinc-200 dark:border-white/[0.08] hover:border-zinc-300 dark:hover:border-white/[0.16] text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white text-xs font-comfortaa font-bold shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] active:scale-[0.97] transition-all duration-150 cursor-pointer shrink-0"
             title={
               sortOrder === 'newest'
                 ? lang === 'ru'
@@ -303,7 +303,7 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
                 : 'Oldest first'
             }
           >
-            <ArrowUpDown className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+            <ArrowUpDown className="w-3.5 h-3.5 text-teal-600 dark:text-[#2DD4BF]" />
             <span className="hidden sm:inline">
               {sortOrder === 'newest'
                 ? lang === 'ru'
@@ -320,13 +320,13 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
       {/* Grid of Notes or Empty State */}
       {filteredNotes.length === 0 ? (
         <div className="relative z-10 p-12 text-center flex flex-col items-center justify-center">
-          <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-[#0B101B] border border-slate-200 dark:border-white/[0.08] flex items-center justify-center mb-3 text-slate-400 dark:text-slate-500 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+          <div className="w-14 h-14 rounded-2xl bg-zinc-100 dark:bg-[#16181C] border border-zinc-200 dark:border-white/[0.08] flex items-center justify-center mb-3 text-zinc-400 dark:text-zinc-500 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
             <FileText className="w-6 h-6" />
           </div>
-          <p className="text-sm text-slate-800 dark:text-slate-200 font-comfortaa font-bold">
+          <p className="text-sm text-zinc-800 dark:text-zinc-200 font-comfortaa font-bold">
             {lang === 'ru' ? 'Заметок не найдено' : 'No notes found'}
           </p>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mt-1 mb-4">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xs mt-1 mb-4">
             {lang === 'ru'
               ? 'Создайте заметку, укажите свою тему и прикрепите скриншоты'
               : 'Create a note, specify your topic and attach screenshots'}
@@ -337,7 +337,7 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
               setEditingNote(null);
               setIsCreateModalOpen(true);
             }}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-[#0E1624] dark:hover:bg-[#131F33] border border-slate-200 dark:border-cyan-400/35 text-cyan-700 dark:text-cyan-300 text-xs font-comfortaa font-bold active:scale-[0.98] transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-[#1B1D22] dark:hover:bg-[#24272D] border border-zinc-200 dark:border-[#2DD4BF]/35 text-teal-700 dark:text-[#5EEAD4] text-xs font-comfortaa font-bold active:scale-[0.98] transition-all cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>{lang === 'ru' ? 'Добавить заметку' : 'Add Note'}</span>
@@ -366,24 +366,24 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
               <article
                 key={note.id}
                 onClick={() => setSelectedNote(note)}
-                className="group relative flex flex-col justify-between rounded-2xl p-4 sm:p-5 bg-slate-50/90 dark:bg-[#0B101B] hover:bg-white dark:hover:bg-[#0F1625] border border-slate-200/90 dark:border-white/[0.08] hover:border-cyan-500/45 dark:hover:border-cyan-400/40 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_10px_28px_rgba(0,0,0,0.35)] hover:shadow-md dark:hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.14),0_16px_36px_rgba(0,0,0,0.55)] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer overflow-hidden min-w-0 max-w-full break-words"
+                className="group relative flex flex-col justify-between rounded-2xl p-4 sm:p-5 bg-zinc-50/90 dark:bg-[#16181C] hover:bg-white dark:hover:bg-[#1D1F25] border border-zinc-200/90 dark:border-white/[0.08] hover:border-teal-500/45 dark:hover:border-[#2DD4BF]/40 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_10px_28px_rgba(0,0,0,0.35)] hover:shadow-md dark:hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12),0_16px_36px_rgba(0,0,0,0.55)] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer overflow-hidden min-w-0 max-w-full break-words"
               >
                 {/* Top subtle edge highlight accent on hover */}
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/0 group-hover:via-cyan-400/50 to-transparent transition-all duration-300"
+                  className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-[#2DD4BF]/0 group-hover:via-[#2DD4BF]/50 to-transparent transition-all duration-300"
                 />
 
                 <div className="min-w-0 w-full">
                   {/* Top Bar: Date, Tag & Hover-revealed Quick Actions */}
-                  <div className="flex items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-200/70 dark:border-white/[0.06]">
+                  <div className="flex items-center justify-between gap-2 pb-3 mb-3 border-b border-zinc-200/70 dark:border-white/[0.06]">
                     <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 font-mono tabular-nums shrink-0">
-                        <Clock className="w-3 h-3 text-cyan-600 dark:text-cyan-400/80" />
+                      <span className="text-[11px] text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5 font-mono tabular-nums shrink-0">
+                        <Clock className="w-3 h-3 text-teal-600 dark:text-[#2DD4BF]" />
                         {formattedDate}
                       </span>
                       {note.tag && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/25 text-[10px] font-mono font-bold tracking-wide truncate max-w-[130px]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#2DD4BF]/10 text-teal-700 dark:text-[#5EEAD4] border border-[#2DD4BF]/25 text-[10px] font-mono font-bold tracking-wide truncate max-w-[130px]">
                           <Tag className="w-2.5 h-2.5 shrink-0 opacity-80" />
                           <span className="truncate">{note.tag}</span>
                         </span>
@@ -403,7 +403,7 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
                         <button
                           type="button"
                           onClick={(e) => handleDownloadClick(e, noteImages[0], note.id)}
-                          className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-cyan-700 dark:hover:text-cyan-300 hover:bg-cyan-500/15 border border-transparent hover:border-cyan-500/25 active:scale-90 transition-all cursor-pointer"
+                          className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-teal-700 dark:hover:text-[#5EEAD4] hover:bg-[#2DD4BF]/15 border border-transparent hover:border-[#2DD4BF]/25 active:scale-90 transition-all cursor-pointer"
                           title={lang === 'ru' ? 'Скачать фото' : 'Download photo'}
                         >
                           <Download className="w-3.5 h-3.5" />
@@ -417,7 +417,7 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
                         className={`p-1.5 rounded-lg border active:scale-90 transition-all cursor-pointer ${
                           isCopied
                             ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.25)]'
-                            : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-white/[0.08]'
+                            : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200/70 dark:hover:bg-white/[0.08]'
                         }`}
                         title={lang === 'ru' ? 'Скопировать текст' : 'Copy text'}
                       >
@@ -432,7 +432,7 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
                       <button
                         type="button"
                         onClick={(e) => handleEditClick(e, note)}
-                        className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-cyan-700 dark:hover:text-cyan-300 hover:bg-cyan-500/15 border border-transparent hover:border-cyan-500/25 active:scale-90 transition-all cursor-pointer"
+                        className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-teal-700 dark:hover:text-[#5EEAD4] hover:bg-[#2DD4BF]/15 border border-transparent hover:border-[#2DD4BF]/25 active:scale-90 transition-all cursor-pointer"
                         title={lang === 'ru' ? 'Редактировать' : 'Edit'}
                       >
                         <Edit3 className="w-3.5 h-3.5" />
@@ -442,7 +442,7 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
                       <button
                         type="button"
                         onClick={(e) => handleDelete(e, note.id)}
-                        className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/15 border border-transparent hover:border-rose-500/25 active:scale-90 transition-all cursor-pointer"
+                        className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/15 border border-transparent hover:border-rose-500/25 active:scale-90 transition-all cursor-pointer"
                         title={lang === 'ru' ? 'Удалить' : 'Delete'}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -455,7 +455,7 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
                     <div className="mb-3.5">
                       {noteImages.length === 1 ? (
                         <div
-                          className="relative w-full h-44 rounded-xl overflow-hidden bg-black/60 border border-slate-200/80 dark:border-white/[0.08] group/thumb flex items-center justify-center cursor-zoom-in"
+                          className="relative w-full h-44 rounded-xl overflow-hidden bg-black/60 border border-zinc-200/80 dark:border-white/[0.08] group/thumb flex items-center justify-center cursor-zoom-in"
                           onClick={(e) => {
                             e.stopPropagation();
                             setLightboxUrl(noteImages[0]);
@@ -477,7 +477,7 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
                           {noteImages.slice(0, 2).map((img, idx) => (
                             <div
                               key={idx}
-                              className="relative w-full h-full bg-black/60 border border-slate-200/60 dark:border-white/[0.08] rounded-xl overflow-hidden cursor-zoom-in group/sub"
+                              className="relative w-full h-full bg-black/60 border border-zinc-200/60 dark:border-white/[0.08] rounded-xl overflow-hidden cursor-zoom-in group/sub"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setLightboxUrl(img);
@@ -494,7 +494,7 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
                       ) : (
                         <div className="grid grid-cols-3 gap-2 h-44 rounded-xl overflow-hidden">
                           <div
-                            className="col-span-2 relative w-full h-full bg-black/60 border border-slate-200/60 dark:border-white/[0.08] rounded-xl overflow-hidden cursor-zoom-in group/sub"
+                            className="col-span-2 relative w-full h-full bg-black/60 border border-zinc-200/60 dark:border-white/[0.08] rounded-xl overflow-hidden cursor-zoom-in group/sub"
                             onClick={(e) => {
                               e.stopPropagation();
                               setLightboxUrl(noteImages[0]);
@@ -509,7 +509,7 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
 
                           <div className="flex flex-col gap-2 h-full">
                             <div
-                              className="relative flex-1 bg-black/60 border border-slate-200/60 dark:border-white/[0.08] rounded-xl overflow-hidden cursor-zoom-in"
+                              className="relative flex-1 bg-black/60 border border-zinc-200/60 dark:border-white/[0.08] rounded-xl overflow-hidden cursor-zoom-in"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setLightboxUrl(noteImages[1]);
@@ -522,7 +522,7 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
                               />
                             </div>
                             <div
-                              className="relative flex-1 bg-black/60 border border-slate-200/60 dark:border-white/[0.08] rounded-xl overflow-hidden cursor-zoom-in flex items-center justify-center group/badge"
+                              className="relative flex-1 bg-black/60 border border-zinc-200/60 dark:border-white/[0.08] rounded-xl overflow-hidden cursor-zoom-in flex items-center justify-center group/badge"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedNote(note);
@@ -545,7 +545,7 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
 
                   {/* Smart Trade Note Body Text (Parses [Item Name] & trade values) */}
                   {noteText && (
-                    <div className="text-xs sm:text-[13px] text-slate-700 dark:text-slate-300 font-sans leading-7 line-clamp-4 whitespace-pre-wrap select-text break-words overflow-hidden">
+                    <div className="text-xs sm:text-[13px] text-zinc-700 dark:text-zinc-300 font-sans leading-7 line-clamp-4 whitespace-pre-wrap select-text break-words overflow-hidden">
                       {renderTradeNoteContent(noteText)}
                     </div>
                   )}
@@ -553,10 +553,10 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
 
                 {/* Card Bottom Status Strip */}
                 {(isCopied || noteImages.length > 0) && (
-                  <div className="mt-3 pt-2.5 border-t border-slate-200/50 dark:border-white/[0.05] flex items-center justify-between gap-2 text-[11px]">
+                  <div className="mt-3 pt-2.5 border-t border-zinc-200/50 dark:border-white/[0.05] flex items-center justify-between gap-2 text-[11px]">
                     {noteImages.length > 0 ? (
-                      <span className="inline-flex items-center gap-1.5 text-slate-500 dark:text-slate-400 font-mono tabular-nums">
-                        <Images className="w-3 h-3 text-cyan-600 dark:text-cyan-400/80" />
+                      <span className="inline-flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400 font-mono tabular-nums">
+                        <Images className="w-3 h-3 text-teal-600 dark:text-[#2DD4BF]" />
                         <span>{noteImages.length}</span>
                       </span>
                     ) : (
@@ -620,14 +620,14 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
             >
               {/* Top Bar with Download & Close */}
               <div className="w-full flex items-center justify-between gap-3 pb-3 px-1 text-white">
-                <span className="text-xs font-comfortaa font-bold text-slate-300">
+                <span className="text-xs font-comfortaa font-bold text-zinc-300">
                   {lang === 'ru' ? 'Просмотр изображения' : 'Image Preview'}
                 </span>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => downloadImage(lightboxUrl, 'warframe-screenshot.png')}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-comfortaa font-bold text-xs transition-all shadow-lg cursor-pointer"
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#2DD4BF] hover:bg-[#5EEAD4] text-zinc-950 font-comfortaa font-bold text-xs transition-all shadow-lg cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>{lang === 'ru' ? 'Скачать' : 'Download'}</span>
