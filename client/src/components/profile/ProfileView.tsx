@@ -107,7 +107,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ lang }) => {
       await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
     } catch {}
     setUser(null);
-    loadNotes();
+    setNotes([]);
   };
 
   const handleAuthSuccess = (authUser: UserProfile) => {
