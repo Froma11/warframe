@@ -10,7 +10,7 @@ import {
   Plus,
   Image as ImageIcon,
 } from 'lucide-react';
-import { NoteItem } from './NotesGrid';
+import { NoteItem, renderTradeNoteContent } from './NotesGrid';
 
 interface NoteModalProps {
   isOpen: boolean;
@@ -127,6 +127,26 @@ export const NoteModal: React.FC<NoteModalProps> = ({
 
   const isEditing = !!initialNote;
 
+  const handleWrapBrackets = () => {
+    const el = textareaRef.current;
+    if (!el) {
+      setContent((prev) => `${prev}[]`);
+      return;
+    }
+
+    const start = el.selectionStart ?? content.length;
+    const end = el.selectionEnd ?? content.length;
+    const selected = content.slice(start, end);
+    const nextValue = `${content.slice(0, start)}[${selected}]${content.slice(end)}`;
+    setContent(nextValue);
+
+    requestAnimationFrame(() => {
+      el.focus();
+      const cursorPos = selected ? end + 2 : start + 1;
+      el.setSelectionRange(cursorPos, cursorPos);
+    });
+  };
+
   const handleProcessFiles = async (fileList: FileList | File[]) => {
     const processed: string[] = [];
     for (let i = 0; i < fileList.length; i++) {
@@ -231,30 +251,35 @@ export const NoteModal: React.FC<NoteModalProps> = ({
     }
   };
 
+  const hasContent = content.trim().length > 0;
+
   // Render directly to document.body via Portal to prevent any parent overflow or backdrop clipping
   return createPortal(
     <div
-      className="fixed inset-0 z-[999] flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-xl animate-in fade-in duration-200 select-none font-sans cursor-pointer overflow-y-auto"
+      className="fixed inset-0 z-[999] flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200 select-none font-sans cursor-pointer overflow-y-auto"
       onClick={handleBackdropClick}
       onMouseDown={handleBackdropClick}
       onPaste={handlePaste}
     >
       <div
-        className="relative w-full max-w-xl max-h-[92vh] bg-white dark:bg-[#090e18] border border-slate-200 dark:border-white/[0.12] rounded-[28px] p-5 sm:p-7 shadow-[0_25px_70px_rgba(0,0,0,0.8),0_0_50px_rgba(0,229,255,0.15)] text-left cursor-default flex flex-col overflow-hidden my-auto"
+        className="relative w-full max-w-2xl max-h-[92vh] bg-white dark:bg-[#090D16] border border-slate-200 dark:border-white/[0.09] rounded-3xl shadow-2xl dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_28px_70px_rgba(0,0,0,0.85)] text-left cursor-default flex flex-col overflow-hidden my-auto"
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        {/* Subtle Ambient Glow */}
-        <div className="absolute top-0 right-0 w-72 h-72 bg-cyan-500/10 blur-3xl rounded-full pointer-events-none -mr-20 -mt-20" />
+        {/* Subtle Ambient Corner Gradient */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_0%_0%,rgba(6,182,212,0.07),transparent_48%)]"
+        />
 
         {/* Pinned Modal Header */}
-        <div className="relative z-10 flex items-center justify-between pb-4 border-b border-slate-200/80 dark:border-white/[0.08] shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-cyan-500/15 border border-cyan-400/40 flex items-center justify-center text-cyan-400 shadow-[0_0_15px_rgba(0,229,255,0.25)]">
-              <FileText className="w-5 h-5" />
+        <div className="relative z-10 flex items-center justify-between gap-3 px-5 sm:px-6 py-4 border-b border-slate-200/80 dark:border-white/[0.07] shrink-0">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 dark:border-cyan-400/25 flex items-center justify-center text-cyan-600 dark:text-cyan-400 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] shrink-0">
+              <FileText className="w-4.5 h-4.5" />
             </div>
-            <div>
-              <h3 className="font-comfortaa font-bold text-base sm:text-lg text-slate-900 dark:text-white">
+            <div className="min-w-0">
+              <h3 className="font-comfortaa font-bold text-base sm:text-lg text-slate-900 dark:text-white truncate">
                 {isEditing
                   ? lang === 'ru'
                     ? 'Редактировать запись'
@@ -263,10 +288,10 @@ export const NoteModal: React.FC<NoteModalProps> = ({
                   ? 'Новая запись в блокнот'
                   : 'New Trade Note'}
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-sans">
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-sans truncate">
                 {lang === 'ru'
-                  ? 'Текст, пользовательская тема и скриншоты'
-                  : 'Text, custom topic & multiple screenshots'}
+                  ? 'Теги предметов в [скобках], тема и скриншоты'
+                  : 'Use [brackets] for item pills, topic tag & screenshots'}
               </p>
             </div>
           </div>
@@ -274,28 +299,28 @@ export const NoteModal: React.FC<NoteModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-all cursor-pointer"
+            aria-label={lang === 'ru' ? 'Закрыть' : 'Close'}
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.07] border border-transparent hover:border-slate-200 dark:hover:border-white/[0.08] active:scale-95 transition-all cursor-pointer shrink-0"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Scrollable Form Body */}
-        <form
-          onSubmit={handleSubmit}
-          className="relative z-10 flex-1 flex flex-col justify-between overflow-y-auto pt-4 space-y-4 pr-1"
-        >
-          <div className="space-y-4">
-            {/* Custom Topic / Tag Input (User Creates Own Topic) */}
-            <div className="space-y-1.5">
+        {/* Form Wrapper (Scrollable Body + Pinned Footer) */}
+        <form onSubmit={handleSubmit} className="relative z-10 flex-1 flex flex-col min-h-0">
+          {/* Scrollable Body */}
+          <div className="flex-1 overflow-y-auto px-5 sm:px-6 py-5 space-y-4">
+            {/* Custom Topic / Tag Input */}
+            <div className="space-y-2">
               <label className="text-xs font-comfortaa font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                <Tag className="w-3.5 h-3.5 text-cyan-400" />
+                <Tag className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
                 <span>
-                  {lang === 'ru' ? 'Тема / Тег заметки:' : 'Note Topic / Tag:'}
+                  {lang === 'ru' ? 'Тема / Тег заметки' : 'Note Topic / Tag'}
                 </span>
               </label>
 
-              <div className="relative">
+              <div className="group/tag relative flex items-center bg-slate-50 dark:bg-[#060911] border border-slate-200 dark:border-white/[0.08] focus-within:border-cyan-500/60 dark:focus-within:border-cyan-400/50 focus-within:ring-2 focus-within:ring-cyan-500/15 dark:focus-within:ring-cyan-400/15 rounded-xl transition-all duration-150 shadow-[inset_0_2px_4px_rgba(0,0,0,0.04)] dark:shadow-[inset_0_2px_6px_rgba(0,0,0,0.5)]">
+                <Tag className="w-3.5 h-3.5 ml-3.5 text-slate-400 dark:text-slate-500 group-focus-within/tag:text-cyan-600 dark:group-focus-within/tag:text-cyan-400 transition-colors shrink-0" />
                 <input
                   type="text"
                   value={customTag}
@@ -305,25 +330,35 @@ export const NoteModal: React.FC<NoteModalProps> = ({
                       ? 'Например: Снайпинг, Ривен на Торид, Сделки, Билды...'
                       : 'e.g. Torid Riven, Sniping, Trade Deals, Builds...'
                   }
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#060a12] border border-slate-200 dark:border-white/[0.1] focus:border-cyan-400 rounded-2xl text-xs font-sans text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none transition-all shadow-inner focus:ring-1 focus:ring-cyan-400/30"
+                  className="w-full pl-2.5 pr-9 py-2.5 bg-transparent text-xs font-sans text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none"
                 />
+                {customTag && (
+                  <button
+                    type="button"
+                    onClick={() => setCustomTag('')}
+                    aria-label={lang === 'ru' ? 'Очистить тег' : 'Clear tag'}
+                    className="absolute right-2.5 p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
               </div>
 
               {/* Quick suggestions from user's previously created tags */}
               {existingTags.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    {lang === 'ru' ? 'Ранее созданные:' : 'Existing topics:'}
+                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono mr-0.5">
+                    {lang === 'ru' ? 'Темы:' : 'Topics:'}
                   </span>
                   {existingTags.map((t) => (
                     <button
                       key={t}
                       type="button"
                       onClick={() => setCustomTag(t)}
-                      className={`px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer ${
+                      className={`px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-semibold transition-all cursor-pointer active:scale-95 ${
                         customTag.trim().toLowerCase() === t.toLowerCase()
-                          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 shadow-[0_0_8px_rgba(0,229,255,0.2)]'
-                          : 'bg-slate-100 dark:bg-white/[0.04] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08] hover:text-white'
+                          ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/40'
+                          : 'bg-slate-100 dark:bg-white/[0.03] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/[0.07] hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-white/[0.15]'
                       }`}
                     >
                       {t}
@@ -333,30 +368,67 @@ export const NoteModal: React.FC<NoteModalProps> = ({
               )}
             </div>
 
-            {/* Note Content Textarea */}
-            <div>
-              <textarea
-                ref={textareaRef}
-                rows={4}
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                onKeyDown={handleKeyDownOnTextarea}
-                placeholder={
-                  lang === 'ru'
-                    ? 'Текст заметки: цены, ники трейдеров, условия сделки...'
-                    : 'Note details: buy/sell prices, trade whisper, notes...'
-                }
-                className="w-full px-4 py-3 bg-slate-50 dark:bg-[#060a12] border border-slate-200 dark:border-white/[0.1] focus:border-cyan-400 rounded-2xl text-sm font-sans text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none transition-all shadow-inner focus:ring-1 focus:ring-cyan-400/30 resize-none leading-relaxed"
-              />
-              <div className="flex items-center justify-between mt-1 px-1 text-[11px] text-slate-400">
-                <span>{content.length > 0 ? `${content.length} симв.` : ''}</span>
-                <span className="font-mono text-[10px] opacity-75">
-                  <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-white/[0.08]">
-                    Ctrl+Enter
-                  </kbd>{' '}
-                  {lang === 'ru' ? 'для сохранения' : 'to save'}
-                </span>
+            {/* Note Content Textarea + Quick Bracket Wrapper */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-xs font-comfortaa font-bold text-slate-700 dark:text-slate-300">
+                  {lang === 'ru' ? 'Текст заметки' : 'Note Content'}
+                </label>
+
+                <button
+                  type="button"
+                  onClick={handleWrapBrackets}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/15 border border-cyan-500/25 hover:border-cyan-400/45 text-[11px] font-mono font-semibold text-cyan-700 dark:text-cyan-300 active:scale-95 transition-all cursor-pointer"
+                  title={
+                    lang === 'ru'
+                      ? 'Обернуть выделение в [Предмет] или вставить скобки'
+                      : 'Wrap selection in [Item] brackets'
+                  }
+                >
+                  <Tag className="w-3 h-3" />
+                  <span>{lang === 'ru' ? '[Предмет]' : '[Item]'}</span>
+                </button>
               </div>
+
+              <div className="rounded-2xl bg-slate-50 dark:bg-[#060911] border border-slate-200 dark:border-white/[0.08] focus-within:border-cyan-500/60 dark:focus-within:border-cyan-400/50 focus-within:ring-2 focus-within:ring-cyan-500/15 dark:focus-within:ring-cyan-400/15 transition-all duration-150 shadow-[inset_0_2px_4px_rgba(0,0,0,0.04)] dark:shadow-[inset_0_2px_6px_rgba(0,0,0,0.5)] overflow-hidden">
+                <textarea
+                  ref={textareaRef}
+                  rows={4}
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  onKeyDown={handleKeyDownOnTextarea}
+                  placeholder={
+                    lang === 'ru'
+                      ? 'Например: Куплю от 3шт [Мистический жнец] 1к10, [Меткая стрела] 1к7...'
+                      : 'e.g. WTB [Arcane Reaper] 10p, [Arcane Energize] x2 150p...'
+                  }
+                  className="w-full px-4 py-3 bg-transparent text-sm font-sans text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none resize-none leading-relaxed"
+                />
+
+                <div className="px-3.5 py-2 border-t border-slate-200/70 dark:border-white/[0.05] bg-slate-100/60 dark:bg-[#080C15] flex items-center justify-between gap-2 text-[11px] font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+                  <span>
+                    {content.length} {lang === 'ru' ? 'симв.' : 'chars'}
+                  </span>
+                  <span className="text-[10px]">
+                    <kbd className="px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-white/[0.07] border border-slate-300/60 dark:border-white/[0.08] text-slate-600 dark:text-slate-300">
+                      Ctrl+Enter
+                    </kbd>{' '}
+                    {lang === 'ru' ? 'сохранить' : 'to save'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Live Smart Preview of how the card will render [Item] pills & trade numbers */}
+              {hasContent && (
+                <div className="rounded-2xl p-3.5 bg-slate-50/70 dark:bg-[#0B101B] border border-slate-200/80 dark:border-white/[0.07] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                    {lang === 'ru' ? 'Превью карточки' : 'Card Preview'}
+                  </div>
+                  <div className="text-xs sm:text-[13px] text-slate-700 dark:text-slate-300 font-sans leading-7 whitespace-pre-wrap break-words">
+                    {renderTradeNoteContent(content)}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Multiple Screenshots Section */}
@@ -369,46 +441,54 @@ export const NoteModal: React.FC<NoteModalProps> = ({
               onChange={handleFileInputChange}
             />
 
-            {/* Gallery of Attached Screenshots */}
-            {images.length > 0 && (
+            {images.length > 0 ? (
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs font-comfortaa font-bold text-slate-300">
-                  <span className="flex items-center gap-1.5 text-cyan-400">
-                    <ImageIcon className="w-3.5 h-3.5" />
+                <div className="flex items-center justify-between text-xs font-comfortaa font-bold text-slate-700 dark:text-slate-300">
+                  <span className="flex items-center gap-1.5 text-cyan-700 dark:text-cyan-300">
+                    <ImageIcon className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
                     <span>
                       {lang === 'ru'
-                        ? `Прикреплено скриншотов: ${images.length}`
-                        : `Attached screenshots: ${images.length}`}
+                        ? `Скриншоты (${images.length})`
+                        : `Screenshots (${images.length})`}
                     </span>
                   </span>
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="text-[11px] text-cyan-400 hover:text-cyan-300 font-comfortaa flex items-center gap-1 cursor-pointer"
+                    className="inline-flex items-center gap-1 text-[11px] text-cyan-700 dark:text-cyan-300 hover:text-cyan-600 dark:hover:text-cyan-200 font-comfortaa cursor-pointer"
                   >
                     <Plus className="w-3 h-3" />
                     <span>{lang === 'ru' ? 'Добавить ещё' : 'Add more'}</span>
                   </button>
                 </div>
 
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 p-2.5 rounded-2xl bg-black/40 border border-white/[0.08]">
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`grid grid-cols-3 sm:grid-cols-4 gap-2.5 p-2.5 rounded-2xl border transition-colors ${
+                    isDragging
+                      ? 'bg-cyan-500/10 border-cyan-400/50'
+                      : 'bg-slate-100/80 dark:bg-[#060911] border-slate-200 dark:border-white/[0.08]'
+                  }`}
+                >
                   {images.map((imgUrl, idx) => (
                     <div
                       key={idx}
-                      className="group/thumb relative aspect-video rounded-xl overflow-hidden bg-black border border-white/[0.1] shadow-sm"
+                      className="group/thumb relative aspect-video rounded-xl overflow-hidden bg-black border border-slate-300/60 dark:border-white/[0.1] shadow-sm"
                     >
                       <img
                         src={imgUrl}
                         alt={`Attachment ${idx + 1}`}
                         className="w-full h-full object-cover"
                       />
-                      <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-md bg-black/75 text-[9px] font-mono font-bold text-white">
+                      <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-md bg-black/75 text-[9px] font-mono font-bold text-white border border-white/10">
                         #{idx + 1}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleRemoveImage(idx)}
-                        className="absolute top-1 right-1 p-1 rounded-lg bg-rose-500/80 hover:bg-rose-500 text-white opacity-0 group-hover/thumb:opacity-100 transition-opacity cursor-pointer shadow-md"
+                        className="absolute top-1 right-1 p-1 rounded-lg bg-rose-500/90 hover:bg-rose-500 text-white sm:opacity-0 sm:group-hover/thumb:opacity-100 transition-opacity cursor-pointer shadow-md"
                         title={lang === 'ru' ? 'Удалить это фото' : 'Remove photo'}
                       >
                         <Trash2 className="w-3 h-3" />
@@ -416,71 +496,70 @@ export const NoteModal: React.FC<NoteModalProps> = ({
                     </div>
                   ))}
 
-                  {/* Add more photo card */}
-                  <div
+                  <button
+                    type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="aspect-video rounded-xl border border-dashed border-cyan-500/40 hover:border-cyan-400 hover:bg-cyan-500/10 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all text-cyan-400"
+                    className="aspect-video rounded-xl border border-dashed border-cyan-500/35 hover:border-cyan-400 hover:bg-cyan-500/10 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all text-cyan-700 dark:text-cyan-300"
                   >
                     <Plus className="w-4 h-4" />
                     <span className="text-[10px] font-comfortaa font-bold">
                       {lang === 'ru' ? 'Ещё фото' : 'Add photo'}
                     </span>
-                  </div>
+                  </button>
                 </div>
               </div>
-            )}
-
-            {/* Drop / Paste Hint Box (If no images yet or as drop target) */}
-            {images.length === 0 && (
+            ) : (
               <div
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`flex items-center justify-between p-3.5 rounded-2xl border border-dashed transition-all cursor-pointer ${
+                className={`flex items-center justify-between gap-3 p-3.5 rounded-2xl border border-dashed transition-all cursor-pointer ${
                   isDragging
-                    ? 'border-cyan-400 bg-cyan-500/15 scale-[1.01]'
-                    : 'border-slate-300 dark:border-white/[0.12] hover:border-cyan-400/60 hover:bg-cyan-500/5'
+                    ? 'border-cyan-400 bg-cyan-500/10'
+                    : 'bg-slate-50/70 dark:bg-[#0B101B]/70 border-slate-300 dark:border-white/[0.1] hover:border-cyan-500/45 dark:hover:border-cyan-400/40 hover:bg-cyan-500/[0.04]'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center text-cyan-400 shrink-0">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center text-cyan-600 dark:text-cyan-400 shrink-0">
                     <Paperclip className="w-4 h-4" />
                   </div>
-                  <div>
-                    <span className="text-xs font-comfortaa font-bold text-slate-800 dark:text-slate-200">
+                  <div className="min-w-0">
+                    <span className="block text-xs font-comfortaa font-bold text-slate-800 dark:text-slate-200 truncate">
                       {lang === 'ru'
                         ? 'Прикрепить скриншоты (можно несколько)'
                         : 'Attach screenshots (multiple supported)'}
                     </span>
-                    <span className="block text-[11px] text-slate-400">
+                    <span className="block text-[11px] text-slate-500 dark:text-slate-400 truncate">
                       {lang === 'ru'
-                        ? 'Или вставьте через Ctrl+V прямо сюда'
-                        : 'Or paste directly using Ctrl+V'}
+                        ? 'Перетащите файлы или вставьте через Ctrl+V'
+                        : 'Drag & drop files or paste with Ctrl+V'}
                     </span>
                   </div>
                 </div>
 
-                <span className="text-xs font-comfortaa font-bold text-cyan-400 shrink-0">
-                  + {lang === 'ru' ? 'Выбрать' : 'Browse'}
+                <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/25 text-xs font-comfortaa font-bold text-cyan-700 dark:text-cyan-300 whitespace-nowrap shrink-0">
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>{lang === 'ru' ? 'Выбрать' : 'Browse'}</span>
                 </span>
               </div>
             )}
           </div>
 
-          {/* Modal Footer (Pinned to bottom, NEVER overflows) */}
-          <div className="flex items-center justify-between pt-4 border-t border-slate-200/80 dark:border-white/[0.08] shrink-0 mt-3">
-            <span className="text-[11px] text-slate-500 font-mono hidden sm:inline">
-              {lang === 'ru'
-                ? 'Ctrl+V — вставить фото из буфера'
-                : 'Ctrl+V to paste screenshot'}
+          {/* Pinned Single-Line Modal Footer */}
+          <div className="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 border-t border-slate-200/80 dark:border-white/[0.07] bg-slate-50/60 dark:bg-[#070B13]/80 shrink-0">
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap">
+              <kbd className="px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-white/[0.07] border border-slate-300/60 dark:border-white/[0.08] text-slate-600 dark:text-slate-300 text-[10px]">
+                Ctrl+V
+              </kbd>
+              <span>{lang === 'ru' ? 'фото из буфера' : 'paste screenshot'}</span>
             </span>
 
-            <div className="flex items-center gap-3 ml-auto">
+            <div className="flex items-center gap-2.5 ml-auto shrink-0">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] text-xs font-comfortaa font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] text-xs font-comfortaa font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white whitespace-nowrap active:scale-[0.98] transition-all cursor-pointer"
               >
                 {lang === 'ru' ? 'Отмена' : 'Cancel'}
               </button>
@@ -488,9 +567,9 @@ export const NoteModal: React.FC<NoteModalProps> = ({
               <button
                 type="submit"
                 disabled={isSubmitting || (!content.trim() && images.length === 0)}
-                className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-400 hover:to-sky-400 text-slate-950 text-xs font-comfortaa font-bold shadow-[0_0_20px_rgba(0,229,255,0.4)] hover:shadow-[0_0_28px_rgba(0,229,255,0.6)] hover:scale-[1.02] active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition-all cursor-pointer flex items-center gap-1.5"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 border border-cyan-400/40 text-xs font-comfortaa font-bold shadow-[inset_0_1px_0_0_rgba(255,255,255,0.4),0_4px_14px_rgba(6,182,212,0.25)] hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.5),0_6px_18px_rgba(6,182,212,0.4)] active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none whitespace-nowrap shrink-0 transition-all cursor-pointer"
               >
-                <Check className="w-4 h-4" />
+                <Check className="w-3.5 h-3.5 shrink-0" />
                 <span>
                   {isSubmitting
                     ? lang === 'ru'

@@ -62,7 +62,7 @@ export const renderTradeNoteContent = (text: string): React.ReactNode => {
 
   const bracketParts = text.split(/(\[[^\]\n]+\])/g);
   const numericTokenRegex =
-    /(?<![A-Za-zА-Яа-яЁё0-9])(\d+(?:[.,/:-]\d+)?(?:\s?(?:к|k|пл|pl|p|шт|pcs))?|[xх×]\d+)(?![A-Za-zА-Яа-яЁё0-9])/gi;
+    /(?<![A-Za-zА-Яа-яЁё0-9])(\d+(?:[кk]\d+|[.,/:-]\d+)?(?:\s?(?:к|k|пл|pl|p|шт|pcs))?|[xх×]\d+)(?![A-Za-zА-Яа-яЁё0-9])/gi;
 
   return bracketParts.map((segment, segIdx) => {
     if (!segment) return null;
@@ -72,7 +72,7 @@ export const renderTradeNoteContent = (text: string): React.ReactNode => {
       return (
         <span
           key={`tag-${segIdx}`}
-          className="inline-flex items-center gap-1 px-1.5 py-[1px] mx-0.5 rounded-md bg-cyan-500/10 dark:bg-cyan-400/10 border border-cyan-500/30 dark:border-cyan-400/25 text-cyan-700 dark:text-cyan-300 font-medium text-[0.9em] leading-snug align-baseline shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+          className="inline-flex items-center gap-1 px-1.5 py-[1px] mx-0.5 my-[1px] rounded-md bg-cyan-500/10 dark:bg-cyan-400/10 border border-cyan-500/30 dark:border-cyan-400/25 text-cyan-700 dark:text-cyan-300 font-medium text-[0.9em] leading-snug align-baseline shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
         >
           <Tag className="w-2.5 h-2.5 text-cyan-600 dark:text-cyan-400 shrink-0 opacity-85" />
           <span>{bracketMatch[1]}</span>
@@ -89,7 +89,7 @@ export const renderTradeNoteContent = (text: string): React.ReactNode => {
             return (
               <span
                 key={`num-${segIdx}-${partIdx}`}
-                className="font-mono font-semibold text-slate-900 dark:text-white bg-slate-200/70 dark:bg-white/[0.06] px-1 py-[0.5px] rounded text-[0.9em] tabular-nums"
+                className="font-mono font-semibold text-slate-900 dark:text-white bg-slate-200/70 dark:bg-white/[0.07] border border-slate-300/60 dark:border-white/[0.08] px-1.5 py-[0.5px] mx-[1px] rounded text-[0.88em] tabular-nums"
               >
                 {part}
               </span>
@@ -545,7 +545,7 @@ export const NotesGrid: React.FC<NotesGridProps> = ({
 
                   {/* Smart Trade Note Body Text (Parses [Item Name] & trade values) */}
                   {noteText && (
-                    <div className="text-xs sm:text-[13px] text-slate-700 dark:text-slate-300 font-sans leading-relaxed line-clamp-4 whitespace-pre-wrap select-text break-words overflow-hidden">
+                    <div className="text-xs sm:text-[13px] text-slate-700 dark:text-slate-300 font-sans leading-7 line-clamp-4 whitespace-pre-wrap select-text break-words overflow-hidden">
                       {renderTradeNoteContent(noteText)}
                     </div>
                   )}
